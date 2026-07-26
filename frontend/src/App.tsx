@@ -8,6 +8,7 @@ import { OverlayToolbar } from "./components/OverlayToolbar.js";
 import { IssCamera } from "./components/IssCamera.js";
 import { LocalSkyView } from "./components/LocalSkyView.js";
 import { SavedList } from "./components/SavedList.js";
+import { CatalogStatusBanner } from "./components/CatalogStatusBanner.js";
 
 export function App() {
   return (
@@ -22,6 +23,7 @@ export function App() {
       <IssCamera />
       <OverlayToolbar />
       <TimeControls />
+      <CatalogStatusBanner />
     </div>
   );
 }

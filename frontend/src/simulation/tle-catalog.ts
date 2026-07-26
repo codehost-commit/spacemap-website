@@ -1,57 +1,78 @@
 import type { Tle } from "@spacemap/shared";
 
 /**
- * Direct CelesTrak endpoint used when the SpaceMap backend isn't running
- * (production static hosting, e.g. GitHub Pages). CelesTrak explicitly
- * allows browser fetches via `Access-Control-Allow-Origin: *`.
+ * TLE loading strategy for the deployed site (Pages) and local dev:
+ *
+ *   1. In dev, try the local SpaceMap backend at `/api/tles` — instant, warm-
+ *      started from disk. Skipped in production so we don't spam 404s.
+ *   2. Try the bundled snapshot at `${base}data/tles.txt`. This file is
+ *      fetched from CelesTrak *at build time* by the GitHub Actions workflow
+ *      (server-side, so CORS doesn't apply) and shipped as a static asset.
+ *   3. Try CelesTrak directly. Historically CORS-open, but the endpoint has
+ *      recently started returning 403 to browser fetches. Left in as a
+ *      best-effort refresh.
+ *   4. Try a public CORS proxy over CelesTrak. Last resort — public proxies
+ *      are flaky, but occasionally save the day.
  */
+
 const CELESTRAK_URL =
   "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle";
+const CORS_PROXY_URL =
+  "https://corsproxy.io/?url=" + encodeURIComponent(CELESTRAK_URL);
+const BUNDLED_URL = `${import.meta.env.BASE_URL}data/tles.txt`;
+const IS_DEV = import.meta.env.DEV;
 
-/**
- * Fetch the TLE catalog. In dev, the Vite proxy exposes the local backend
- * on `/api/tles` which serves a warm-started, cached catalog. When that path
- * isn't reachable — GitHub Pages, offline preview, whatever — we fall back
- * to CelesTrak directly and parse the raw TLE text in the browser.
- */
 export async function fetchTles(): Promise<Tle[]> {
-  const viaBackend = await tryBackend();
-  if (viaBackend && viaBackend.length > 0) return viaBackend;
-  return await fetchFromCelestrak();
-}
+  const attempts: Array<{ label: string; run: () => Promise<Tle[]> }> = [];
+  if (IS_DEV) attempts.push({ label: "backend /api/tles", run: tryBackend });
+  attempts.push({ label: "bundled snapshot", run: tryBundled });
+  attempts.push({ label: "CelesTrak direct", run: tryCelestrak });
+  attempts.push({ label: "CORS proxy", run: tryProxy });
 
-async function tryBackend(): Promise<Tle[] | null> {
-  try {
-    const res = await fetch("/api/tles", { signal: AbortSignal.timeout(2500) });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { count: number; tles: Tle[] };
-    return body.tles;
-  } catch {
-    return null;
-  }
-}
-
-async function fetchFromCelestrak(): Promise<Tle[]> {
-  const attempts = [CELESTRAK_URL];
-  let lastErr: unknown;
-  for (let i = 0; i < 4; i++) {
-    for (const url of attempts) {
-      try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`CelesTrak ${res.status}`);
-        const text = await res.text();
-        const tles = parseTleText(text);
-        if (tles.length > 0) return tles;
-        throw new Error("CelesTrak returned no TLEs");
-      } catch (err) {
-        lastErr = err;
+  const errors: string[] = [];
+  for (const attempt of attempts) {
+    try {
+      const tles = await attempt.run();
+      if (tles.length > 0) {
+        console.info(`[tle] loaded ${tles.length} objects via ${attempt.label}`);
+        return tles;
       }
+      errors.push(`${attempt.label}: empty`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      errors.push(`${attempt.label}: ${msg}`);
+      console.warn(`[tle] ${attempt.label} failed:`, msg);
     }
-    await new Promise((r) => setTimeout(r, 800 * (i + 1)));
   }
-  throw new Error(
-    `TLE catalog unavailable: ${lastErr instanceof Error ? lastErr.message : lastErr}`,
-  );
+  throw new Error(`TLE catalog unavailable — tried ${errors.length} sources:\n  ${errors.join("\n  ")}`);
+}
+
+async function tryBackend(): Promise<Tle[]> {
+  const res = await fetch("/api/tles", { signal: AbortSignal.timeout(2500) });
+  if (!res.ok) throw new Error(`status ${res.status}`);
+  const body = (await res.json()) as { count: number; tles: Tle[] };
+  return body.tles;
+}
+
+async function tryBundled(): Promise<Tle[]> {
+  const res = await fetch(BUNDLED_URL, { cache: "no-cache" });
+  if (!res.ok) throw new Error(`status ${res.status}`);
+  const text = await res.text();
+  const tles = parseTleText(text);
+  if (tles.length === 0) throw new Error("no TLEs parsed");
+  return tles;
+}
+
+async function tryCelestrak(): Promise<Tle[]> {
+  const res = await fetch(CELESTRAK_URL);
+  if (!res.ok) throw new Error(`status ${res.status}`);
+  return parseTleText(await res.text());
+}
+
+async function tryProxy(): Promise<Tle[]> {
+  const res = await fetch(CORS_PROXY_URL);
+  if (!res.ok) throw new Error(`status ${res.status}`);
+  return parseTleText(await res.text());
 }
 
 /**
@@ -61,6 +82,7 @@ async function fetchFromCelestrak(): Promise<Tle[]> {
 export function parseTleText(text: string): Tle[] {
   const lines = text.split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean);
   const out: Tle[] = [];
+  const seen = new Set<number>();
   for (let i = 0; i + 2 < lines.length; i += 3) {
     const name = lines[i].trim();
     const l1 = lines[i + 1];
@@ -71,6 +93,8 @@ export function parseTleText(text: string): Tle[] {
     }
     const noradId = Number(l1.slice(2, 7).trim());
     if (!Number.isFinite(noradId)) continue;
+    if (seen.has(noradId)) continue;
+    seen.add(noradId);
     out.push({ noradId, name, line1: l1, line2: l2, epoch: parseTleEpoch(l1) });
   }
   return out;

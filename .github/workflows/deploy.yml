@@ -4,6 +4,10 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  # Refresh the bundled TLE snapshot every 6 hours so the deployed site
+  # always ships with a recent catalog even if nobody's pushing code.
+  schedule:
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: read
@@ -26,8 +30,6 @@ jobs:
           cache: npm
 
       - name: Install
-        # Prefer `npm ci` when a lockfile is committed; fall back to `install`
-        # so this works on the very first push before anyone has generated one.
         run: |
           if [ -f package-lock.json ]; then
             npm ci --no-audit --no-fund
@@ -49,8 +51,49 @@ jobs:
           VITE_BASE_URL: ${{ steps.base.outputs.base }}
         run: npm run build -w frontend
 
+      - name: Fetch TLE snapshot for bundling
+        # CelesTrak now returns 403 to browser-origin fetches, so we grab the
+        # catalog server-side here and ship it as a static asset. Multiple
+        # groups are merged so users see LEO + GEO + weather birds out of the
+        # box. A polite User-Agent identifies this build to CelesTrak per
+        # their usage policy.
+        env:
+          UA: "SpaceMap/1.0 (+https://github.com/${{ github.repository }})"
+        run: |
+          mkdir -p frontend/dist/data
+          set +e
+          FAIL=0
+          fetch_group() {
+            local group="$1"
+            local out="$2"
+            echo "Fetching group=$group"
+            curl -fsSL -A "$UA" \
+              "https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=tle" \
+              >> "$out"
+            local rc=$?
+            if [ $rc -ne 0 ]; then
+              echo "  → group $group failed (rc=$rc)"
+              FAIL=$((FAIL+1))
+            fi
+          }
+          fetch_group active frontend/dist/data/tles.txt
+          # Best-effort auxiliary groups: don't fail the build if these 429/timeout.
+          fetch_group visual   frontend/dist/data/tles.txt || true
+          fetch_group weather  frontend/dist/data/tles.txt || true
+          fetch_group stations frontend/dist/data/tles.txt || true
+          if [ ! -s frontend/dist/data/tles.txt ]; then
+            echo "::error::TLE fetch failed — no data bundled."
+            exit 1
+          fi
+          LINES=$(wc -l < frontend/dist/data/tles.txt)
+          echo "Bundled TLE lines: $LINES (~$((LINES/3)) satellites)"
+
       - name: Add SPA 404 shim
         run: cp frontend/dist/index.html frontend/dist/404.html
+
+      - name: Add .nojekyll marker
+        # Prevents Jekyll from ever re-processing the artifact.
+        run: touch frontend/dist/.nojekyll
 
       - uses: actions/configure-pages@v5
 
