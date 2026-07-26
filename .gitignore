@@ -1,0 +1,11 @@
+node_modules/
+dist/
+build/
+.vite/
+.cache/
+*.log
+.DS_Store
+.env
+.env.local
+coverage/
+data/tle-cache/

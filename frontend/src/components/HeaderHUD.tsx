@@ -1,0 +1,96 @@
+import { useEffect, useState } from "react";
+import { useStore } from "../state/store.js";
+
+/** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
+export function HeaderHUD() {
+  const status = useStore((s) => s.catalogStatus);
+  const error = useStore((s) => s.catalogError);
+  const catalogSize = useStore((s) => s.catalogSize);
+  const snapshotCount = useStore((s) => s.snapshot?.count ?? 0);
+  const simTimeMs = useStore((s) => s.simTimeMs);
+  const multiplier = useStore((s) => s.simMultiplier);
+  const paused = useStore((s) => s.simPaused);
+
+  const [wallNow, setWallNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setWallNow(Date.now()), 500);
+    return () => clearInterval(id);
+  }, []);
+
+  const drift = simTimeMs - wallNow;
+  const driftLabel =
+    Math.abs(drift) < 2000
+      ? "live"
+      : `${drift > 0 ? "+" : "−"}${formatDuration(Math.abs(drift))}`;
+
+  return (
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
+      <div className="pointer-events-auto flex items-center gap-3 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
+        <div className="text-sm font-semibold tracking-wider text-space-accent">SPACEMAP</div>
+        <div className="text-[10px] uppercase tracking-widest text-space-dim">
+          Orbital Nexus · Phase 2
+        </div>
+      </div>
+
+      <div className="pointer-events-auto flex items-center gap-4 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 font-mono text-xs backdrop-blur">
+        <Stat label="Catalog" value={catalogSize.toLocaleString()} />
+        <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
+        <Stat
+          label="Speed"
+          value={`${paused ? "⏸ " : ""}${multiplier >= 0 ? "" : "−"}${Math.abs(multiplier)}×`}
+        />
+        <Stat label="Sim (UTC)" value={new Date(simTimeMs).toISOString().slice(11, 19)} />
+        <Stat label="Δ vs now" value={driftLabel} />
+        <div className="flex items-center gap-1.5">
+          <span
+            className={`h-2 w-2 rounded-full ${statusColor(status)}`}
+            title={error ?? status}
+          />
+          <span className="text-space-dim">{statusLabel(status)}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col leading-tight">
+      <span className="text-[9px] uppercase tracking-widest text-space-dim">{label}</span>
+      <span className="text-space-text">{value}</span>
+    </div>
+  );
+}
+
+function statusColor(s: string): string {
+  switch (s) {
+    case "ready":
+      return "bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400";
+    case "loading":
+      return "bg-space-warn shadow-[0_0_8px] shadow-space-warn";
+    case "error":
+      return "bg-space-bad shadow-[0_0_8px] shadow-space-bad";
+    default:
+      return "bg-space-dim";
+  }
+}
+
+function statusLabel(s: string): string {
+  switch (s) {
+    case "ready":
+      return "LIVE";
+    case "loading":
+      return "LOADING";
+    case "error":
+      return "ERROR";
+    default:
+      return "IDLE";
+  }
+}
+
+function formatDuration(ms: number): string {
+  if (ms < 60_000) return `${Math.round(ms / 1000)}s`;
+  if (ms < 3_600_000) return `${Math.round(ms / 60_000)}m`;
+  if (ms < 86_400_000) return `${(ms / 3_600_000).toFixed(1)}h`;
+  return `${(ms / 86_400_000).toFixed(1)}d`;
+}

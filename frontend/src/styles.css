@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  font-family: theme("fontFamily.sans");
+  background: theme("colors.space.bg");
+  color: theme("colors.space.text");
+}
+
+/* Cesium container needs a positioned parent. */
+.cesium-container {
+  position: absolute;
+  inset: 0;
+}
+
+/* Hide Cesium's default credit / toolbar chrome for a cleaner look. */
+.cesium-viewer-bottom,
+.cesium-viewer-toolbar,
+.cesium-viewer-animationContainer,
+.cesium-viewer-timelineContainer,
+.cesium-viewer-fullscreenContainer {
+  display: none !important;
+}
+
+.cesium-viewer,
+.cesium-widget,
+.cesium-widget canvas {
+  background: theme("colors.space.bg") !important;
+}
