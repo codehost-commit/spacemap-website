@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { SatelliteTelemetry } from "@spacemap/shared";
 import { useStore, type CameraMode } from "../state/store.js";
 import { findInSnapshot } from "../state/snapshot-util.js";
+import { computeTelemetry } from "../simulation/client-telemetry.js";
 import { ConjunctionPanel } from "./ConjunctionPanel.js";
 
 const MODE_LABEL: Record<CameraMode, string> = {
@@ -30,24 +31,13 @@ export function TelemetryPanel() {
   useEffect(() => {
     setTelemetry(null);
     if (selected == null) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/satellites/${selected}/telemetry`);
-        if (!res.ok) return;
-        const t = (await res.json()) as SatelliteTelemetry;
-        if (!cancelled && t.meta.noradId === selected) setTelemetry(t);
-      } catch {
-        /* transient */
-      }
-    };
-    load();
-    const id = setInterval(load, 2000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
-  }, [selected]);
+    // Compute telemetry locally from the in-browser catalog — works with no
+    // backend running (GitHub Pages, offline preview, etc.). Refreshes on
+    // simTimeMs so element-derived values (period, etc. stay in sync with
+    // time-warping).
+    const t = computeTelemetry(selected, new Date(simTimeMs));
+    if (t) setTelemetry(t);
+  }, [selected, simTimeMs]);
 
   if (skyOpen) return null;
 

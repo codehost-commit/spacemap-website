@@ -13,7 +13,7 @@ import { installFocusApi } from "../cesium/focus.js";
 import { installClockControls } from "../simulation/clock-controls.js";
 import { installNotificationWatcher } from "../simulation/notifications.js";
 import { installSavedPersistence, loadSavedFromStorage } from "../state/saved.js";
-import type { Tle } from "@spacemap/shared";
+import { getLocalTle } from "../simulation/catalog-store.js";
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -150,12 +150,7 @@ async function updateOrbitRibbon(ribbon: OrbitTrail, noradId: number | null): Pr
     ribbon.clear();
     return;
   }
-  try {
-    const res = await fetch(`/api/satellites/${noradId}`);
-    if (!res.ok) return;
-    const tle = (await res.json()) as Tle;
-    ribbon.setFromTle(tle, new Date());
-  } catch (err) {
-    console.warn("[ribbon] failed to load TLE:", err);
-  }
+  const tle = getLocalTle(noradId);
+  if (!tle) return;
+  ribbon.setFromTle(tle, new Date());
 }

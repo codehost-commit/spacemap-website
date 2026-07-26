@@ -12,7 +12,13 @@ const cesiumPkgDir = path.dirname(require.resolve("cesium/package.json"));
 const cesiumBuildRootPath = path.join(cesiumPkgDir, "Build");
 const cesiumBuildPath = path.join(cesiumPkgDir, "Build", "Cesium/");
 
+// GitHub Pages serves the site from `/${repo}/`. Override at build time with
+// `VITE_BASE_URL=/YourRepo/ npm run build`. Defaults to `/SpaceMap/` because
+// that's the intended repository name; falls back to `/` for local preview.
+const baseUrl = process.env.VITE_BASE_URL ?? "/";
+
 export default defineConfig({
+  base: baseUrl,
   plugins: [react(), cesium({ cesiumBuildRootPath, cesiumBuildPath })],
   server: {
     port: 5173,

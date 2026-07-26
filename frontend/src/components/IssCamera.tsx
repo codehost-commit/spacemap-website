@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { SatelliteTelemetry } from "@spacemap/shared";
 import { useStore } from "../state/store.js";
 import { findInSnapshot } from "../state/snapshot-util.js";
+import { computeTelemetry } from "../simulation/client-telemetry.js";
 
 const ISS_NORAD = 25544;
 // NASA's public HD Earth-viewing / ISS livestream. If NASA rotates the URL
@@ -24,23 +25,13 @@ export function IssCamera() {
 
   useEffect(() => {
     if (!open) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(`/api/satellites/${ISS_NORAD}/telemetry`);
-        if (!res.ok) return;
-        const t = (await res.json()) as SatelliteTelemetry;
-        if (!cancelled) setTel(t);
-      } catch {
-        /* ignore */
-      }
+    const refresh = () => {
+      const t = computeTelemetry(ISS_NORAD, new Date());
+      if (t) setTel(t);
     };
-    load();
-    const id = setInterval(load, 5000);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
+    refresh();
+    const id = setInterval(refresh, 5000);
+    return () => clearInterval(id);
   }, [open]);
 
   if (!open) return null;

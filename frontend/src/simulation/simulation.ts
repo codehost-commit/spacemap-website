@@ -2,6 +2,7 @@ import * as Cesium from "cesium";
 import type { ConjunctionResult, PropagationSnapshot, Tle } from "@spacemap/shared";
 import PropagatorWorker from "../workers/propagator.worker.ts?worker";
 import { fetchTles } from "./tle-catalog.js";
+import { setLocalCatalog } from "./catalog-store.js";
 import { useStore } from "../state/store.js";
 
 export class Simulation {
@@ -28,6 +29,7 @@ export class Simulation {
     try {
       const tles = await fetchTles();
       this.worker.postMessage({ type: "load", tles });
+      setLocalCatalog(tles);
       store.setIndex(tles.map((t: Tle) => ({ noradId: t.noradId, name: t.name })));
       store.setCatalogStatus("ready");
       // Fire an immediate propagation now that the worker has data — don't
