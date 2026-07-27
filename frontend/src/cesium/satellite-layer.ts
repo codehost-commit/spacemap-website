@@ -64,8 +64,13 @@ const BILLBOARD_ADD_BELOW_SQ = 25_000_000 ** 2;
 // Additions happen instantly because a missing primitive is a correctness bug;
 // deletions can wait so we don't churn the collection every frame.
 const BAND_CHECK_INTERVAL_MS = 500;
-const VIEW_MARGIN_RAD = 0.6;
-const VIEW_RELEASE_MARGIN_RAD = 0.9;
+// Tightened from 0.6/0.9 rad — 34°/51° margins were basically the whole
+// hemisphere, so frustum culling did almost nothing. 10°/20° actually
+// culls off-screen sats without introducing pop-in during small pans
+// (release cone is 20° past the frustum, so a sat has to move quite a
+// bit before being removed once it's tracked).
+const VIEW_MARGIN_RAD = 0.17; // ≈ 10° extra beyond the frustum for adds
+const VIEW_RELEASE_MARGIN_RAD = 0.35; // ≈ 20° for keeps (hysteresis)
 const OFFSCREEN_NEAR_RESERVE_SQ = 12_000_000 ** 2;
 const HORIZON_PREWARM_FACTOR = 1.18;
 
@@ -342,26 +347,33 @@ export class SatelliteLayer {
     // Advance rolling cursor once per snapshot.
     this.catchupCursor = catchupEnd % count;
 
-    // Reap primitives that dropped out of the current filter / catalog. Only
-    // removes satellites that *aren't in `seen`* — a satellite that's just
-    // temporarily out of its band still lives in `seen` (we saw it above),
-    // so we don't accidentally kill a valid entry.
-    for (const [id, p] of this.pointIndex) {
-      if (this.seenGeneration.get(id) !== generation) {
-        this.points.remove(p);
-        this.pointIndex.delete(id);
-        this.pointClassById.delete(id);
-        this.pointPosById.delete(id);
-        this.seenGeneration.delete(id);
+    // Reap primitives that dropped out of the current filter / catalog. This
+    // is throttled to the same BAND_CHECK_INTERVAL_MS cadence as band-based
+    // removals — running the reap every snapshot causes vertex-buffer churn
+    // during camera pan (each Cesium remove marks the slot dirty and forces a
+    // buffer recompact on the next collection update). Batching removals to
+    // twice a second smooths the pan-release feel with no visible change,
+    // since the zombie primitives are off-screen anyway. Sats behind Earth
+    // stay in the collection an extra 0–500 ms after being culled; their GPU
+    // cost during that window is negligible.
+    if (canRemoveThisTick) {
+      for (const [id, p] of this.pointIndex) {
+        if (this.seenGeneration.get(id) !== generation) {
+          this.points.remove(p);
+          this.pointIndex.delete(id);
+          this.pointClassById.delete(id);
+          this.pointPosById.delete(id);
+          this.seenGeneration.delete(id);
+        }
       }
-    }
-    for (const [id, b] of this.billboardIndex) {
-      if (this.seenGeneration.get(id) !== generation) {
-        this.billboards.remove(b);
-        this.billboardIndex.delete(id);
-        this.billboardClassById.delete(id);
-        this.billboardPosById.delete(id);
-        this.seenGeneration.delete(id);
+      for (const [id, b] of this.billboardIndex) {
+        if (this.seenGeneration.get(id) !== generation) {
+          this.billboards.remove(b);
+          this.billboardIndex.delete(id);
+          this.billboardClassById.delete(id);
+          this.billboardPosById.delete(id);
+          this.seenGeneration.delete(id);
+        }
       }
     }
   }
