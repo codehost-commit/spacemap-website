@@ -2,9 +2,13 @@ import * as Cesium from "cesium";
 
 /**
  * Base-imagery layer catalog. All GIBS layers are auth-free and CORS-open, so
- * they work from any static host. Blue Marble and Black Marble are static
- * imagery; MODIS Terra is time-varying and we anchor to two days ago so the
- * tiles are guaranteed to be processed.
+ * they work from any static host.
+ *
+ * NB: GIBS EPSG:4326 tile matrix sets have specific level counts per resolution
+ * (500m → levels 0-6, 250m → 0-7, etc.). Exceeding maximumLevel causes 404s and
+ * the tiles simply don't show — which shows up as "half the globe is black".
+ * Using UrlTemplateImageryProvider here instead of WMTS keeps the URL exact and
+ * predictable.
  */
 export interface ImageryDef {
   id: string;
@@ -17,23 +21,40 @@ function twoDaysAgoIso(): string {
   return new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
 }
 
+function gibsProvider(opts: {
+  layer: string;
+  time?: string;
+  tileMatrixSet: string;
+  ext: "jpg" | "png";
+  maximumLevel: number;
+  credit: string;
+}): Cesium.UrlTemplateImageryProvider {
+  const timeSegment = opts.time ? `${opts.time}/` : "";
+  const url = `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/${opts.layer}/default/${timeSegment}${opts.tileMatrixSet}/{z}/{y}/{x}.${opts.ext}`;
+  return new Cesium.UrlTemplateImageryProvider({
+    url,
+    tileWidth: 512,
+    tileHeight: 512,
+    minimumLevel: 0,
+    maximumLevel: opts.maximumLevel,
+    tilingScheme: new Cesium.GeographicTilingScheme(),
+    rectangle: Cesium.Rectangle.MAX_VALUE,
+    credit: new Cesium.Credit(opts.credit, true),
+  });
+}
+
 export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
     id: "bluemarble",
     label: "Blue Marble",
     description: "NASA Blue Marble Next Generation — cloudless composite.",
     create: () =>
-      new Cesium.WebMapTileServiceImageryProvider({
-        url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/BlueMarble_ShadedRelief_Bathymetry/default/500m/{TileMatrix}/{TileRow}/{TileCol}.jpeg",
+      gibsProvider({
         layer: "BlueMarble_ShadedRelief_Bathymetry",
-        style: "default",
-        format: "image/jpeg",
-        tileMatrixSetID: "500m",
-        maximumLevel: 8,
-        tileWidth: 512,
-        tileHeight: 512,
-        tilingScheme: new Cesium.GeographicTilingScheme(),
-        credit: new Cesium.Credit("NASA GIBS · Blue Marble", true),
+        tileMatrixSet: "500m",
+        ext: "jpg",
+        maximumLevel: 6, // 500m set has 7 levels total (0..6)
+        credit: "NASA GIBS · Blue Marble",
       }),
   },
   {
@@ -42,17 +63,13 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
     description:
       "MODIS Terra true-color, two days ago. Real cloud cover, actual sea ice, current wildfires.",
     create: () =>
-      new Cesium.WebMapTileServiceImageryProvider({
-        url: `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/MODIS_Terra_CorrectedReflectance_TrueColor/default/${twoDaysAgoIso()}/250m/{TileMatrix}/{TileRow}/{TileCol}.jpg`,
+      gibsProvider({
         layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
-        style: "default",
-        format: "image/jpeg",
-        tileMatrixSetID: "250m",
-        maximumLevel: 9,
-        tileWidth: 512,
-        tileHeight: 512,
-        tilingScheme: new Cesium.GeographicTilingScheme(),
-        credit: new Cesium.Credit("NASA GIBS · MODIS Terra", true),
+        time: twoDaysAgoIso(),
+        tileMatrixSet: "250m",
+        ext: "jpg",
+        maximumLevel: 7, // 250m set has 8 levels total (0..7)
+        credit: "NASA GIBS · MODIS Terra",
       }),
   },
   {
@@ -60,17 +77,12 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
     label: "Black Marble (night)",
     description: "VIIRS Black Marble city lights — humanity glowing from orbit.",
     create: () =>
-      new Cesium.WebMapTileServiceImageryProvider({
-        url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/VIIRS_Black_Marble/default/500m/{TileMatrix}/{TileRow}/{TileCol}.png",
+      gibsProvider({
         layer: "VIIRS_Black_Marble",
-        style: "default",
-        format: "image/png",
-        tileMatrixSetID: "500m",
-        maximumLevel: 8,
-        tileWidth: 512,
-        tileHeight: 512,
-        tilingScheme: new Cesium.GeographicTilingScheme(),
-        credit: new Cesium.Credit("NASA GIBS · VIIRS Black Marble", true),
+        tileMatrixSet: "500m",
+        ext: "png",
+        maximumLevel: 6,
+        credit: "NASA GIBS · VIIRS Black Marble",
       }),
   },
   {

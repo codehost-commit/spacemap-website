@@ -18,7 +18,8 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
     timeline: false,
     // No default base layer — BaseImageryController swaps in NASA GIBS
     // streaming tiles (or an offline fallback) immediately after boot.
-    baseLayer: false as unknown as Cesium.ImageryLayer,
+    // Cast is only because Cesium's TS types are strict; runtime accepts false.
+    baseLayer: false as unknown as false,
     skyBox: createStarSkyBox(),
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });

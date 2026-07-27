@@ -58,11 +58,16 @@ export class SatelliteModel {
     const url = modelUrlFor(noradId);
     this.loadingUrl = url;
     try {
+      // Real satellite sizes (ISS ~100 m, cubesat ~0.3 m) are invisible dots
+      // at typical camera distances (500+ km). `minimumPixelSize: 220` clamps
+      // the on-screen footprint so you actually see the model shape. It still
+      // shrinks nicely when you fly close and cross the natural-scale
+      // threshold.
       const model = await Cesium.Model.fromGltfAsync({
         url,
         modelMatrix: Cesium.Matrix4.IDENTITY,
-        minimumPixelSize: 48,
-        maximumScale: 400_000,
+        minimumPixelSize: 220,
+        maximumScale: 800_000,
         scale: 1,
         // Hide until first transform update so the model doesn't flash at the
         // origin.
