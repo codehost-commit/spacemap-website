@@ -14,7 +14,6 @@ import { installClockControls } from "../simulation/clock-controls.js";
 import { installNotificationWatcher } from "../simulation/notifications.js";
 import { installSavedPersistence, loadSavedFromStorage } from "../state/saved.js";
 import { getLocalTle } from "../simulation/catalog-store.js";
-import { SceneEnhancements } from "../cesium/scene-enhancements.js";
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -29,7 +28,6 @@ export function GlobeCanvas() {
     const follow = new FollowMode(viewer, layer);
     const pov = new PovCamera(viewer, () => useStore.getState().snapshot);
     const sim = new Simulation(viewer);
-    const enhancements = new SceneEnhancements(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
     const uninstallClock = installClockControls(viewer);
@@ -37,20 +35,11 @@ export function GlobeCanvas() {
     loadSavedFromStorage();
     const uninstallSaved = installSavedPersistence();
     const uninstallNotifications = installNotificationWatcher();
-    const initialLayers = useStore.getState().visualLayers;
-    enhancements.setLayerEnabled("graticule", initialLayers.has("graticule"));
-    enhancements.setLayerEnabled("labels", initialLayers.has("labels"));
-    enhancements.setLayerEnabled("terminator", initialLayers.has("terminator"));
 
     // Click → select or pick compare partner.
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
-      const picks = viewer.scene.drillPick(ev.position);
-      const picked = picks.find(
-        (entry) =>
-          typeof entry?.id === "number" ||
-          (entry?.primitive && typeof entry.primitive.id === "number"),
-      );
+      const picked = viewer.scene.pick(ev.position);
       const id =
         picked && typeof picked.id === "number"
           ? picked.id
@@ -83,7 +72,6 @@ export function GlobeCanvas() {
     let lastCameraMode = "orbit";
     let lastTrailMode = "";
     let lastHeatmap = false;
-    let lastVisualLayers: Set<unknown> | null = null;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef) {
         lastFilterRef = s.filter;
@@ -110,12 +98,6 @@ export function GlobeCanvas() {
         lastHeatmap = s.heatmapOn;
         void heatmap.setEnabled(s.heatmapOn);
       }
-      if (s.visualLayers !== lastVisualLayers) {
-        lastVisualLayers = s.visualLayers;
-        enhancements.setLayerEnabled("graticule", s.visualLayers.has("graticule"));
-        enhancements.setLayerEnabled("labels", s.visualLayers.has("labels"));
-        enhancements.setLayerEnabled("terminator", s.visualLayers.has("terminator"));
-      }
     });
 
     sim.start();
@@ -135,7 +117,6 @@ export function GlobeCanvas() {
       heatmap.destroy();
       trails.clear();
       orbitRibbon.clear();
-      enhancements.destroy();
       layer.clear();
       sim.destroy();
       viewer.destroy();

@@ -4,9 +4,7 @@ import { ensureNotificationPermission } from "../simulation/notifications.js";
 /** Right-hand icon rail: toggles for ISS cam, sky view, saved list, notifications. */
 export function OverlayToolbar() {
   const openOverlays = useStore((s) => s.openOverlays);
-  const visualLayers = useStore((s) => s.visualLayers);
   const toggleOverlay = useStore((s) => s.toggleOverlay);
-  const toggleVisualLayer = useStore((s) => s.toggleVisualLayer);
   const notifyEnabled = useStore((s) => s.notifyEnabled);
   const setNotifyEnabled = useStore((s) => s.setNotifyEnabled);
 
@@ -39,15 +37,6 @@ export function OverlayToolbar() {
       </button>
       <button className={btn(openOverlays.has("saved"))} onClick={() => toggleOverlay("saved")} title="Saved satellites">
         ★
-      </button>
-      <button className={btn(visualLayers.has("graticule"))} onClick={() => toggleVisualLayer("graticule")} title="Latitude / longitude grid">
-        GRID
-      </button>
-      <button className={btn(visualLayers.has("labels"))} onClick={() => toggleVisualLayer("labels")} title="Country and city labels">
-        MAP
-      </button>
-      <button className={btn(visualLayers.has("terminator"))} onClick={() => toggleVisualLayer("terminator")} title="Solar terminator line">
-        SUN
       </button>
       <button className={btn(notifyEnabled)} onClick={handleNotify} title="Browser notifications">
         🔔
