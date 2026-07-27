@@ -107,10 +107,13 @@ class SolarTerminator {
 
   constructor(private readonly scene: Cesium.Scene) {
     this.lines = scene.primitives.add(new Cesium.PolylineCollection());
+    const material = Cesium.Material.fromType("Color", {
+      color: Cesium.Color.fromCssColorString("#8ac6ff").withAlpha(0.75),
+    });
     this.polyline = this.lines.add({
       positions: [],
       width: 1.8,
-      material: Cesium.Color.fromCssColorString("#8ac6ff").withAlpha(0.75),
+      material,
     });
   }
 
@@ -184,12 +187,16 @@ class GraticuleOverlay {
     this.lines = scene.primitives.add(new Cesium.PolylineCollection());
     this.lines.show = false;
     const color = Cesium.Color.fromCssColorString("#4fc3f7").withAlpha(0.22);
+    const gridMaterial = Cesium.Material.fromType("Color", { color });
+    const equatorMaterial = Cesium.Material.fromType("Color", {
+      color: Cesium.Color.fromCssColorString("#8bd8ff").withAlpha(0.32),
+    });
 
     for (let lon = -180; lon < 180; lon += 15) {
       this.lines.add({
         positions: sampleMeridian(lon),
         width: lon % 45 === 0 ? 1.3 : 0.9,
-        material: color,
+        material: gridMaterial,
       });
     }
     for (let lat = -75; lat <= 75; lat += 15) {
@@ -197,13 +204,13 @@ class GraticuleOverlay {
       this.lines.add({
         positions: sampleParallel(lat),
         width: lat % 45 === 0 ? 1.25 : 0.85,
-        material: color,
+        material: gridMaterial,
       });
     }
     this.lines.add({
       positions: sampleParallel(0),
       width: 1.4,
-      material: Cesium.Color.fromCssColorString("#8bd8ff").withAlpha(0.32),
+      material: equatorMaterial,
     });
   }
 
