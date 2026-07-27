@@ -54,6 +54,8 @@ interface StoreState {
   simMultiplier: number;
   simPaused: boolean;
 
+  adminOpen: boolean;
+
   setCatalogStatus: (s: CatalogStatus, err?: string | null) => void;
   setIndex: (index: SatelliteIndexEntry[]) => void;
   setSnapshot: (snap: PropagationSnapshot) => void;
@@ -82,6 +84,7 @@ interface StoreState {
   setOverlay: (id: OverlayId, open: boolean) => void;
 
   setClock: (timeMs: number, multiplier: number, paused: boolean) => void;
+  setAdminOpen: (v: boolean) => void;
 }
 
 const defaultFilter = new Set<OrbitClass>(ORBIT_CLASSES);
@@ -123,6 +126,8 @@ export const useStore = create<StoreState>((set) => ({
   simTimeMs: Date.now(),
   simMultiplier: 1,
   simPaused: false,
+
+  adminOpen: false,
 
   setCatalogStatus: (catalogStatus, err = null) => set({ catalogStatus, catalogError: err }),
   setIndex: (index) =>
@@ -199,4 +204,5 @@ export const useStore = create<StoreState>((set) => ({
 
   setClock: (simTimeMs, simMultiplier, simPaused) =>
     set({ simTimeMs, simMultiplier, simPaused }),
+  setAdminOpen: (adminOpen) => set({ adminOpen }),
 }));

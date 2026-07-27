@@ -24,6 +24,9 @@ import { installSavedPersistence, loadSavedFromStorage } from "../state/saved.js
 import { getLocalTle } from "../simulation/catalog-store.js";
 import { installKeyboardShortcuts } from "../simulation/keyboard.js";
 import { installUrlState } from "../state/url-state.js";
+import { registerInstruments } from "../admin/registry.js";
+import { installInstrumentation } from "../admin/instrumentation.js";
+import { getClockControls } from "../simulation/clock-controls.js";
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -55,6 +58,13 @@ export function GlobeCanvas() {
     const uninstallNotifications = installNotificationWatcher();
     const uninstallKeyboard = installKeyboardShortcuts();
     const uninstallUrl = installUrlState();
+
+    // Admin console instrumentation — shared refs + engine event stream.
+    const clock = getClockControls();
+    const uninstallRegistry = clock
+      ? registerInstruments({ viewer, layer, sim, clock })
+      : () => {};
+    const uninstallInstrumentation = installInstrumentation();
 
     // Apply the initial imagery layer immediately so users see something even
     // while TLEs download.
@@ -234,6 +244,8 @@ export function GlobeCanvas() {
       uninstallNotifications();
       uninstallKeyboard();
       uninstallUrl();
+      uninstallRegistry();
+      uninstallInstrumentation();
       pov.destroy();
       follow.destroy();
       model.destroy();

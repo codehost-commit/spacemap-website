@@ -11,6 +11,7 @@ import { SavedList } from "./components/SavedList.js";
 import { CatalogStatusBanner } from "./components/CatalogStatusBanner.js";
 import { ConjunctionLeaderboard } from "./components/ConjunctionLeaderboard.js";
 import { LaunchTracker } from "./components/LaunchTracker.js";
+import { AdminConsole } from "./components/AdminConsole.js";
 
 export function App() {
   return (
@@ -28,6 +29,7 @@ export function App() {
       <LaunchTracker />
       <TimeControls />
       <CatalogStatusBanner />
+      <AdminConsole />
     </div>
   );
 }

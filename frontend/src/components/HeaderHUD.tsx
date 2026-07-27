@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../state/store.js";
 import { LocateButton } from "./LocateButton.js";
+import { adminLog } from "../admin/admin-log.js";
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -47,7 +48,19 @@ export function HeaderHUD() {
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
       <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-56 flex-col gap-2 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
-        <div className="text-sm font-semibold tracking-wider text-space-accent">SPACEMAP</div>
+        <div className="flex items-center justify-between">
+          <div className="text-sm font-semibold tracking-wider text-space-accent">SPACEMAP</div>
+          <button
+            onClick={() => {
+              adminLog.push("main", { channel: "sys", severity: "info", text: "admin console opened" });
+              useStore.getState().setAdminOpen(true);
+            }}
+            title="Admin console (developer)"
+            className="rounded border border-emerald-800 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400 hover:border-emerald-500 hover:text-emerald-300"
+          >
+            ADMIN
+          </button>
+        </div>
         <LocateButton />
       </div>
 
