@@ -10,6 +10,9 @@ import * as Cesium from "cesium";
  */
 const OUTLINE_URL = `${import.meta.env.BASE_URL}data/countries.geojson`;
 const OUTLINE_LIFT_M = 5000;
+// Borders fade in only when the camera is within ~8000 km of the surface.
+// Wider than that and the outlines just clutter the scene.
+const MAX_VISIBLE_DISTANCE_M = 8_000_000;
 
 interface Feature {
   type: "Feature";
@@ -68,8 +71,12 @@ export class Countries {
     const col = this.scene.primitives.add(new Cesium.PolylineCollection());
     this.collection = col;
     const material = Cesium.Material.fromType("Color", {
-      color: new Cesium.Color(0.75, 0.85, 1, 0.35),
+      color: new Cesium.Color(0.75, 0.85, 1, 0.5),
     });
+    const showCondition = new Cesium.DistanceDisplayCondition(
+      0,
+      MAX_VISIBLE_DISTANCE_M,
+    );
 
     let ringCount = 0;
     for (const feature of data.features) {
@@ -79,7 +86,12 @@ export class Countries {
         for (const ring of geom.coordinates) {
           const positions = ringPositions(ring);
           if (positions.length < 2) continue;
-          col.add({ positions, width: 1.0, material });
+          col.add({
+            positions,
+            width: 1.0,
+            material,
+            distanceDisplayCondition: showCondition,
+          });
           ringCount++;
         }
       } else if (geom.type === "MultiPolygon") {
@@ -87,7 +99,12 @@ export class Countries {
           for (const ring of poly) {
             const positions = ringPositions(ring);
             if (positions.length < 2) continue;
-            col.add({ positions, width: 1.0, material });
+            col.add({
+              positions,
+              width: 1.0,
+              material,
+              distanceDisplayCondition: showCondition,
+            });
             ringCount++;
           }
         }

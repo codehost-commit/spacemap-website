@@ -46,7 +46,7 @@ export function LocateButton() {
   return (
     <button
       onClick={locate}
-      className="ml-2 flex items-center gap-1.5 rounded border border-space-border px-2 py-1 font-mono text-[11px] text-space-text hover:border-space-accent hover:text-space-accent"
+      className="flex w-full items-center justify-center gap-1.5 rounded border border-space-border px-2 py-1 font-mono text-[11px] text-space-text hover:border-space-accent hover:text-space-accent"
       title="Fly camera to your current location"
       disabled={status === "locating"}
     >

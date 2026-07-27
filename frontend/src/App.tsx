@@ -10,6 +10,7 @@ import { LocalSkyView } from "./components/LocalSkyView.js";
 import { SavedList } from "./components/SavedList.js";
 import { CatalogStatusBanner } from "./components/CatalogStatusBanner.js";
 import { ConjunctionLeaderboard } from "./components/ConjunctionLeaderboard.js";
+import { LaunchTracker } from "./components/LaunchTracker.js";
 
 export function App() {
   return (
@@ -24,6 +25,7 @@ export function App() {
       <IssCamera />
       <OverlayToolbar />
       <ConjunctionLeaderboard />
+      <LaunchTracker />
       <TimeControls />
       <CatalogStatusBanner />
     </div>

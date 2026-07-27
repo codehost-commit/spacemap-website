@@ -15,7 +15,7 @@ export interface SatelliteIndexEntry {
   name: string;
 }
 
-export type OverlayId = "iss" | "sky" | "saved" | "leaderboard";
+export type OverlayId = "iss" | "sky" | "saved" | "leaderboard" | "launches";
 
 interface StoreState {
   catalogStatus: CatalogStatus;

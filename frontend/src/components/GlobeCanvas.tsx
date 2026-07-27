@@ -79,14 +79,38 @@ export function GlobeCanvas() {
     }, 8000);
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+
+    // Multi-pick: try the exact pixel first, then spiral outward through a
+    // ring of nearby pixels. Makes tiny satellite dots much easier to click
+    // when they're dense in LEO.
+    const PICK_OFFSETS: Array<[number, number]> = [
+      [0, 0],
+      [4, 0], [-4, 0], [0, 4], [0, -4],
+      [3, 3], [-3, 3], [3, -3], [-3, -3],
+      [8, 0], [-8, 0], [0, 8], [0, -8],
+      [6, 6], [-6, 6], [6, -6], [-6, -6],
+      [12, 0], [-12, 0], [0, 12], [0, -12],
+      [10, 10], [-10, 10], [10, -10], [-10, -10],
+    ];
+    const scratchPickPos = new Cesium.Cartesian2();
+    const pickSatelliteAt = (pos: Cesium.Cartesian2): number | null => {
+      for (const [dx, dy] of PICK_OFFSETS) {
+        scratchPickPos.x = pos.x + dx;
+        scratchPickPos.y = pos.y + dy;
+        const picked = viewer.scene.pick(scratchPickPos);
+        const id =
+          picked && typeof picked.id === "number"
+            ? picked.id
+            : picked?.primitive && typeof picked.primitive.id === "number"
+              ? picked.primitive.id
+              : null;
+        if (id != null) return id;
+      }
+      return null;
+    };
+
     handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
-      const picked = viewer.scene.pick(ev.position);
-      const id =
-        picked && typeof picked.id === "number"
-          ? picked.id
-          : picked?.primitive && typeof picked.primitive.id === "number"
-            ? picked.primitive.id
-            : null;
+      const id = pickSatelliteAt(ev.position);
       if (id == null) return;
       const state = useStore.getState();
       if (state.pickCompareMode && state.selectedNoradId != null && id !== state.selectedNoradId) {
@@ -95,6 +119,23 @@ export function GlobeCanvas() {
         state.select(id);
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+
+    // Hover — throttled multi-pick + layer.setHovered so the nearest satellite
+    // gets a visible ring. Users get a preview of what will be selected on click.
+    let lastHoverMs = 0;
+    const HOVER_INTERVAL_MS = 40;
+    handler.setInputAction(
+      (ev: { endPosition: Cesium.Cartesian2 }) => {
+        const now = performance.now();
+        if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
+        lastHoverMs = now;
+        const id = pickSatelliteAt(ev.endPosition);
+        layer.setHovered(id);
+        // Cursor feedback: pointer over a pickable satellite.
+        viewer.scene.canvas.style.cursor = id != null ? "pointer" : "";
+      },
+      Cesium.ScreenSpaceEventType.MOUSE_MOVE,
+    );
 
     // Snapshot → render loop.
     let lastTick = -1;

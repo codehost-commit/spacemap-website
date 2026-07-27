@@ -38,6 +38,8 @@ export class SatelliteLayer {
   private readonly colorByClass: Cesium.Color[];
   private readonly iconUrl: string;
   private readonly scratch = new Cesium.Cartesian3();
+  private hoveredId: number | null = null;
+  private selectedId: number | null = null;
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -50,11 +52,20 @@ export class SatelliteLayer {
     });
   }
 
+  setHovered(noradId: number | null): void {
+    if (this.hoveredId === noradId) return;
+    const prev = this.hoveredId;
+    this.hoveredId = noradId;
+    if (prev != null) this.applyStyle(prev);
+    if (noradId != null) this.applyStyle(noradId);
+  }
+
   update(
     snap: PropagationSnapshot,
     filter: Set<OrbitClass>,
     highlightId: number | null,
   ): void {
+    this.selectedId = highlightId;
     const filterMask = new Uint8Array(ORBIT_CLASSES.length);
     for (let i = 0; i < ORBIT_CLASSES.length; i++) {
       filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
@@ -71,7 +82,6 @@ export class SatelliteLayer {
       this.scratch.x = ecefPos[n * 3];
       this.scratch.y = ecefPos[n * 3 + 1];
       this.scratch.z = ecefPos[n * 3 + 2];
-      const isSelected = highlightId === id;
       const color = this.colorByClass[cls];
 
       // --- Point (far LOD) ---
@@ -80,8 +90,8 @@ export class SatelliteLayer {
         p = this.points.add({
           position: Cesium.Cartesian3.clone(this.scratch),
           color,
-          pixelSize: isSelected ? 9 : 3,
-          outlineWidth: isSelected ? 1.5 : 0,
+          pixelSize: 3,
+          outlineWidth: 0,
           outlineColor: Cesium.Color.WHITE,
           translucencyByDistance: POINT_FADE,
           id,
@@ -90,10 +100,6 @@ export class SatelliteLayer {
       } else {
         p.position = this.scratch;
         if (p.color !== color) p.color = color;
-        const wantSize = isSelected ? 9 : 3;
-        if (p.pixelSize !== wantSize) p.pixelSize = wantSize;
-        const wantOutline = isSelected ? 1.5 : 0;
-        if (p.outlineWidth !== wantOutline) p.outlineWidth = wantOutline;
       }
 
       // --- Billboard (close LOD) ---
@@ -114,8 +120,9 @@ export class SatelliteLayer {
       } else {
         b.position = this.scratch;
         if (b.color !== color) b.color = color;
-        b.scale = isSelected ? 0.85 : 0.5;
       }
+
+      this.applyStyle(id);
     }
 
     // Reap primitives that dropped out of the current filter / catalog.
@@ -136,6 +143,29 @@ export class SatelliteLayer {
   positionOf(noradId: number): Cesium.Cartesian3 | null {
     const p = this.pointIndex.get(noradId);
     return p ? p.position : null;
+  }
+
+  /** Apply the current hover/selection style to a single satellite. */
+  private applyStyle(noradId: number): void {
+    const p = this.pointIndex.get(noradId);
+    const b = this.billboardIndex.get(noradId);
+    const isSelected = this.selectedId === noradId;
+    const isHovered = this.hoveredId === noradId;
+    if (p) {
+      const wantSize = isSelected ? 11 : isHovered ? 8 : 3;
+      const wantOutline = isSelected ? 1.8 : isHovered ? 2.2 : 0;
+      if (p.pixelSize !== wantSize) p.pixelSize = wantSize;
+      if (p.outlineWidth !== wantOutline) p.outlineWidth = wantOutline;
+      if (isHovered && !isSelected) {
+        p.outlineColor = Cesium.Color.CYAN;
+      } else {
+        p.outlineColor = Cesium.Color.WHITE;
+      }
+    }
+    if (b) {
+      const wantScale = isSelected ? 0.95 : isHovered ? 0.7 : 0.5;
+      if (b.scale !== wantScale) b.scale = wantScale;
+    }
   }
 
   clear(): void {
