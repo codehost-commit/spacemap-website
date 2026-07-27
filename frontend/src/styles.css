@@ -18,6 +18,49 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+.spacemap-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.spacemap-brand-compact {
+  gap: 0.55rem;
+}
+
+.spacemap-brand-emblem {
+  width: 2.2rem;
+  height: 2.2rem;
+  flex: none;
+  filter: drop-shadow(0 0 16px rgba(79, 209, 255, 0.18));
+}
+
+.spacemap-brand-compact .spacemap-brand-emblem {
+  width: 2rem;
+  height: 2rem;
+}
+
+.spacemap-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 1.15rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.spacemap-wordmark-space {
+  color: #eff7ff;
+}
+
+.spacemap-wordmark-map {
+  color: theme("colors.space.accent");
+}
+
 .cesium-container {
   position: absolute;
   inset: 0;
@@ -79,6 +122,18 @@ body {
   }
   .spacemap-hud .spacemap-hud-brand {
     font-size: 0.7rem !important;
+  }
+  .spacemap-hud-brand {
+    width: auto !important;
+    max-width: calc(100vw - 1rem);
+  }
+  .spacemap-wordmark {
+    font-size: 0.92rem;
+    letter-spacing: 0.07em;
+  }
+  .spacemap-brand-emblem {
+    width: 1.8rem;
+    height: 1.8rem;
   }
   /* Time controls wrap onto multiple rows if needed. */
   .spacemap-timecontrols {

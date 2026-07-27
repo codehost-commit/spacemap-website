@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useStore } from "../state/store.js";
 import { LocateButton } from "./LocateButton.js";
 import { adminLog } from "../admin/admin-log.js";
+import { BrandMark } from "./BrandMark.js";
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -47,9 +48,9 @@ export function HeaderHUD() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
-      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-56 flex-col gap-2 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19rem] flex-col gap-2 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
         <div className="flex items-center justify-between">
-          <div className="text-sm font-semibold tracking-wider text-space-accent">SPACEMAP</div>
+          <BrandMark compact />
           <button
             onClick={() => {
               adminLog.push("main", { channel: "sys", severity: "info", text: "admin console opened" });
