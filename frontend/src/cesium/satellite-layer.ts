@@ -5,20 +5,41 @@ import {
   type OrbitClass,
   type PropagationSnapshot,
 } from "@spacemap/shared";
+import { buildSatelliteIcon } from "./satellite-icon.js";
 
 /**
- * Renders every satellite as a point primitive. Consumes the SoA snapshot
- * from the propagator worker (ECEF metres) directly — no per-satellite
- * object allocation. Filters by orbit class in-place.
+ * Renders satellites at two levels of detail:
+ *   • PointPrimitive — cheap glowing dot, visible when far.
+ *   • Billboard      — canvas-drawn satellite silhouette, fades in as the
+ *                       camera approaches.
+ *
+ * Both live at exactly the same ECEF position and share the same `id` (NORAD),
+ * so picking hits either one and returns the right satellite. `translucencyByDistance`
+ * cross-fades them cleanly around the LOD threshold.
  */
+
+// LOD cross-fade thresholds in metres (camera-to-primitive distance).
+const CLOSE_M = 800_000;   // 800 km — fully inside "close" range → billboards
+const FAR_M = 6_000_000;   // 6000 km — fully inside "far" range → points only
+
+const POINT_FADE = new Cesium.NearFarScalar(CLOSE_M, 0, FAR_M, 1);
+const BILLBOARD_FADE = new Cesium.NearFarScalar(CLOSE_M, 1, FAR_M, 0);
+// Shrink billboards when very close so they don't dominate the scene.
+const BILLBOARD_SCALE = new Cesium.NearFarScalar(200_000, 0.6, 3_000_000, 1.1);
+
 export class SatelliteLayer {
   private readonly points: Cesium.PointPrimitiveCollection;
-  private readonly index = new Map<number, Cesium.PointPrimitive>();
+  private readonly billboards: Cesium.BillboardCollection;
+  private readonly pointIndex = new Map<number, Cesium.PointPrimitive>();
+  private readonly billboardIndex = new Map<number, Cesium.Billboard>();
   private readonly colorByClass: Cesium.Color[];
+  private readonly iconUrl: string;
   private readonly scratch = new Cesium.Cartesian3();
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
+    this.billboards = scene.primitives.add(new Cesium.BillboardCollection({ scene }));
+    this.iconUrl = buildSatelliteIcon(64);
     this.colorByClass = ORBIT_CLASSES.map((cls: OrbitClass) => {
       const c = Cesium.Color.fromCssColorString(ORBIT_CLASS_COLOR[cls]);
       c.alpha = 0.95;
@@ -26,7 +47,11 @@ export class SatelliteLayer {
     });
   }
 
-  update(snap: PropagationSnapshot, filter: Set<OrbitClass>, highlightId: number | null): void {
+  update(
+    snap: PropagationSnapshot,
+    filter: Set<OrbitClass>,
+    highlightId: number | null,
+  ): void {
     const filterMask = new Uint8Array(ORBIT_CLASSES.length);
     for (let i = 0; i < ORBIT_CLASSES.length; i++) {
       filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
@@ -45,49 +70,75 @@ export class SatelliteLayer {
       this.scratch.z = ecefPos[n * 3 + 2];
       const isSelected = highlightId === id;
       const color = this.colorByClass[cls];
-      let p = this.index.get(id);
+
+      // --- Point (far LOD) ---
+      let p = this.pointIndex.get(id);
       if (!p) {
         p = this.points.add({
           position: Cesium.Cartesian3.clone(this.scratch),
           color,
-          pixelSize: isSelected ? 9 : 2.5,
+          pixelSize: isSelected ? 9 : 3,
           outlineWidth: isSelected ? 1.5 : 0,
           outlineColor: Cesium.Color.WHITE,
+          translucencyByDistance: POINT_FADE,
           id,
         });
-        this.index.set(id, p);
+        this.pointIndex.set(id, p);
       } else {
-        // CRUCIAL: assigning the scratch reference triggers Cesium's setter,
-        // which compares by value and clones into its own internal buffer,
-        // marking the primitive dirty so the GPU picks up the new position.
-        // Mutating p.position in place (e.g. Cartesian3.clone(scratch, p.position))
-        // silently skips the dirty flag and freezes the point on screen.
         p.position = this.scratch;
         if (p.color !== color) p.color = color;
-        const wantSize = isSelected ? 9 : 2.5;
+        const wantSize = isSelected ? 9 : 3;
         if (p.pixelSize !== wantSize) p.pixelSize = wantSize;
         const wantOutline = isSelected ? 1.5 : 0;
         if (p.outlineWidth !== wantOutline) p.outlineWidth = wantOutline;
       }
+
+      // --- Billboard (close LOD) ---
+      let b = this.billboardIndex.get(id);
+      if (!b) {
+        b = this.billboards.add({
+          position: Cesium.Cartesian3.clone(this.scratch),
+          image: this.iconUrl,
+          color,
+          scale: 0.5,
+          scaleByDistance: BILLBOARD_SCALE,
+          translucencyByDistance: BILLBOARD_FADE,
+          verticalOrigin: Cesium.VerticalOrigin.CENTER,
+          horizontalOrigin: Cesium.HorizontalOrigin.CENTER,
+          id,
+        });
+        this.billboardIndex.set(id, b);
+      } else {
+        b.position = this.scratch;
+        if (b.color !== color) b.color = color;
+        b.scale = isSelected ? 0.85 : 0.5;
+      }
     }
 
-    // Remove points that dropped out (filter change or catalog reduction).
-    for (const [id, p] of this.index) {
+    // Reap primitives that dropped out of the current filter / catalog.
+    for (const [id, p] of this.pointIndex) {
       if (!seen.has(id)) {
         this.points.remove(p);
-        this.index.delete(id);
+        this.pointIndex.delete(id);
+      }
+    }
+    for (const [id, b] of this.billboardIndex) {
+      if (!seen.has(id)) {
+        this.billboards.remove(b);
+        this.billboardIndex.delete(id);
       }
     }
   }
 
-  /** Latest ECEF position of a satellite in the current frame, if visible. */
   positionOf(noradId: number): Cesium.Cartesian3 | null {
-    const p = this.index.get(noradId);
+    const p = this.pointIndex.get(noradId);
     return p ? p.position : null;
   }
 
   clear(): void {
     this.points.removeAll();
-    this.index.clear();
+    this.billboards.removeAll();
+    this.pointIndex.clear();
+    this.billboardIndex.clear();
   }
 }

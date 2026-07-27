@@ -43,7 +43,7 @@ export function TelemetryPanel() {
 
   if (selected == null) {
     return (
-      <aside className="pointer-events-auto absolute right-16 top-20 z-10 w-72 rounded-md border border-space-border bg-space-panel/85 p-4 text-xs backdrop-blur">
+      <aside className="spacemap-telemetry pointer-events-auto absolute right-16 top-20 z-10 w-72 rounded-md border border-space-border bg-space-panel/85 p-4 text-xs backdrop-blur">
         <div className="text-space-dim">
           Click any satellite, or search by name / NORAD id.
         </div>
@@ -52,7 +52,7 @@ export function TelemetryPanel() {
   }
 
   return (
-    <aside className="pointer-events-auto absolute right-16 top-20 z-10 flex max-h-[calc(100vh-8rem)] w-[26rem] flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/90 backdrop-blur">
+    <aside className="spacemap-telemetry pointer-events-auto absolute right-16 top-20 z-10 flex max-h-[calc(100vh-8rem)] w-[26rem] flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/90 backdrop-blur">
       <header className="flex items-start justify-between gap-2 border-b border-space-border px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">

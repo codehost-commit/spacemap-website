@@ -28,7 +28,7 @@ export function TimeControls() {
   const isReversed = multiplier < 0;
 
   return (
-    <div className="pointer-events-auto absolute inset-x-0 bottom-4 z-10 mx-auto flex w-fit items-center gap-2 rounded-md border border-space-border bg-space-panel/90 px-3 py-2 font-mono text-xs backdrop-blur">
+    <div className="spacemap-timecontrols pointer-events-auto absolute inset-x-0 bottom-4 z-10 mx-auto flex w-fit items-center gap-2 rounded-md border border-space-border bg-space-panel/90 px-3 py-2 font-mono text-xs backdrop-blur">
       <button
         onClick={togglePlay}
         className="rounded border border-space-border px-2 py-1 text-space-text hover:border-space-accent"

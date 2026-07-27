@@ -94,7 +94,7 @@ export const useStore = create<StoreState>((set) => ({
   filter: new Set(defaultFilter),
   trailMode: "selected",
   heatmapOn: false,
-  imageryId: "bluemarble",
+  imageryId: "arcgis",
 
   savedIds: new Set(),
   notifyEnabled: false,

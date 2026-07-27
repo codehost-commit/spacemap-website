@@ -16,6 +16,8 @@ import { installClockControls } from "../simulation/clock-controls.js";
 import { installNotificationWatcher } from "../simulation/notifications.js";
 import { installSavedPersistence, loadSavedFromStorage } from "../state/saved.js";
 import { getLocalTle } from "../simulation/catalog-store.js";
+import { installKeyboardShortcuts } from "../simulation/keyboard.js";
+import { installUrlState } from "../state/url-state.js";
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,6 +41,8 @@ export function GlobeCanvas() {
     loadSavedFromStorage();
     const uninstallSaved = installSavedPersistence();
     const uninstallNotifications = installNotificationWatcher();
+    const uninstallKeyboard = installKeyboardShortcuts();
+    const uninstallUrl = installUrlState();
 
     // Apply the initial imagery layer immediately so users see something even
     // while TLEs download.
@@ -124,6 +128,8 @@ export function GlobeCanvas() {
       uninstallSim();
       uninstallSaved();
       uninstallNotifications();
+      uninstallKeyboard();
+      uninstallUrl();
       pov.destroy();
       follow.destroy();
       model.destroy();

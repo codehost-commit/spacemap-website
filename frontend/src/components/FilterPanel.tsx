@@ -28,7 +28,7 @@ export function FilterPanel() {
   const setHeatmap = useStore((s) => s.setHeatmap);
 
   return (
-    <aside className="pointer-events-auto absolute left-4 top-20 z-10 max-h-[calc(100vh-6rem)] w-56 overflow-auto rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
+    <aside className="spacemap-filter pointer-events-auto absolute left-4 top-20 z-10 max-h-[calc(100vh-6rem)] w-56 overflow-auto rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
       <ImageryPicker />
       <SectionHeader
         label="Orbit class"

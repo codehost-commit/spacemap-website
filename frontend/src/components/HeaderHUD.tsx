@@ -25,14 +25,14 @@ export function HeaderHUD() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
-      <div className="pointer-events-auto flex items-center gap-3 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex items-center gap-3 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
         <div className="text-sm font-semibold tracking-wider text-space-accent">SPACEMAP</div>
         <div className="text-[10px] uppercase tracking-widest text-space-dim">
-          Orbital Nexus · Phase 2
+          Orbital Nexus
         </div>
       </div>
 
-      <div className="pointer-events-auto flex items-center gap-4 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 font-mono text-xs backdrop-blur">
+      <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 font-mono text-xs backdrop-blur">
         <Stat label="Catalog" value={catalogSize.toLocaleString()} />
         <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
         <Stat

@@ -39,7 +39,7 @@ export function SearchBox() {
   };
 
   return (
-    <div className="pointer-events-auto absolute left-1/2 top-4 z-20 w-96 -translate-x-1/2 font-mono text-xs">
+    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-4 z-20 w-96 -translate-x-1/2 font-mono text-xs">
       <input
         type="text"
         value={q}

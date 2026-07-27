@@ -50,7 +50,7 @@ export function ConjunctionLeaderboard() {
   if (!open) return null;
 
   return (
-    <aside className="pointer-events-auto absolute bottom-24 right-16 z-10 flex max-h-[calc(100vh-14rem)] w-[420px] flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
+    <aside className="spacemap-overlay pointer-events-auto absolute bottom-24 right-16 z-10 flex max-h-[calc(100vh-14rem)] w-[420px] flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
       <header className="flex items-center justify-between border-b border-space-border px-3 py-2">
         <div>
           <div className="text-[9px] uppercase tracking-widest text-space-dim">

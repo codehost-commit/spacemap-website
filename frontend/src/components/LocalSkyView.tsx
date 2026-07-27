@@ -51,7 +51,7 @@ export function LocalSkyView() {
     : [];
 
   return (
-    <aside className="pointer-events-auto absolute right-4 top-20 z-10 flex max-h-[calc(100vh-8rem)] w-96 flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
+    <aside className="spacemap-overlay pointer-events-auto absolute right-4 top-20 z-10 flex max-h-[calc(100vh-8rem)] w-96 flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
       <header className="flex items-center justify-between border-b border-space-border px-3 py-2">
         <div>
           <div className="text-[9px] uppercase tracking-widest text-space-dim">Local sky</div>

@@ -17,7 +17,7 @@ export function SavedList() {
   }));
 
   return (
-    <aside className="pointer-events-auto absolute left-64 top-20 z-10 w-64 rounded-md border border-space-border bg-space-panel/90 backdrop-blur">
+    <aside className="spacemap-overlay pointer-events-auto absolute left-64 top-20 z-10 w-64 rounded-md border border-space-border bg-space-panel/90 backdrop-blur">
       <header className="flex items-center justify-between border-b border-space-border px-3 py-2">
         <span className="text-[10px] uppercase tracking-widest text-space-dim">
           Saved satellites

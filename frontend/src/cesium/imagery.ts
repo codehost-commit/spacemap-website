@@ -1,14 +1,16 @@
 import * as Cesium from "cesium";
 
 /**
- * Base-imagery layer catalog. All GIBS layers are auth-free and CORS-open, so
- * they work from any static host.
+ * Base-imagery catalog.
  *
- * NB: GIBS EPSG:4326 tile matrix sets have specific level counts per resolution
- * (500m → levels 0-6, 250m → 0-7, etc.). Exceeding maximumLevel causes 404s and
- * the tiles simply don't show — which shows up as "half the globe is black".
- * Using UrlTemplateImageryProvider here instead of WMTS keeps the URL exact and
- * predictable.
+ * Primary is ArcGIS World Imagery — same source Cesium itself falls back on
+ * when Ion isn't configured. Very high resolution, CORS-open, no token, and
+ * (unlike GIBS) doesn't care about picky WMTS URL conventions.
+ *
+ * GIBS layers are kept as alternates for the science / recent-photo vibe.
+ * They are notoriously finicky: BlueMarble insists on `.jpeg` (not `.jpg`),
+ * MODIS uses `.jpg`, VIIRS uses `.png`, and the maximumLevel must match the
+ * tile matrix set exactly or you get 400s that render as a black hemisphere.
  */
 export interface ImageryDef {
   id: string;
@@ -21,11 +23,11 @@ function twoDaysAgoIso(): string {
   return new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
 }
 
-function gibsProvider(opts: {
+function gibs(opts: {
   layer: string;
   time?: string;
   tileMatrixSet: string;
-  ext: "jpg" | "png";
+  ext: "jpg" | "jpeg" | "png";
   maximumLevel: number;
   credit: string;
 }): Cesium.UrlTemplateImageryProvider {
@@ -45,15 +47,28 @@ function gibsProvider(opts: {
 
 export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
+    id: "arcgis",
+    label: "ArcGIS World Imagery",
+    description:
+      "ESRI's composite Bing / Maxar / USGS aerial imagery — best default quality.",
+    create: async () =>
+      Cesium.ArcGisMapServerImageryProvider.fromUrl(
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer",
+        {
+          enablePickFeatures: false,
+        },
+      ),
+  },
+  {
     id: "bluemarble",
-    label: "Blue Marble",
-    description: "NASA Blue Marble Next Generation — cloudless composite.",
+    label: "NASA Blue Marble",
+    description: "Classic cloudless composite from NASA's Blue Marble series.",
     create: () =>
-      gibsProvider({
+      gibs({
         layer: "BlueMarble_ShadedRelief_Bathymetry",
         tileMatrixSet: "500m",
-        ext: "jpg",
-        maximumLevel: 6, // 500m set has 7 levels total (0..6)
+        ext: "jpeg",
+        maximumLevel: 6,
         credit: "NASA GIBS · Blue Marble",
       }),
   },
@@ -61,14 +76,14 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
     id: "modis-terra",
     label: "MODIS Terra (recent)",
     description:
-      "MODIS Terra true-color, two days ago. Real cloud cover, actual sea ice, current wildfires.",
+      "Real satellite photo from two days ago — actual cloud cover, sea ice, wildfires.",
     create: () =>
-      gibsProvider({
+      gibs({
         layer: "MODIS_Terra_CorrectedReflectance_TrueColor",
         time: twoDaysAgoIso(),
         tileMatrixSet: "250m",
         ext: "jpg",
-        maximumLevel: 7, // 250m set has 8 levels total (0..7)
+        maximumLevel: 7,
         credit: "NASA GIBS · MODIS Terra",
       }),
   },
@@ -77,7 +92,7 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
     label: "Black Marble (night)",
     description: "VIIRS Black Marble city lights — humanity glowing from orbit.",
     create: () =>
-      gibsProvider({
+      gibs({
         layer: "VIIRS_Black_Marble",
         tileMatrixSet: "500m",
         ext: "png",
@@ -96,12 +111,8 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   },
 ];
 
-export const DEFAULT_IMAGERY_ID = "bluemarble";
+export const DEFAULT_IMAGERY_ID = "arcgis";
 
-/**
- * Swap the viewer's base imagery layer while leaving overlays (heatmap, etc.)
- * untouched. Called on boot and whenever the user picks a new layer.
- */
 export class BaseImageryController {
   private current: Cesium.ImageryLayer | null = null;
 
@@ -112,7 +123,6 @@ export class BaseImageryController {
     try {
       const provider = await Promise.resolve(def.create());
       const layer = new Cesium.ImageryLayer(provider);
-      // Insert at bottom so overlays stay on top.
       this.viewer.imageryLayers.add(layer, 0);
       if (this.current) {
         this.viewer.imageryLayers.remove(this.current);
@@ -128,7 +138,7 @@ export class BaseImageryController {
       try {
         this.viewer.imageryLayers.remove(this.current);
       } catch {
-        /* viewer already destroyed */
+        /* viewer torn down */
       }
       this.current = null;
     }

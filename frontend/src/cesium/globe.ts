@@ -42,6 +42,31 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
   viewer.clock.shouldAnimate = true;
   viewer.clock.multiplier = 1;
 
+  // Bloom makes satellite points/billboards glow like real stars. Cheap on
+  // modern GPUs; the delta and step values are tuned to be visible but not
+  // wash out the imagery below.
+  try {
+    // Cesium's TS types don't include createBloomStage yet, but it exists at
+    // runtime and is the recommended way to add HDR bloom.
+    const lib = Cesium.PostProcessStageLibrary as unknown as {
+      createBloomStage?: () => Cesium.PostProcessStage;
+    };
+    const bloom = lib.createBloomStage?.();
+    if (bloom) {
+      bloom.enabled = true;
+      const u = bloom.uniforms as Record<string, unknown>;
+      u.contrast = 128;
+      u.brightness = -0.35;
+      u.glowOnly = false;
+      u.delta = 1.4;
+      u.sigma = 3;
+      u.stepSize = 1.2;
+      scene.postProcessStages.add(bloom);
+    }
+  } catch (err) {
+    console.warn("[globe] bloom stage failed", err);
+  }
+
   return viewer;
 }
 
