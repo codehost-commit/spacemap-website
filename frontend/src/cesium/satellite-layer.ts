@@ -22,23 +22,26 @@ import { buildSatelliteIcon } from "./satellite-icon.js";
  *
  *   dot(C, S) > R² − √((|C|²−R²) × (|S|²−R²))
  *
- * where C is the camera in ECEF, S is the satellite in ECEF, and R is
- * Earth's radius. This is exactly the "the tangent cones from C and S
- * touching the sphere overlap" condition — no arccosines, no branches.
+ * ## Band-based membership
  *
- * ## Back-side freshness
+ * The `/selfdiagnose` report showed that FPS scales with *how many
+ * primitives exist in the collections*, not just with what's drawn —
+ * Cesium iterates every entry for GPU-state / sort / alpha resolution even
+ * when the resolved alpha is zero. So beyond just position culling, we now
+ * put each satellite into only the collection(s) whose distance band it
+ * actually belongs to:
  *
- * A satellite that stays occluded isn't updated, so if the user rotates the
- * globe suddenly, the far side would show stale positions from whenever they
- * last rotated away. To keep everyone reasonably fresh:
+ *   • Camera-to-sat distance below `POINT_DROP_BELOW_M` (2 500 km) → the
+ *     point is fully transparent anyway, so the primitive is *removed*.
+ *     Only the billboard remains.
+ *   • Distance above `BILLBOARD_DROP_ABOVE_M` (27 500 km) → the billboard
+ *     is fully transparent, so it's removed. Only the point remains.
+ *   • In the fade zone → both exist, translucency handles the crossfade.
  *
- * Each snapshot we refresh a *rolling batch* of catalog slots regardless of
- * visibility. The batch size is chosen so we cover the full catalog within
- * TARGET_STALE_SIM_MS of sim time — the batch grows automatically when the
- * user time-warps at 100× or 1000× (since more sim time passes per wall
- * snapshot). Time discontinuities (Now / Jump…) are detected via a large
- * jump in snap.timeMs and trigger a one-shot full refresh so nothing is
- * left frozen at a wildly wrong position.
+ * Hysteresis (add-threshold widens the band) prevents oscillation at
+ * boundaries. Membership is only *revisited* every ~500 ms (the
+ * `BAND_CHECK_INTERVAL_MS`) so we don't churn primitives every frame —
+ * positions themselves continue to update at every snapshot as normal.
  */
 
 // LOD cross-fade thresholds in metres (camera-to-primitive distance).
@@ -49,15 +52,23 @@ const POINT_FADE = new Cesium.NearFarScalar(CLOSE_M, 0, FAR_M, 1);
 const BILLBOARD_FADE = new Cesium.NearFarScalar(CLOSE_M, 1, FAR_M, 0);
 const BILLBOARD_SCALE = new Cesium.NearFarScalar(400_000, 1.6, 20_000_000, 0.55);
 
+// Band thresholds — points/billboards are removed when they're fully
+// transparent, and the *add* threshold sits inside the *drop* threshold to
+// give ~300 km of hysteresis so a satellite drifting near the boundary
+// doesn't churn on/off every band check.
+const POINT_DROP_BELOW_SQ = 2_500_000 ** 2;
+const POINT_ADD_ABOVE_SQ = 2_800_000 ** 2;
+const BILLBOARD_DROP_ABOVE_SQ = 27_500_000 ** 2;
+const BILLBOARD_ADD_BELOW_SQ = 25_000_000 ** 2;
+// How often we're allowed to *remove* primitives that fell out of their band.
+// Additions happen instantly because a missing primitive is a correctness bug;
+// deletions can wait so we don't churn the collection every frame.
+const BAND_CHECK_INTERVAL_MS = 500;
+
 // Culling constants.
 const EARTH_R_M = 6_378_137;
 const EARTH_R_SQ = EARTH_R_M * EARTH_R_M;
-// How stale a culled satellite is allowed to become (in sim time). Chosen so
-// LEO satellites drift < ~40 km before their next update.
 const TARGET_STALE_SIM_MS = 5_000;
-// A sim-time jump larger than this triggers a one-shot full refresh — covers
-// "Now" and "Jump…" clock changes so we never wake up with the far side of
-// the sky frozen at yesterday's positions.
 const FULL_REFRESH_JUMP_SIM_MS = 30_000;
 
 export class SatelliteLayer {
@@ -72,6 +83,7 @@ export class SatelliteLayer {
   private selectedId: number | null = null;
   private catchupCursor = 0;
   private prevSnapSimMs: number | null = null;
+  private lastBandCheckMs = 0;
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -106,32 +118,20 @@ export class SatelliteLayer {
 
     const { count, ids, ecefPos, orbitClass } = snap;
 
-    // -- Rolling batch + full-refresh detection ---------------------------
-    const simDt = this.prevSnapSimMs != null
-      ? Math.abs(snap.timeMs - this.prevSnapSimMs)
-      : Number.POSITIVE_INFINITY;
+    // Rolling batch + full-refresh detection.
+    const simDt =
+      this.prevSnapSimMs != null ? Math.abs(snap.timeMs - this.prevSnapSimMs) : Number.POSITIVE_INFINITY;
     this.prevSnapSimMs = snap.timeMs;
-
-    // A discontinuity in sim time (Now / Jump…) → refresh everyone once.
-    // First-ever snapshot also lands here because simDt starts at Infinity.
     const forceAll = simDt > FULL_REFRESH_JUMP_SIM_MS;
-
-    // Rolling batch size scales with elapsed sim time so all sats get
-    // refreshed within TARGET_STALE_SIM_MS of sim time. Paused (simDt = 0)
-    // → 0 batch size (nothing's moving anyway).
     const rollingCount = forceAll
       ? count
       : Math.min(count, Math.ceil((count * simDt) / TARGET_STALE_SIM_MS));
-
-    // Precompute the wrap-around window [catchupCursor, catchupCursor+rollingCount).
     const catchupEnd = this.catchupCursor + rollingCount;
     const catchupWraps = catchupEnd > count;
     const catchupHi = catchupWraps ? count : catchupEnd;
     const catchupLo2 = catchupWraps ? catchupEnd - count : 0;
 
-    // -- Culling precomputation -------------------------------------------
-    // Two-horizon test constants — undefined when camera unavailable or
-    // inside the sphere (in which case we simply update everything).
+    // Culling precomputation.
     let cameraCulling = false;
     let cx = 0;
     let cy = 0;
@@ -148,6 +148,12 @@ export class SatelliteLayer {
       }
     }
 
+    // Band-check gating: additions happen every frame (correctness), removals
+    // only every BAND_CHECK_INTERVAL_MS (perf).
+    const nowMs = performance.now();
+    const canRemoveThisTick = nowMs - this.lastBandCheckMs >= BAND_CHECK_INTERVAL_MS;
+    if (canRemoveThisTick) this.lastBandCheckMs = nowMs;
+
     const seen = new Set<number>();
 
     for (let n = 0; n < count; n++) {
@@ -160,7 +166,7 @@ export class SatelliteLayer {
       const sy = ecefPos[n * 3 + 1];
       const sz = ecefPos[n * 3 + 2];
 
-      // Visibility test — is the satellite above the camera's horizon?
+      // Visibility test.
       let visible = !cameraCulling;
       if (cameraCulling) {
         const dotCS = cx * sx + cy * sy + cz * sz;
@@ -168,29 +174,44 @@ export class SatelliteLayer {
         const satTangentSq = sMagSq > EARTH_R_SQ ? sMagSq - EARTH_R_SQ : 0;
         visible = dotCS > EARTH_R_SQ - Math.sqrt(camTangentSq * satTangentSq);
       }
-
-      // Rolling batch — force update for a wrapping slice each snapshot so
-      // occluded satellites don't drift forever.
       const inRolling = forceAll
         ? true
         : catchupWraps
           ? n >= this.catchupCursor || n < catchupLo2
           : n >= this.catchupCursor && n < catchupHi;
-
-      // Also always update selected/hovered so their styling is correct even
-      // when they're technically behind the horizon.
       const alwaysUpdate = id === this.selectedId || id === this.hoveredId;
-
       if (!visible && !inRolling && !alwaysUpdate) continue;
 
-      // -- Write path --------------------------------------------------
+      // Camera-distance² for band decisions (cheap: 3 subs + 3 muls + 2 adds).
+      let camDistSq = 0;
+      if (cameraCulling) {
+        const dx = sx - cx;
+        const dy = sy - cy;
+        const dz = sz - cz;
+        camDistSq = dx * dx + dy * dy + dz * dz;
+      }
+
+      // Whether each primitive kind is "wanted" (i.e., inside the add band).
+      // No-camera fallback: keep both (matches previous behaviour).
+      const wantPoint = !cameraCulling || camDistSq > POINT_ADD_ABOVE_SQ;
+      const wantBillboard = !cameraCulling || camDistSq < BILLBOARD_ADD_BELOW_SQ;
+      // "Forbidden" is inside the drop band — used to trigger removal.
+      const forbidPoint = cameraCulling && camDistSq < POINT_DROP_BELOW_SQ;
+      const forbidBillboard = cameraCulling && camDistSq > BILLBOARD_DROP_ABOVE_SQ;
+
       this.scratch.x = sx;
       this.scratch.y = sy;
       this.scratch.z = sz;
       const color = this.colorByClass[cls];
 
+      // ---- Point primitive band management ----
       let p = this.pointIndex.get(id);
-      if (!p) {
+      if (p && forbidPoint && canRemoveThisTick) {
+        this.points.remove(p);
+        this.pointIndex.delete(id);
+        p = undefined;
+      }
+      if (!p && wantPoint) {
         p = this.points.add({
           position: Cesium.Cartesian3.clone(this.scratch),
           color,
@@ -201,13 +222,19 @@ export class SatelliteLayer {
           id,
         });
         this.pointIndex.set(id, p);
-      } else {
+      } else if (p) {
         p.position = this.scratch;
         if (p.color !== color) p.color = color;
       }
 
+      // ---- Billboard band management ----
       let b = this.billboardIndex.get(id);
-      if (!b) {
+      if (b && forbidBillboard && canRemoveThisTick) {
+        this.billboards.remove(b);
+        this.billboardIndex.delete(id);
+        b = undefined;
+      }
+      if (!b && wantBillboard) {
         b = this.billboards.add({
           position: Cesium.Cartesian3.clone(this.scratch),
           image: this.iconUrl,
@@ -220,7 +247,7 @@ export class SatelliteLayer {
           id,
         });
         this.billboardIndex.set(id, b);
-      } else {
+      } else if (b) {
         b.position = this.scratch;
         if (b.color !== color) b.color = color;
       }
@@ -231,10 +258,10 @@ export class SatelliteLayer {
     // Advance rolling cursor once per snapshot.
     this.catchupCursor = catchupEnd % count;
 
-    // Reap primitives that dropped out of the current filter / catalog.
-    // Note: we iterate `seen` from the loop above which added every slot the
-    // filter accepted (visible or not), so this only removes truly-dropped
-    // satellites — not culled ones.
+    // Reap primitives that dropped out of the current filter / catalog. Only
+    // removes satellites that *aren't in `seen`* — a satellite that's just
+    // temporarily out of its band still lives in `seen` (we saw it above),
+    // so we don't accidentally kill a valid entry.
     for (const [id, p] of this.pointIndex) {
       if (!seen.has(id)) {
         this.points.remove(p);
@@ -250,8 +277,14 @@ export class SatelliteLayer {
   }
 
   positionOf(noradId: number): Cesium.Cartesian3 | null {
+    // Fall back to the billboard: at close range the point may have been
+    // dropped by the band manager, but the billboard still exists and has
+    // the same position.
     const p = this.pointIndex.get(noradId);
-    return p ? p.position : null;
+    if (p) return p.position;
+    const b = this.billboardIndex.get(noradId);
+    if (b) return b.position;
+    return null;
   }
 
   /** Apply the current hover/selection style to a single satellite. */
@@ -284,5 +317,6 @@ export class SatelliteLayer {
     this.billboardIndex.clear();
     this.catchupCursor = 0;
     this.prevSnapSimMs = null;
+    this.lastBandCheckMs = 0;
   }
 }

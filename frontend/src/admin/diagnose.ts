@@ -500,6 +500,49 @@ function computeFps(samples: number[]): FpsStats {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/**
+ * Wait until Cesium's tile queue has been at zero for at least
+ * `steadyMs`, or up to `maxMs`. Between phases where imagery or camera
+ * changed, this prevents ongoing tile streaming from bleeding into the FPS
+ * sample of the next test — the imagery-impact phase in the previous report
+ * clearly contaminated overlay measurements this way.
+ */
+function waitForTilesSettled(
+  viewer: Cesium.Viewer,
+  steadyMs = 600,
+  maxMs = 8_000,
+): Promise<void> {
+  return new Promise<void>((resolve) => {
+    const start = performance.now();
+    let lastRemaining = -1;
+    let lastChangeMs = performance.now();
+    let unsub: (() => void) | null = null;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const cleanup = () => {
+      unsub?.();
+      if (timer) clearInterval(timer);
+    };
+
+    unsub = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
+      (remaining: number) => {
+        if (remaining !== lastRemaining) {
+          lastRemaining = remaining;
+          lastChangeMs = performance.now();
+        }
+      },
+    );
+    timer = setInterval(() => {
+      const now = performance.now();
+      const stable = lastRemaining === 0 && now - lastChangeMs >= steadyMs;
+      if (stable || now - start >= maxMs) {
+        cleanup();
+        resolve();
+      }
+    }, 100);
+  });
+}
+
 function renderBar(pct: number, width: number): string {
   const filled = Math.max(0, Math.min(width, Math.floor((pct / 100) * width)));
   if (filled >= width) return "[" + "=".repeat(width) + "]";
@@ -906,7 +949,9 @@ async function measureAltitudeImpact(
       destination: Cesium.Cartesian3.fromDegrees(0, 0, altKm * 1000),
       orientation: { heading: 0, pitch: Cesium.Math.toRadians(-90), roll: 0 },
     });
-    await sleep(1500);
+    // Let tiles settle before sampling — flying to GEO or 100 000 km fetches
+    // a whole new pyramid.
+    await waitForTilesSettled(viewer);
     const fps = await sampleFps(3500);
     out.push({ altKm, fps: fps.avg });
     log(`${altKm.toString().padStart(6)} km alt → ${fps.avg.toFixed(1)} fps`);
@@ -917,11 +962,14 @@ async function measureAltitudeImpact(
 async function measureImageryImpact(
   log: (msg: string) => void,
 ): Promise<DiagnoseReport["imageryImpact"]> {
+  const viewer = getInstruments()!.viewer;
   const out: DiagnoseReport["imageryImpact"] = [];
   for (const layer of IMAGERY_LAYERS) {
     useStore.getState().setImagery(layer.id);
-    await sleep(3500); // give tiles time to stream
-    const fps = await sampleFps(2000);
+    // Wait for the new imagery's tiles to fully stream in before sampling —
+    // otherwise the previous-tile bleed contaminates the FPS number.
+    await waitForTilesSettled(viewer, 800, 10_000);
+    const fps = await sampleFps(2500);
     out.push({ id: layer.id, label: layer.label, fps: fps.avg });
     log(`${layer.label}: ${fps.avg.toFixed(1)} fps`);
   }
@@ -931,6 +979,7 @@ async function measureImageryImpact(
 async function measureOverlayImpact(
   log: (msg: string) => void,
 ): Promise<DiagnoseReport["overlayImpact"]> {
+  const viewer = getInstruments()!.viewer;
   const overlays: Array<{ key: string; on: () => void; off: () => void }> = [
     {
       key: "trails=visible",
@@ -963,14 +1012,20 @@ async function measureOverlayImpact(
       off: () => useStore.getState().setCities(false),
     },
   ];
+  // Before the sweep, let any tile streaming from the previous phase settle.
+  // Previous report showed 5+ FPS of contamination bleeding from imagery
+  // changes into overlay measurements.
+  log("waiting for scene to settle before overlay sweep…");
+  await waitForTilesSettled(viewer, 1000, 10_000);
+
   const out: DiagnoseReport["overlayImpact"] = [];
   for (const o of overlays) {
     o.off();
-    await sleep(2500);
-    const offFps = await sampleFps(2500);
+    await waitForTilesSettled(viewer, 500, 4_000);
+    const offFps = await sampleFps(3000);
     o.on();
-    await sleep(2500);
-    const onFps = await sampleFps(2500);
+    await waitForTilesSettled(viewer, 500, 4_000);
+    const onFps = await sampleFps(3000);
     const delta = offFps.avg - onFps.avg;
     out.push({ overlay: o.key, onFps: onFps.avg, offFps: offFps.avg, deltaFps: delta });
     log(`${o.key}: on ${onFps.avg.toFixed(1)} · off ${offFps.avg.toFixed(1)} · Δ ${delta.toFixed(1)}`);
@@ -981,6 +1036,7 @@ async function measureOverlayImpact(
 async function measureFilterImpact(
   log: (msg: string) => void,
 ): Promise<DiagnoseReport["filterImpact"]> {
+  const viewer = getInstruments()!.viewer;
   const combos: Array<{ label: string; classes: OrbitClass[] }> = [
     { label: "all", classes: [...ORBIT_CLASSES] },
     { label: "LEO only", classes: ["LEO"] },
@@ -991,11 +1047,9 @@ async function measureFilterImpact(
   const out: DiagnoseReport["filterImpact"] = [];
   for (const c of combos) {
     useStore.getState().setFilter(c.classes);
-    await sleep(2500);
+    await waitForTilesSettled(viewer, 400, 3_000);
     const fps = await sampleFps(2500);
     const rendered = useStore.getState().snapshot?.count ?? 0;
-    // "rendered" is the whole snapshot; the actual painted count is at most
-    // this, but there's no cheap way to read filter-post count here.
     out.push({
       label: c.label,
       classes: c.classes,
@@ -1010,17 +1064,17 @@ async function measureFilterImpact(
 async function measureCameraModeImpact(
   log: (msg: string) => void,
 ): Promise<DiagnoseReport["cameraModeImpact"]> {
+  const viewer = getInstruments()!.viewer;
   const st = useStore.getState();
   const out: DiagnoseReport["cameraModeImpact"] = [];
   const modes: Array<"orbit" | "follow" | "pov"> = ["orbit", "follow", "pov"];
-  // Follow/POV require a selected satellite — pick the ISS if we know it.
   if (st.selectedNoradId == null) {
     st.select(25544);
     await sleep(500);
   }
   for (const m of modes) {
     st.setCameraMode(m);
-    await sleep(2500);
+    await waitForTilesSettled(viewer, 500, 3_000);
     const fps = await sampleFps(2500);
     out.push({ mode: m, fps: fps.avg });
     log(`camera=${m}: ${fps.avg.toFixed(1)} fps`);
