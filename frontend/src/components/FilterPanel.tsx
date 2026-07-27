@@ -30,6 +30,10 @@ export function FilterPanel() {
   const setTerminator = useStore((s) => s.setTerminator);
   const graticuleOn = useStore((s) => s.graticuleOn);
   const setGraticule = useStore((s) => s.setGraticule);
+  const countriesOn = useStore((s) => s.countriesOn);
+  const setCountries = useStore((s) => s.setCountries);
+  const citiesOn = useStore((s) => s.citiesOn);
+  const setCities = useStore((s) => s.setCities);
 
   return (
     <aside className="spacemap-filter pointer-events-auto absolute left-4 top-20 z-10 max-h-[calc(100vh-6rem)] w-56 overflow-auto rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
@@ -120,6 +124,24 @@ export function FilterPanel() {
           className="h-3 w-3 accent-space-accent"
         />
         <span>Lat / lon grid</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={countriesOn}
+          onChange={(e) => setCountries(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Country borders</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={citiesOn}
+          onChange={(e) => setCities(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Major cities</span>
       </label>
     </aside>
   );

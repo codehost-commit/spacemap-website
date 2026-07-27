@@ -42,12 +42,18 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
   viewer.clock.shouldAnimate = true;
   viewer.clock.multiplier = 1;
 
-  // Bloom makes satellite points/billboards glow like real stars. Cheap on
-  // modern GPUs; the delta and step values are tuned to be visible but not
-  // wash out the imagery below.
+  // Enable HDR framebuffer — required for bloom to look right on bright
+  // satellites without washing out the imagery. Falls back gracefully on
+  // devices where HDR isn't supported.
   try {
-    // Cesium's TS types don't include createBloomStage yet, but it exists at
-    // runtime and is the recommended way to add HDR bloom.
+    (scene as unknown as { highDynamicRange: boolean }).highDynamicRange = true;
+  } catch {
+    /* older Cesium / unsupported context */
+  }
+
+  // Bloom + HDR — real starlight glow on satellites and the sun. The uniforms
+  // here favour selective glow (bright pixels only) so ocean/land don't blur.
+  try {
     const lib = Cesium.PostProcessStageLibrary as unknown as {
       createBloomStage?: () => Cesium.PostProcessStage;
     };
@@ -55,12 +61,15 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
     if (bloom) {
       bloom.enabled = true;
       const u = bloom.uniforms as Record<string, unknown>;
-      u.contrast = 128;
-      u.brightness = -0.35;
+      // Bright-pixel threshold: only pixels above `brightness` bloom. Negative
+      // values effectively lower the threshold — good for our dim points.
+      u.contrast = 160;
+      u.brightness = -0.5;
       u.glowOnly = false;
-      u.delta = 1.4;
-      u.sigma = 3;
-      u.stepSize = 1.2;
+      // Gaussian blur radius controls how far the glow spreads.
+      u.delta = 1.6;
+      u.sigma = 3.4;
+      u.stepSize = 1.5;
       scene.postProcessStages.add(bloom);
     }
   } catch (err) {

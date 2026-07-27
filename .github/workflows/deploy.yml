@@ -91,6 +91,23 @@ jobs:
           LINES=$(wc -l < frontend/dist/data/tles.txt)
           echo "Bundled TLE lines: $LINES (~$((LINES/3)) satellites)"
 
+      - name: Fetch Natural Earth country outlines
+        # Bundled with the site so the "Country outlines" overlay works
+        # without a runtime CORS call. jsdelivr mirrors GitHub with a CDN in
+        # front, so this is fast + reliable in CI.
+        run: |
+          mkdir -p frontend/dist/data
+          set +e
+          curl -fsSL \
+            "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector/geojson/ne_110m_admin_0_countries.geojson" \
+            -o frontend/dist/data/countries.geojson
+          if [ ! -s frontend/dist/data/countries.geojson ]; then
+            echo "::warning::Country GeoJSON fetch failed — overlay will be unavailable"
+            rm -f frontend/dist/data/countries.geojson
+          else
+            echo "Countries GeoJSON: $(wc -c < frontend/dist/data/countries.geojson) bytes"
+          fi
+
       - name: Add SPA 404 shim
         run: cp frontend/dist/index.html frontend/dist/404.html
 

@@ -39,6 +39,8 @@ interface StoreState {
   heatmapOn: boolean;
   terminatorOn: boolean;
   graticuleOn: boolean;
+  countriesOn: boolean;
+  citiesOn: boolean;
   imageryId: string;
 
   savedIds: Set<number>;
@@ -65,6 +67,8 @@ interface StoreState {
   setHeatmap: (v: boolean) => void;
   setTerminator: (v: boolean) => void;
   setGraticule: (v: boolean) => void;
+  setCountries: (v: boolean) => void;
+  setCities: (v: boolean) => void;
   setImagery: (id: string) => void;
 
   toggleSaved: (id: number) => void;
@@ -100,6 +104,8 @@ export const useStore = create<StoreState>((set) => ({
   heatmapOn: false,
   terminatorOn: false,
   graticuleOn: false,
+  countriesOn: false,
+  citiesOn: false,
   imageryId: "arcgis",
 
   savedIds: new Set(),
@@ -149,6 +155,8 @@ export const useStore = create<StoreState>((set) => ({
   setHeatmap: (heatmapOn) => set({ heatmapOn }),
   setTerminator: (terminatorOn) => set({ terminatorOn }),
   setGraticule: (graticuleOn) => set({ graticuleOn }),
+  setCountries: (countriesOn) => set({ countriesOn }),
+  setCities: (citiesOn) => set({ citiesOn }),
   setImagery: (imageryId) => set({ imageryId }),
 
   toggleSaved: (id) =>

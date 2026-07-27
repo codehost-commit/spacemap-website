@@ -12,6 +12,8 @@ import { BaseImageryController } from "../cesium/imagery.js";
 import { Terminator } from "../cesium/terminator.js";
 import { Graticule } from "../cesium/graticule.js";
 import { StarCatalog } from "../cesium/star-catalog.js";
+import { Countries } from "../cesium/countries.js";
+import { Cities } from "../cesium/cities.js";
 import { Simulation, installSimulation } from "../simulation/simulation.js";
 import { useStore } from "../state/store.js";
 import { installFocusApi } from "../cesium/focus.js";
@@ -39,6 +41,8 @@ export function GlobeCanvas() {
     const terminator = new Terminator(viewer);
     const graticule = new Graticule(viewer.scene);
     const stars = new StarCatalog(viewer);
+    const countries = new Countries(viewer.scene);
+    const cities = new Cities(viewer.scene);
     const sim = new Simulation(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
@@ -91,6 +95,8 @@ export function GlobeCanvas() {
     let lastHeatmap = false;
     let lastTerminator = false;
     let lastGraticule = false;
+    let lastCountries = false;
+    let lastCities = false;
     let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef) {
@@ -126,6 +132,14 @@ export function GlobeCanvas() {
         lastGraticule = s.graticuleOn;
         graticule.setEnabled(s.graticuleOn);
       }
+      if (s.countriesOn !== lastCountries) {
+        lastCountries = s.countriesOn;
+        void countries.setEnabled(s.countriesOn);
+      }
+      if (s.citiesOn !== lastCities) {
+        lastCities = s.citiesOn;
+        cities.setEnabled(s.citiesOn);
+      }
       if (s.imageryId !== lastImagery) {
         lastImagery = s.imageryId;
         void imagery.apply(s.imageryId);
@@ -152,6 +166,8 @@ export function GlobeCanvas() {
       heatmap.destroy();
       terminator.destroy();
       graticule.destroy();
+      countries.destroy();
+      cities.destroy();
       stars.destroy();
       imagery.destroy();
       trails.clear();
