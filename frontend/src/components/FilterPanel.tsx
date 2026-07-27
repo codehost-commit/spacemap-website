@@ -1,5 +1,6 @@
 import { ORBIT_CLASSES, ORBIT_CLASS_COLOR, type OrbitClass } from "@spacemap/shared";
 import { useStore, type TrailMode } from "../state/store.js";
+import { ImageryPicker } from "./ImageryPicker.js";
 
 const LABELS: Record<OrbitClass, string> = {
   LEO: "LEO",
@@ -27,7 +28,8 @@ export function FilterPanel() {
   const setHeatmap = useStore((s) => s.setHeatmap);
 
   return (
-    <aside className="pointer-events-auto absolute left-4 top-20 z-10 w-56 rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
+    <aside className="pointer-events-auto absolute left-4 top-20 z-10 max-h-[calc(100vh-6rem)] w-56 overflow-auto rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
+      <ImageryPicker />
       <SectionHeader
         label="Orbit class"
         action={

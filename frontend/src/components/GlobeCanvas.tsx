@@ -7,6 +7,8 @@ import { HistoryTrails } from "../cesium/history-trails.js";
 import { HeatmapLayer } from "../cesium/heatmap-layer.js";
 import { FollowMode } from "../cesium/follow.js";
 import { PovCamera } from "../cesium/pov-camera.js";
+import { SatelliteModel } from "../cesium/satellite-model.js";
+import { BaseImageryController } from "../cesium/imagery.js";
 import { Simulation, installSimulation } from "../simulation/simulation.js";
 import { useStore } from "../state/store.js";
 import { installFocusApi } from "../cesium/focus.js";
@@ -21,12 +23,14 @@ export function GlobeCanvas() {
   useEffect(() => {
     if (!containerRef.current) return;
     const viewer = createViewer(containerRef.current);
+    const imagery = new BaseImageryController(viewer);
     const layer = new SatelliteLayer(viewer.scene);
     const orbitRibbon = new OrbitTrail(viewer.scene);
     const trails = new HistoryTrails(viewer.scene);
     const heatmap = new HeatmapLayer(viewer);
     const follow = new FollowMode(viewer, layer);
     const pov = new PovCamera(viewer, () => useStore.getState().snapshot);
+    const model = new SatelliteModel(viewer, () => useStore.getState().snapshot);
     const sim = new Simulation(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
@@ -36,7 +40,10 @@ export function GlobeCanvas() {
     const uninstallSaved = installSavedPersistence();
     const uninstallNotifications = installNotificationWatcher();
 
-    // Click → select or pick compare partner.
+    // Apply the initial imagery layer immediately so users see something even
+    // while TLEs download.
+    void imagery.apply(useStore.getState().imageryId);
+
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
       const picked = viewer.scene.pick(ev.position);
@@ -72,6 +79,7 @@ export function GlobeCanvas() {
     let lastCameraMode = "orbit";
     let lastTrailMode = "";
     let lastHeatmap = false;
+    let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef) {
         lastFilterRef = s.filter;
@@ -83,12 +91,12 @@ export function GlobeCanvas() {
       if (s.selectedNoradId !== lastSelection) {
         lastSelection = s.selectedNoradId;
         void updateOrbitRibbon(orbitRibbon, s.selectedNoradId);
-        // Retarget the active camera mode.
-        applyCameraMode(follow, pov, s.cameraMode, s.selectedNoradId);
+        void model.setFor(s.selectedNoradId);
+        applyCameraMode(follow, pov, model, s.cameraMode, s.selectedNoradId);
       }
       if (s.cameraMode !== lastCameraMode) {
         lastCameraMode = s.cameraMode;
-        applyCameraMode(follow, pov, s.cameraMode, s.selectedNoradId);
+        applyCameraMode(follow, pov, model, s.cameraMode, s.selectedNoradId);
       }
       if (s.trailMode !== lastTrailMode) {
         lastTrailMode = s.trailMode;
@@ -97,6 +105,10 @@ export function GlobeCanvas() {
       if (s.heatmapOn !== lastHeatmap) {
         lastHeatmap = s.heatmapOn;
         void heatmap.setEnabled(s.heatmapOn);
+      }
+      if (s.imageryId !== lastImagery) {
+        lastImagery = s.imageryId;
+        void imagery.apply(s.imageryId);
       }
     });
 
@@ -114,7 +126,9 @@ export function GlobeCanvas() {
       uninstallNotifications();
       pov.destroy();
       follow.destroy();
+      model.destroy();
       heatmap.destroy();
+      imagery.destroy();
       trails.clear();
       orbitRibbon.clear();
       layer.clear();
@@ -129,9 +143,13 @@ export function GlobeCanvas() {
 function applyCameraMode(
   follow: FollowMode,
   pov: PovCamera,
+  model: SatelliteModel,
   mode: string,
   selectedNoradId: number | null,
 ): void {
+  // In POV of the selected sat, hide the model — otherwise the camera sits
+  // inside the mesh and we render the interior.
+  model.setHidden(mode === "pov");
   if (mode === "follow") {
     pov.deactivate();
     follow.set(selectedNoradId);

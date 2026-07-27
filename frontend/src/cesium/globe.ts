@@ -16,14 +16,9 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
     sceneModePicker: false,
     selectionIndicator: false,
     timeline: false,
-    // Use natural-earth imagery bundled with Cesium as a sensible default so
-    // the app works without an Ion token. Callers can swap in higher-res
-    // imagery later.
-    baseLayer: Cesium.ImageryLayer.fromProviderAsync(
-      Cesium.TileMapServiceImageryProvider.fromUrl(
-        Cesium.buildModuleUrl("Assets/Textures/NaturalEarthII"),
-      ),
-    ),
+    // No default base layer — BaseImageryController swaps in NASA GIBS
+    // streaming tiles (or an offline fallback) immediately after boot.
+    baseLayer: false as unknown as Cesium.ImageryLayer,
     skyBox: createStarSkyBox(),
     skyAtmosphere: new Cesium.SkyAtmosphere(),
   });

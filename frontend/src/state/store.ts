@@ -37,6 +37,7 @@ interface StoreState {
   filter: Set<OrbitClass>;
   trailMode: TrailMode;
   heatmapOn: boolean;
+  imageryId: string;
 
   savedIds: Set<number>;
   notifyEnabled: boolean;
@@ -60,6 +61,7 @@ interface StoreState {
   setFilter: (classes: Iterable<OrbitClass>) => void;
   setTrailMode: (mode: TrailMode) => void;
   setHeatmap: (v: boolean) => void;
+  setImagery: (id: string) => void;
 
   toggleSaved: (id: number) => void;
   loadSaved: (ids: Iterable<number>) => void;
@@ -92,6 +94,7 @@ export const useStore = create<StoreState>((set) => ({
   filter: new Set(defaultFilter),
   trailMode: "selected",
   heatmapOn: false,
+  imageryId: "bluemarble",
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -138,6 +141,7 @@ export const useStore = create<StoreState>((set) => ({
   setFilter: (classes) => set({ filter: new Set(classes) }),
   setTrailMode: (trailMode) => set({ trailMode }),
   setHeatmap: (heatmapOn) => set({ heatmapOn }),
+  setImagery: (imageryId) => set({ imageryId }),
 
   toggleSaved: (id) =>
     set((s) => {

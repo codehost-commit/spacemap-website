@@ -81,6 +81,9 @@ jobs:
           fetch_group visual   frontend/dist/data/tles.txt || true
           fetch_group weather  frontend/dist/data/tles.txt || true
           fetch_group stations frontend/dist/data/tles.txt || true
+          # Science group brings in Hubble, JWST, and other named spacecraft
+          # so their 3-D models actually correspond to selectable satellites.
+          fetch_group science  frontend/dist/data/tles.txt || true
           if [ ! -s frontend/dist/data/tles.txt ]; then
             echo "::error::TLE fetch failed — no data bundled."
             exit 1
