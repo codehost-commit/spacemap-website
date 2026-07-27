@@ -27,6 +27,9 @@ interface StoreState {
   snapshot: PropagationSnapshot | null;
   snapshotTick: number;
 
+  imageryReady: boolean;
+  firstSnapshotReceived: boolean;
+
   selectedNoradId: number | null;
   compareNoradId: number | null;
   pickCompareMode: boolean;
@@ -54,6 +57,7 @@ interface StoreState {
   setCatalogStatus: (s: CatalogStatus, err?: string | null) => void;
   setIndex: (index: SatelliteIndexEntry[]) => void;
   setSnapshot: (snap: PropagationSnapshot) => void;
+  setImageryReady: (v: boolean) => void;
 
   select: (id: number | null) => void;
   setCompare: (id: number | null) => void;
@@ -91,6 +95,8 @@ export const useStore = create<StoreState>((set) => ({
 
   snapshot: null,
   snapshotTick: 0,
+  imageryReady: false,
+  firstSnapshotReceived: false,
 
   selectedNoradId: null,
   compareNoradId: null,
@@ -125,7 +131,13 @@ export const useStore = create<StoreState>((set) => ({
       catalogSize: index.length,
       indexByNorad: new Map(index.map((e) => [e.noradId, e.name])),
     }),
-  setSnapshot: (snap) => set((s) => ({ snapshot: snap, snapshotTick: s.snapshotTick + 1 })),
+  setSnapshot: (snap) =>
+    set((s) => ({
+      snapshot: snap,
+      snapshotTick: s.snapshotTick + 1,
+      firstSnapshotReceived: s.firstSnapshotReceived || snap.count > 0,
+    })),
+  setImageryReady: (imageryReady) => set({ imageryReady }),
 
   select: (id) =>
     set((s) => ({

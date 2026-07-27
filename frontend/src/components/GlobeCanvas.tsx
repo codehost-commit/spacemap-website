@@ -12,6 +12,7 @@ import { BaseImageryController } from "../cesium/imagery.js";
 import { Terminator } from "../cesium/terminator.js";
 import { Graticule } from "../cesium/graticule.js";
 import { StarCatalog } from "../cesium/star-catalog.js";
+import { Planets } from "../cesium/planets.js";
 import { Countries } from "../cesium/countries.js";
 import { Cities } from "../cesium/cities.js";
 import { Simulation, installSimulation } from "../simulation/simulation.js";
@@ -41,6 +42,7 @@ export function GlobeCanvas() {
     const terminator = new Terminator(viewer);
     const graticule = new Graticule(viewer.scene);
     const stars = new StarCatalog(viewer);
+    const planets = new Planets(viewer);
     const countries = new Countries(viewer.scene);
     const cities = new Cities(viewer.scene);
     const sim = new Simulation(viewer);
@@ -57,6 +59,24 @@ export function GlobeCanvas() {
     // Apply the initial imagery layer immediately so users see something even
     // while TLEs download.
     void imagery.apply(useStore.getState().imageryId);
+
+    // Track initial-tile-load completion so the loading screen can dismiss
+    // once the globe is actually rendered. Cesium fires
+    // tileLoadProgressEvent(remaining) whenever the queue changes; we set
+    // "imagery ready" the first time it drops to 0 after being > 0. Timeout
+    // fallback in case the imagery layer never reports any tiles.
+    let hadTiles = false;
+    const tileHandler = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
+      (remaining: number) => {
+        if (remaining > 0) hadTiles = true;
+        if (hadTiles && remaining === 0) {
+          useStore.getState().setImageryReady(true);
+        }
+      },
+    );
+    const imageryTimeout = setTimeout(() => {
+      useStore.getState().setImageryReady(true);
+    }, 8000);
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
     handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
@@ -153,6 +173,8 @@ export function GlobeCanvas() {
       unsubSnapshot();
       unsubUi();
       handler.destroy();
+      tileHandler();
+      clearTimeout(imageryTimeout);
       uninstallFocus();
       uninstallClock();
       uninstallSim();
@@ -169,6 +191,7 @@ export function GlobeCanvas() {
       countries.destroy();
       cities.destroy();
       stars.destroy();
+      planets.destroy();
       imagery.destroy();
       trails.clear();
       orbitRibbon.destroy();

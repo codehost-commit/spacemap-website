@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useStore } from "../state/store.js";
+import { LocateButton } from "./LocateButton.js";
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -50,6 +51,7 @@ export function HeaderHUD() {
         <div className="text-[10px] uppercase tracking-widest text-space-dim">
           Orbital Nexus
         </div>
+        <LocateButton />
       </div>
 
       <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 font-mono text-xs backdrop-blur">

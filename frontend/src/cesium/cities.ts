@@ -36,12 +36,15 @@ export class Cities {
     this.points = points;
 
     for (const city of CITIES) {
+      // Fade thresholds are in metres (camera-to-city distance). Tighter than
+      // before — labels disappear at continental zoom so the world isn't a
+      // wall of text.
       const maxDist =
         city.tier === 1
-          ? Number.POSITIVE_INFINITY
+          ? 22_000_000 // mega-cities: still visible from ~½ Earth away
           : city.tier === 2
-            ? 25_000_000
-            : 8_000_000;
+            ? 8_500_000
+            : 3_000_000;
       const condition = new Cesium.DistanceDisplayCondition(0, maxDist);
       const position = Cesium.Cartesian3.fromDegrees(city.lon, city.lat, 0);
 
@@ -68,8 +71,8 @@ export class Cities {
         scaleByDistance: new Cesium.NearFarScalar(
           500_000,
           1,
-          25_000_000,
-          city.tier === 1 ? 0.7 : 0.6,
+          20_000_000,
+          city.tier === 1 ? 0.55 : 0.45,
         ),
         distanceDisplayCondition: condition,
         // Never occluded by satellites floating in front.

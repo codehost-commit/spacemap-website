@@ -91,6 +91,28 @@ jobs:
           LINES=$(wc -l < frontend/dist/data/tles.txt)
           echo "Bundled TLE lines: $LINES (~$((LINES/3)) satellites)"
 
+      - name: Build HYG star catalog
+        # HYG v3 CSV (~35 MB) → filtered compact binary (~200-400 KB, gzipped
+        # smaller). Non-fatal: if the fetch fails the frontend falls back to
+        # its hardcoded 60 bright stars.
+        run: |
+          mkdir -p frontend/dist/data
+          set +e
+          curl -fsSL \
+            "https://cdn.jsdelivr.net/gh/astronexus/HYG-Database@main/hyg/CURRENT/hygdata_v41.csv" \
+            -o /tmp/hyg.csv
+          if [ ! -s /tmp/hyg.csv ]; then
+            echo "primary HYG URL failed, trying legacy v3 path…"
+            curl -fsSL \
+              "https://cdn.jsdelivr.net/gh/astronexus/HYG-Database@main/hyg/v3/hygdata_v3.csv" \
+              -o /tmp/hyg.csv
+          fi
+          if [ -s /tmp/hyg.csv ]; then
+            node frontend/scripts/build-stars.mjs /tmp/hyg.csv frontend/dist/data/stars.bin 7.0
+          else
+            echo "::warning::HYG fetch failed, hardcoded fallback catalog will be used"
+          fi
+
       - name: Fetch Natural Earth country outlines
         # Bundled with the site so the "Country outlines" overlay works
         # without a runtime CORS call. jsdelivr mirrors GitHub with a CDN in

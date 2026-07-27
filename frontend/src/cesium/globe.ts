@@ -33,7 +33,12 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
     scene.skyAtmosphere.hueShift = -0.05;
   }
   scene.moon = new Cesium.Moon();
-  scene.sun = new Cesium.Sun();
+  const sun = new Cesium.Sun();
+  // Bump the sun's built-in lens flare — Cesium's Sun sprite has a glow
+  // multiplier that produces the classic "star with rays" halo. 1 is the
+  // default; anything > 3 starts to feel like real sunlight through a lens.
+  (sun as unknown as { glowFactor: number }).glowFactor = 4;
+  scene.sun = sun;
   scene.backgroundColor = Cesium.Color.BLACK;
   scene.fog.enabled = true;
   // Real sun position drives day/night.
