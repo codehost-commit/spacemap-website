@@ -3,6 +3,7 @@ import * as Cesium from "cesium";
 import { createViewer } from "../cesium/globe.js";
 import { SatelliteLayer } from "../cesium/satellite-layer.js";
 import { OrbitTrail } from "../cesium/orbit-trail.js";
+import { SonarSweep } from "../cesium/sonar-sweep.js";
 import { HistoryTrails } from "../cesium/history-trails.js";
 import { HeatmapLayer } from "../cesium/heatmap-layer.js";
 import { FollowMode } from "../cesium/follow.js";
@@ -37,6 +38,7 @@ export function GlobeCanvas() {
     const imagery = new BaseImageryController(viewer);
     const layer = new SatelliteLayer(viewer.scene);
     const orbitRibbon = new OrbitTrail(viewer.scene);
+    const sonar = new SonarSweep(viewer.scene);
     const trails = new HistoryTrails(viewer.scene);
     const heatmap = new HeatmapLayer(viewer);
     const follow = new FollowMode(viewer, layer);
@@ -215,7 +217,7 @@ export function GlobeCanvas() {
       }
       if (s.selectedNoradId !== lastSelection) {
         lastSelection = s.selectedNoradId;
-        void updateOrbitRibbon(orbitRibbon, s.selectedNoradId);
+        void updateOrbitRibbon(orbitRibbon, sonar, s.selectedNoradId);
         void model.setFor(s.selectedNoradId);
         applyCameraMode(follow, pov, model, s.cameraMode, s.selectedNoradId);
       }
@@ -286,6 +288,7 @@ export function GlobeCanvas() {
       imagery.destroy();
       trails.clear();
       orbitRibbon.destroy();
+      sonar.destroy();
       layer.clear();
       sim.destroy();
       viewer.destroy();
@@ -318,12 +321,18 @@ function applyCameraMode(
   }
 }
 
-async function updateOrbitRibbon(ribbon: OrbitTrail, noradId: number | null): Promise<void> {
+async function updateOrbitRibbon(
+  ribbon: OrbitTrail,
+  sonar: SonarSweep,
+  noradId: number | null,
+): Promise<void> {
   if (noradId == null) {
     ribbon.clear();
+    sonar.setFromTle(null);
     return;
   }
   const tle = getLocalTle(noradId);
   if (!tle) return;
   ribbon.setFromTle(tle);
+  sonar.setFromTle(tle);
 }

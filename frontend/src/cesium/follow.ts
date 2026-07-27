@@ -32,6 +32,12 @@ export class FollowMode {
         false,
         Cesium.ReferenceFrame.FIXED,
       ),
+      // Default camera offset when tracked. Cesium interprets this in the
+      // entity's local ENU frame — so this places the camera ~4000 km "back"
+      // and 1500 km "up" from the satellite, giving a chase-cam view where
+      // the orbit reads as a visible curve instead of a straight line pointed
+      // straight down.
+      viewFrom: new Cesium.Cartesian3(-4_000_000, -2_500_000, 1_500_000),
       // Invisible point — the entity exists purely to anchor the camera.
       point: {
         pixelSize: 0,

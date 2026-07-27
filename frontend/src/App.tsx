@@ -12,6 +12,7 @@ import { CatalogStatusBanner } from "./components/CatalogStatusBanner.js";
 import { ConjunctionLeaderboard } from "./components/ConjunctionLeaderboard.js";
 import { LaunchTracker } from "./components/LaunchTracker.js";
 import { AdminConsole } from "./components/AdminConsole.js";
+import { TimelineScrubber } from "./components/TimelineScrubber.js";
 
 export function App() {
   return (
@@ -28,6 +29,7 @@ export function App() {
       <ConjunctionLeaderboard />
       <LaunchTracker />
       <TimeControls />
+      <TimelineScrubber />
       <CatalogStatusBanner />
       <AdminConsole />
     </div>

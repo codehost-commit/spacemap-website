@@ -145,7 +145,9 @@ export class StarCatalog {
       color: new Cesium.Color(seed.rgb[0], seed.rgb[1], seed.rgb[2], alpha),
       pixelSize: size,
       outlineWidth: 0,
-      disableDepthTestDistance: Number.POSITIVE_INFINITY,
+      // Depth test *on* — Earth should occlude stars on the far side.
+      // Previous code disabled depth at infinity, which caused stars to
+      // show *through* the planet in POV / orbit views.
     });
   }
 }

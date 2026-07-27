@@ -189,17 +189,21 @@ export const useStore = create<StoreState>((set) => ({
   setNotifyEnabled: (notifyEnabled) => set({ notifyEnabled }),
   toggleOverlay: (id) =>
     set((s) => {
-      const next = new Set(s.openOverlays);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return { openOverlays: next };
+      // Only one right-rail overlay open at a time — opening a new one
+      // implicitly closes whatever was open before, so panels never stack
+      // on top of each other.
+      if (s.openOverlays.has(id)) return { openOverlays: new Set() };
+      return { openOverlays: new Set([id]) };
     }),
   setOverlay: (id, open) =>
     set((s) => {
-      const next = new Set(s.openOverlays);
-      if (open) next.add(id);
-      else next.delete(id);
-      return { openOverlays: next };
+      if (!open) {
+        if (!s.openOverlays.has(id)) return {};
+        const next = new Set(s.openOverlays);
+        next.delete(id);
+        return { openOverlays: next };
+      }
+      return { openOverlays: new Set([id]) };
     }),
 
   setClock: (simTimeMs, simMultiplier, simPaused) =>
