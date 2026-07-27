@@ -91,9 +91,22 @@ export function GlobeCanvas() {
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
 
     // Multi-pick: try the exact pixel first, then spiral outward through a
-    // ring of nearby pixels. Makes tiny satellite dots much easier to click
-    // when they're dense in LEO.
-    const PICK_OFFSETS: Array<[number, number]> = [
+    // ring of nearby pixels so tiny satellite dots are actually catchable.
+    //
+    // Each pick call is a full re-render into Cesium's pick framebuffer +
+    // pixel read — measured at ~6 ms/pick on Apple ANGLE + MSAA. So the
+    // spiral length materially affects hover FPS. We split into two:
+    //   • HOVER — tight 9-point spiral (~5 px catch radius). Cheap enough
+    //     that hover feels instant, with early-exit on first hit so empty
+    //     sky costs just one pick.
+    //   • CLICK — full 25-point spiral (~14 px catch radius). Users
+    //     initiate clicks intentionally, so paying 160 ms once is fine.
+    const HOVER_PICK_OFFSETS: Array<[number, number]> = [
+      [0, 0],
+      [4, 0], [-4, 0], [0, 4], [0, -4],
+      [3, 3], [-3, 3], [3, -3], [-3, -3],
+    ];
+    const CLICK_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
       [4, 0], [-4, 0], [0, 4], [0, -4],
       [3, 3], [-3, 3], [3, -3], [-3, -3],
@@ -103,8 +116,11 @@ export function GlobeCanvas() {
       [10, 10], [-10, 10], [10, -10], [-10, -10],
     ];
     const scratchPickPos = new Cesium.Cartesian2();
-    const pickSatelliteAt = (pos: Cesium.Cartesian2): number | null => {
-      for (const [dx, dy] of PICK_OFFSETS) {
+    const pickWithOffsets = (
+      pos: Cesium.Cartesian2,
+      offsets: Array<[number, number]>,
+    ): number | null => {
+      for (const [dx, dy] of offsets) {
         scratchPickPos.x = pos.x + dx;
         scratchPickPos.y = pos.y + dy;
         const picked = viewer.scene.pick(scratchPickPos);
@@ -114,13 +130,15 @@ export function GlobeCanvas() {
             : picked?.primitive && typeof picked.primitive.id === "number"
               ? picked.primitive.id
               : null;
-        if (id != null) return id;
+        if (id != null) return id; // early exit — first hit wins
       }
       return null;
     };
+    const pickForClick = (pos: Cesium.Cartesian2) => pickWithOffsets(pos, CLICK_PICK_OFFSETS);
+    const pickForHover = (pos: Cesium.Cartesian2) => pickWithOffsets(pos, HOVER_PICK_OFFSETS);
 
     handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
-      const id = pickSatelliteAt(ev.position);
+      const id = pickForClick(ev.position);
       if (id == null) return;
       const state = useStore.getState();
       if (state.pickCompareMode && state.selectedNoradId != null && id !== state.selectedNoradId) {
@@ -139,9 +157,8 @@ export function GlobeCanvas() {
         const now = performance.now();
         if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
         lastHoverMs = now;
-        const id = pickSatelliteAt(ev.endPosition);
+        const id = pickForHover(ev.endPosition);
         layer.setHovered(id);
-        // Cursor feedback: pointer over a pickable satellite.
         viewer.scene.canvas.style.cursor = id != null ? "pointer" : "";
       },
       Cesium.ScreenSpaceEventType.MOUSE_MOVE,

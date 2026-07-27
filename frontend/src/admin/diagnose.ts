@@ -852,7 +852,11 @@ function measurePhysicsAccuracy(
     const geo = satellite.eciToGeodetic(pv.position, gmst);
     const altKm = geo.height;
     const speedKmS = Math.hypot(pv.velocity.x, pv.velocity.y, pv.velocity.z);
-    const periodMin = ((2 * Math.PI) / satrec.no) / 60;
+    // satrec.no is mean motion in rad/min — period in minutes is just
+    // 2π / no. Earlier revision had an erroneous /60, which shifted the
+    // reported period into hours and made the "ok" check pass while
+    // printing the wrong number.
+    const periodMin = (2 * Math.PI) / satrec.no;
     // Also verify our own client-telemetry gives the same numbers.
     void computeTelemetry(referenceTle.noradId, at);
     const iss = {
