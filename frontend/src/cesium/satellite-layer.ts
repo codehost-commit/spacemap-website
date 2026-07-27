@@ -68,7 +68,7 @@ const BAND_CHECK_INTERVAL_MS = 500;
 // Culling constants.
 const EARTH_R_M = 6_378_137;
 const EARTH_R_SQ = EARTH_R_M * EARTH_R_M;
-const TARGET_STALE_SIM_MS = 5_000;
+const TARGET_STALE_SIM_MS = 12_000;
 const FULL_REFRESH_JUMP_SIM_MS = 30_000;
 
 export class SatelliteLayer {
@@ -79,11 +79,18 @@ export class SatelliteLayer {
   private readonly colorByClass: Cesium.Color[];
   private readonly iconUrl: string;
   private readonly scratch = new Cesium.Cartesian3();
+  private readonly filterMask = new Uint8Array(ORBIT_CLASSES.length);
+  private readonly seenGeneration = new Map<number, number>();
+  private readonly pointClassById = new Map<number, number>();
+  private readonly billboardClassById = new Map<number, number>();
+  private readonly pointPosById = new Map<number, Float64Array>();
+  private readonly billboardPosById = new Map<number, Float64Array>();
   private hoveredId: number | null = null;
   private selectedId: number | null = null;
   private catchupCursor = 0;
   private prevSnapSimMs: number | null = null;
   private lastBandCheckMs = 0;
+  private generation = 0;
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -110,10 +117,14 @@ export class SatelliteLayer {
     highlightId: number | null,
     cameraEcef: Cesium.Cartesian3 | null,
   ): void {
-    this.selectedId = highlightId;
-    const filterMask = new Uint8Array(ORBIT_CLASSES.length);
+    if (this.selectedId !== highlightId) {
+      const prev = this.selectedId;
+      this.selectedId = highlightId;
+      if (prev != null) this.applyStyle(prev);
+      if (highlightId != null) this.applyStyle(highlightId);
+    }
     for (let i = 0; i < ORBIT_CLASSES.length; i++) {
-      filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
+      this.filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
     }
 
     const { count, ids, ecefPos, orbitClass } = snap;
@@ -154,13 +165,13 @@ export class SatelliteLayer {
     const canRemoveThisTick = nowMs - this.lastBandCheckMs >= BAND_CHECK_INTERVAL_MS;
     if (canRemoveThisTick) this.lastBandCheckMs = nowMs;
 
-    const seen = new Set<number>();
+    const generation = ++this.generation;
 
     for (let n = 0; n < count; n++) {
       const cls = orbitClass[n];
-      if (!filterMask[cls]) continue;
+      if (!this.filterMask[cls]) continue;
       const id = ids[n];
-      seen.add(id);
+      this.seenGeneration.set(id, generation);
 
       const sx = ecefPos[n * 3];
       const sy = ecefPos[n * 3 + 1];
@@ -209,6 +220,8 @@ export class SatelliteLayer {
       if (p && forbidPoint && canRemoveThisTick) {
         this.points.remove(p);
         this.pointIndex.delete(id);
+        this.pointClassById.delete(id);
+        this.pointPosById.delete(id);
         p = undefined;
       }
       if (!p && wantPoint) {
@@ -222,9 +235,25 @@ export class SatelliteLayer {
           id,
         });
         this.pointIndex.set(id, p);
+        this.pointClassById.set(id, cls);
+        this.pointPosById.set(id, new Float64Array([sx, sy, sz]));
+        this.applyStyle(id);
       } else if (p) {
-        p.position = this.scratch;
-        if (p.color !== color) p.color = color;
+        const prevPos = this.pointPosById.get(id);
+        if (!prevPos || prevPos[0] !== sx || prevPos[1] !== sy || prevPos[2] !== sz) {
+          p.position = this.scratch;
+          if (prevPos) {
+            prevPos[0] = sx;
+            prevPos[1] = sy;
+            prevPos[2] = sz;
+          } else {
+            this.pointPosById.set(id, new Float64Array([sx, sy, sz]));
+          }
+        }
+        if (this.pointClassById.get(id) !== cls) {
+          p.color = color;
+          this.pointClassById.set(id, cls);
+        }
       }
 
       // ---- Billboard band management ----
@@ -232,6 +261,8 @@ export class SatelliteLayer {
       if (b && forbidBillboard && canRemoveThisTick) {
         this.billboards.remove(b);
         this.billboardIndex.delete(id);
+        this.billboardClassById.delete(id);
+        this.billboardPosById.delete(id);
         b = undefined;
       }
       if (!b && wantBillboard) {
@@ -247,12 +278,26 @@ export class SatelliteLayer {
           id,
         });
         this.billboardIndex.set(id, b);
+        this.billboardClassById.set(id, cls);
+        this.billboardPosById.set(id, new Float64Array([sx, sy, sz]));
+        this.applyStyle(id);
       } else if (b) {
-        b.position = this.scratch;
-        if (b.color !== color) b.color = color;
+        const prevPos = this.billboardPosById.get(id);
+        if (!prevPos || prevPos[0] !== sx || prevPos[1] !== sy || prevPos[2] !== sz) {
+          b.position = this.scratch;
+          if (prevPos) {
+            prevPos[0] = sx;
+            prevPos[1] = sy;
+            prevPos[2] = sz;
+          } else {
+            this.billboardPosById.set(id, new Float64Array([sx, sy, sz]));
+          }
+        }
+        if (this.billboardClassById.get(id) !== cls) {
+          b.color = color;
+          this.billboardClassById.set(id, cls);
+        }
       }
-
-      this.applyStyle(id);
     }
 
     // Advance rolling cursor once per snapshot.
@@ -263,15 +308,21 @@ export class SatelliteLayer {
     // temporarily out of its band still lives in `seen` (we saw it above),
     // so we don't accidentally kill a valid entry.
     for (const [id, p] of this.pointIndex) {
-      if (!seen.has(id)) {
+      if (this.seenGeneration.get(id) !== generation) {
         this.points.remove(p);
         this.pointIndex.delete(id);
+        this.pointClassById.delete(id);
+        this.pointPosById.delete(id);
+        this.seenGeneration.delete(id);
       }
     }
     for (const [id, b] of this.billboardIndex) {
-      if (!seen.has(id)) {
+      if (this.seenGeneration.get(id) !== generation) {
         this.billboards.remove(b);
         this.billboardIndex.delete(id);
+        this.billboardClassById.delete(id);
+        this.billboardPosById.delete(id);
+        this.seenGeneration.delete(id);
       }
     }
   }
@@ -315,6 +366,11 @@ export class SatelliteLayer {
     this.billboards.removeAll();
     this.pointIndex.clear();
     this.billboardIndex.clear();
+    this.seenGeneration.clear();
+    this.pointClassById.clear();
+    this.billboardClassById.clear();
+    this.pointPosById.clear();
+    this.billboardPosById.clear();
     this.catchupCursor = 0;
     this.prevSnapSimMs = null;
     this.lastBandCheckMs = 0;

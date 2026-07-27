@@ -89,6 +89,13 @@ export function GlobeCanvas() {
     }, 8000);
 
     const handler = new Cesium.ScreenSpaceEventHandler(viewer.scene.canvas);
+    let cameraMoving = false;
+    const onMoveStart = viewer.camera.moveStart.addEventListener(() => {
+      cameraMoving = true;
+    });
+    const onMoveEnd = viewer.camera.moveEnd.addEventListener(() => {
+      cameraMoving = false;
+    });
 
     // Multi-pick: try the exact pixel first, then spiral outward through a
     // ring of nearby pixels so tiny satellite dots are actually catchable.
@@ -154,6 +161,7 @@ export function GlobeCanvas() {
     const HOVER_INTERVAL_MS = 40;
     handler.setInputAction(
       (ev: { endPosition: Cesium.Cartesian2 }) => {
+        if (cameraMoving) return;
         const now = performance.now();
         if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
         lastHoverMs = now;
@@ -202,7 +210,7 @@ export function GlobeCanvas() {
             s.selectedNoradId,
             viewer.scene.camera.positionWC,
           );
-          trails.ingest(s.snapshot, s.filter);
+          trails.ingest(s.snapshot, s.filter, { force: true });
         }
       }
       if (s.selectedNoradId !== lastSelection) {
@@ -252,6 +260,8 @@ export function GlobeCanvas() {
       unsubSnapshot();
       unsubUi();
       handler.destroy();
+      onMoveStart();
+      onMoveEnd();
       tileHandler();
       clearTimeout(imageryTimeout);
       uninstallFocus();

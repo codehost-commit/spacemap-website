@@ -9,8 +9,9 @@ export class Simulation {
   private worker: Worker;
   private inflight = false;
   private queued = false;
+  private timerScheduled = false;
   private lastRequestMs = 0;
-  private readonly minIntervalMs = 60;
+  private readonly minIntervalMs = 180;
   private disposers: Array<() => void> = [];
   private nextRequestId = 1;
   private conjunctionWaiters = new Map<
@@ -123,15 +124,7 @@ export class Simulation {
     }
     if (now - this.lastRequestMs < this.minIntervalMs) {
       this.queued = true;
-      setTimeout(
-        () => {
-          if (this.queued) {
-            this.queued = false;
-            this.requestPropagation(
-              Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
-            );
-          }
-        },
+      this.scheduleQueuedPropagation(
         Math.max(0, this.minIntervalMs - (now - this.lastRequestMs)),
       );
       return;
@@ -140,6 +133,19 @@ export class Simulation {
     this.lastRequestMs = now;
     this.queued = false;
     this.worker.postMessage({ type: "propagate", timeMs });
+  }
+
+  private scheduleQueuedPropagation(delayMs: number): void {
+    if (this.timerScheduled) return;
+    this.timerScheduled = true;
+    setTimeout(() => {
+      this.timerScheduled = false;
+      if (!this.queued || this.inflight) return;
+      this.queued = false;
+      this.requestPropagation(
+        Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
+      );
+    }, delayMs);
   }
 
   private handleWorkerMessage(msg: unknown): void {
@@ -173,10 +179,7 @@ export class Simulation {
       useStore.getState().setSnapshot(snap);
       this.inflight = false;
       if (this.queued) {
-        this.queued = false;
-        this.requestPropagation(
-          Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
-        );
+        this.scheduleQueuedPropagation(this.minIntervalMs);
       }
       return;
     }

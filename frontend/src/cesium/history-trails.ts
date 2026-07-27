@@ -47,10 +47,15 @@ export class HistoryTrails {
     if (!v) this.clear();
   }
 
-  ingest(snap: PropagationSnapshot, filter: Set<OrbitClass>): void {
+  ingest(
+    snap: PropagationSnapshot,
+    filter: Set<OrbitClass>,
+    options: { force?: boolean } = {},
+  ): void {
     if (!this.enabled) return;
 
     const dueForSample = snap.timeMs - this.lastSampleMs >= SAMPLE_INTERVAL_MS;
+    if (!dueForSample && !options.force) return;
     if (dueForSample) this.lastSampleMs = snap.timeMs;
 
     const filterMask = new Uint8Array(ORBIT_CLASSES.length);
