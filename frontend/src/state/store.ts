@@ -37,6 +37,8 @@ interface StoreState {
   filter: Set<OrbitClass>;
   trailMode: TrailMode;
   heatmapOn: boolean;
+  terminatorOn: boolean;
+  graticuleOn: boolean;
   imageryId: string;
 
   savedIds: Set<number>;
@@ -61,6 +63,8 @@ interface StoreState {
   setFilter: (classes: Iterable<OrbitClass>) => void;
   setTrailMode: (mode: TrailMode) => void;
   setHeatmap: (v: boolean) => void;
+  setTerminator: (v: boolean) => void;
+  setGraticule: (v: boolean) => void;
   setImagery: (id: string) => void;
 
   toggleSaved: (id: number) => void;
@@ -94,6 +98,8 @@ export const useStore = create<StoreState>((set) => ({
   filter: new Set(defaultFilter),
   trailMode: "selected",
   heatmapOn: false,
+  terminatorOn: false,
+  graticuleOn: false,
   imageryId: "arcgis",
 
   savedIds: new Set(),
@@ -141,6 +147,8 @@ export const useStore = create<StoreState>((set) => ({
   setFilter: (classes) => set({ filter: new Set(classes) }),
   setTrailMode: (trailMode) => set({ trailMode }),
   setHeatmap: (heatmapOn) => set({ heatmapOn }),
+  setTerminator: (terminatorOn) => set({ terminatorOn }),
+  setGraticule: (graticuleOn) => set({ graticuleOn }),
   setImagery: (imageryId) => set({ imageryId }),
 
   toggleSaved: (id) =>

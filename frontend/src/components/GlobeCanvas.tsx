@@ -9,6 +9,9 @@ import { FollowMode } from "../cesium/follow.js";
 import { PovCamera } from "../cesium/pov-camera.js";
 import { SatelliteModel } from "../cesium/satellite-model.js";
 import { BaseImageryController } from "../cesium/imagery.js";
+import { Terminator } from "../cesium/terminator.js";
+import { Graticule } from "../cesium/graticule.js";
+import { StarCatalog } from "../cesium/star-catalog.js";
 import { Simulation, installSimulation } from "../simulation/simulation.js";
 import { useStore } from "../state/store.js";
 import { installFocusApi } from "../cesium/focus.js";
@@ -33,6 +36,9 @@ export function GlobeCanvas() {
     const follow = new FollowMode(viewer, layer);
     const pov = new PovCamera(viewer, () => useStore.getState().snapshot);
     const model = new SatelliteModel(viewer, () => useStore.getState().snapshot);
+    const terminator = new Terminator(viewer);
+    const graticule = new Graticule(viewer.scene);
+    const stars = new StarCatalog(viewer);
     const sim = new Simulation(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
@@ -83,6 +89,8 @@ export function GlobeCanvas() {
     let lastCameraMode = "orbit";
     let lastTrailMode = "";
     let lastHeatmap = false;
+    let lastTerminator = false;
+    let lastGraticule = false;
     let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef) {
@@ -110,6 +118,14 @@ export function GlobeCanvas() {
         lastHeatmap = s.heatmapOn;
         void heatmap.setEnabled(s.heatmapOn);
       }
+      if (s.terminatorOn !== lastTerminator) {
+        lastTerminator = s.terminatorOn;
+        terminator.setEnabled(s.terminatorOn);
+      }
+      if (s.graticuleOn !== lastGraticule) {
+        lastGraticule = s.graticuleOn;
+        graticule.setEnabled(s.graticuleOn);
+      }
       if (s.imageryId !== lastImagery) {
         lastImagery = s.imageryId;
         void imagery.apply(s.imageryId);
@@ -134,9 +150,12 @@ export function GlobeCanvas() {
       follow.destroy();
       model.destroy();
       heatmap.destroy();
+      terminator.destroy();
+      graticule.destroy();
+      stars.destroy();
       imagery.destroy();
       trails.clear();
-      orbitRibbon.clear();
+      orbitRibbon.destroy();
       layer.clear();
       sim.destroy();
       viewer.destroy();
@@ -176,5 +195,5 @@ async function updateOrbitRibbon(ribbon: OrbitTrail, noradId: number | null): Pr
   }
   const tle = getLocalTle(noradId);
   if (!tle) return;
-  ribbon.setFromTle(tle, new Date());
+  ribbon.setFromTle(tle);
 }

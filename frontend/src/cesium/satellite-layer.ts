@@ -19,13 +19,16 @@ import { buildSatelliteIcon } from "./satellite-icon.js";
  */
 
 // LOD cross-fade thresholds in metres (camera-to-primitive distance).
-const CLOSE_M = 800_000;   // 800 km — fully inside "close" range → billboards
-const FAR_M = 6_000_000;   // 6000 km — fully inside "far" range → points only
+// Billboards start bleeding in at 25 000 km (mid-zoom) so they're visible
+// well before you get "close", and completely take over inside 3 000 km.
+const CLOSE_M = 3_000_000;   // fully billboards
+const FAR_M = 25_000_000;    // fully points
 
 const POINT_FADE = new Cesium.NearFarScalar(CLOSE_M, 0, FAR_M, 1);
 const BILLBOARD_FADE = new Cesium.NearFarScalar(CLOSE_M, 1, FAR_M, 0);
-// Shrink billboards when very close so they don't dominate the scene.
-const BILLBOARD_SCALE = new Cesium.NearFarScalar(200_000, 0.6, 3_000_000, 1.1);
+// Grow the billboard as the camera gets closer — mimics perspective. Below
+// 400 km distance we clamp so it doesn't fill the screen.
+const BILLBOARD_SCALE = new Cesium.NearFarScalar(400_000, 1.6, 20_000_000, 0.55);
 
 export class SatelliteLayer {
   private readonly points: Cesium.PointPrimitiveCollection;

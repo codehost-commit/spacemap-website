@@ -4,17 +4,25 @@ import type { PropagationSnapshot } from "@spacemap/shared";
 /**
  * First-person camera mounted on a satellite. Each frame the camera is set to
  * the satellite's ECEF position, oriented so that:
- *  - view direction is nadir (toward Earth's centre),
- *  - "up" on screen is the along-track direction (satellite motion vector).
+ *   - view direction is nadir (toward Earth's centre),
+ *   - "up" on screen is the along-track direction (satellite motion vector).
  *
- * Because we place the camera exactly at the satellite and Cesium's default
- * controls interfere with that, we disable user camera input while POV is
- * active and restore it on exit.
+ * User input handling:
+ *   - Cesium's standard pan/rotate/tilt are disabled (would pull the camera
+ *     off the satellite).
+ *   - Zoom uses the camera FOV instead of moving position, so the camera
+ *     stays perfectly locked to the spacecraft. Wheel/pinch narrows or widens
+ *     the lens between the configured MIN/MAX FOV.
  */
+const DEFAULT_FOV_RAD = Math.PI / 3; // 60°
+const MIN_FOV_RAD = (5 * Math.PI) / 180; // 5° — deep telephoto
+const MAX_FOV_RAD = (110 * Math.PI) / 180; // 110° — wide fisheye-ish
+
 export class PovCamera {
   private noradId: number | null = null;
   private unsubPreRender: (() => void) | null = null;
-  private savedCameraController: {
+  private wheelListener: ((ev: WheelEvent) => void) | null = null;
+  private savedController: {
     rotate: boolean;
     translate: boolean;
     tilt: boolean;
@@ -26,7 +34,9 @@ export class PovCamera {
     direction: Cesium.Cartesian3;
     up: Cesium.Cartesian3;
     right: Cesium.Cartesian3;
+    fov: number;
   } | null = null;
+  private fov = DEFAULT_FOV_RAD;
 
   constructor(
     private readonly viewer: Cesium.Viewer,
@@ -37,15 +47,19 @@ export class PovCamera {
     if (this.noradId === noradId) return;
     if (this.noradId != null) this.deactivate(true);
     this.noradId = noradId;
+    this.fov = DEFAULT_FOV_RAD;
+
     const cam = this.viewer.scene.camera;
+    const frustum = cam.frustum as Cesium.PerspectiveFrustum;
     this.savedCamera = {
       position: Cesium.Cartesian3.clone(cam.position),
       direction: Cesium.Cartesian3.clone(cam.direction),
       up: Cesium.Cartesian3.clone(cam.up),
       right: Cesium.Cartesian3.clone(cam.right),
+      fov: frustum.fov ?? DEFAULT_FOV_RAD,
     };
     const controller = this.viewer.scene.screenSpaceCameraController;
-    this.savedCameraController = {
+    this.savedController = {
       rotate: controller.enableRotate,
       translate: controller.enableTranslate,
       tilt: controller.enableTilt,
@@ -55,35 +69,53 @@ export class PovCamera {
     controller.enableRotate = false;
     controller.enableTranslate = false;
     controller.enableTilt = false;
-    controller.enableZoom = false;
+    controller.enableZoom = false; // we handle wheel ourselves
     controller.enableLook = false;
 
-    const disposer = this.viewer.scene.preRender.addEventListener(() => this.tick());
-    this.unsubPreRender = disposer;
-    // Trigger one immediate placement so the switch feels instant.
+    // Install FOV-zoom listener on the canvas. This is *in addition to* the
+    // disabled Cesium zoom above — Cesium's is a position change, ours is a
+    // lens change.
+    const canvas = this.viewer.scene.canvas as HTMLCanvasElement;
+    this.wheelListener = (ev: WheelEvent) => {
+      if (this.noradId == null) return;
+      ev.preventDefault();
+      // Scale factor ~0.001 gives smooth zoom feel with typical mousewheel steps.
+      const factor = Math.exp(ev.deltaY * 0.001);
+      this.fov = Math.min(MAX_FOV_RAD, Math.max(MIN_FOV_RAD, this.fov * factor));
+      (cam.frustum as Cesium.PerspectiveFrustum).fov = this.fov;
+    };
+    canvas.addEventListener("wheel", this.wheelListener, { passive: false });
+
+    this.unsubPreRender = this.viewer.scene.preRender.addEventListener(() => this.tick());
     this.tick();
   }
 
-  deactivate(preserveController = false): void {
+  deactivate(preserve = false): void {
     if (this.unsubPreRender) {
       this.unsubPreRender();
       this.unsubPreRender = null;
     }
-    if (this.savedCameraController && !preserveController) {
-      const controller = this.viewer.scene.screenSpaceCameraController;
-      controller.enableRotate = this.savedCameraController.rotate;
-      controller.enableTranslate = this.savedCameraController.translate;
-      controller.enableTilt = this.savedCameraController.tilt;
-      controller.enableZoom = this.savedCameraController.zoom;
-      controller.enableLook = this.savedCameraController.look;
+    if (this.wheelListener) {
+      const canvas = this.viewer.scene.canvas as HTMLCanvasElement;
+      canvas.removeEventListener("wheel", this.wheelListener);
+      this.wheelListener = null;
     }
-    this.savedCameraController = null;
-    if (this.savedCamera && !preserveController) {
+    if (this.savedController && !preserve) {
+      const controller = this.viewer.scene.screenSpaceCameraController;
+      controller.enableRotate = this.savedController.rotate;
+      controller.enableTranslate = this.savedController.translate;
+      controller.enableTilt = this.savedController.tilt;
+      controller.enableZoom = this.savedController.zoom;
+      controller.enableLook = this.savedController.look;
+    }
+    this.savedController = null;
+    if (this.savedCamera && !preserve) {
       const cam = this.viewer.scene.camera;
       cam.position = this.savedCamera.position;
       cam.direction = this.savedCamera.direction;
       cam.up = this.savedCamera.up;
       cam.right = this.savedCamera.right;
+      (cam.frustum as Cesium.PerspectiveFrustum).fov = this.savedCamera.fov;
     }
     this.savedCamera = null;
     this.noradId = null;
@@ -97,7 +129,6 @@ export class PovCamera {
     if (this.noradId == null) return;
     const snap = this.getSnapshot();
     if (!snap) return;
-    // Linear scan — one satellite per frame is fine even at 30k catalog.
     let i = -1;
     for (let k = 0; k < snap.count; k++) {
       if (snap.ids[k] === this.noradId) {
@@ -114,17 +145,14 @@ export class PovCamera {
     const vy = snap.ecefVel[i * 3 + 1];
     const vz = snap.ecefVel[i * 3 + 2];
 
-    // Nadir direction = -normalize(position).
     const rMag = Math.hypot(px, py, pz) || 1;
     const dirX = -px / rMag;
     const dirY = -py / rMag;
     const dirZ = -pz / rMag;
 
-    // Along-track direction = normalize(velocity), then orthogonalize to dir.
     let ax = vx;
     let ay = vy;
     let az = vz;
-    // Remove any radial component so "up" stays in the local horizontal plane.
     const alongDot = ax * dirX + ay * dirY + az * dirZ;
     ax -= alongDot * dirX;
     ay -= alongDot * dirY;
@@ -135,8 +163,6 @@ export class PovCamera {
     az /= aMag;
 
     const cam = this.viewer.scene.camera;
-    // Push camera 1 metre back along -velocity so the satellite itself is not
-    // clipped through and Cesium's own point is safely behind us.
     cam.setView({
       destination: new Cesium.Cartesian3(px - ax * 1, py - ay * 1, pz - az * 1),
       orientation: {
@@ -144,5 +170,8 @@ export class PovCamera {
         up: new Cesium.Cartesian3(ax, ay, az),
       },
     });
+    // setView resets frustum FOV to whatever was previously set on the camera
+    // — reapply our tracked value so wheel zoom sticks.
+    (cam.frustum as Cesium.PerspectiveFrustum).fov = this.fov;
   }
 }

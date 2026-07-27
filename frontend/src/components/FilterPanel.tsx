@@ -26,6 +26,10 @@ export function FilterPanel() {
   const setTrailMode = useStore((s) => s.setTrailMode);
   const heatmapOn = useStore((s) => s.heatmapOn);
   const setHeatmap = useStore((s) => s.setHeatmap);
+  const terminatorOn = useStore((s) => s.terminatorOn);
+  const setTerminator = useStore((s) => s.setTerminator);
+  const graticuleOn = useStore((s) => s.graticuleOn);
+  const setGraticule = useStore((s) => s.setGraticule);
 
   return (
     <aside className="spacemap-filter pointer-events-auto absolute left-4 top-20 z-10 max-h-[calc(100vh-6rem)] w-56 overflow-auto rounded-md border border-space-border bg-space-panel/85 p-3 font-mono text-xs backdrop-blur">
@@ -98,6 +102,24 @@ export function FilterPanel() {
           className="h-3 w-3 accent-space-accent"
         />
         <span>Density heatmap</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={terminatorOn}
+          onChange={(e) => setTerminator(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Solar terminator</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={graticuleOn}
+          onChange={(e) => setGraticule(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Lat / lon grid</span>
       </label>
     </aside>
   );

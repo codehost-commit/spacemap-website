@@ -12,9 +12,29 @@ export function HeaderHUD() {
   const paused = useStore((s) => s.simPaused);
 
   const [wallNow, setWallNow] = useState(() => Date.now());
+  const [fps, setFps] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setWallNow(Date.now()), 500);
     return () => clearInterval(id);
+  }, []);
+
+  // rAF-based FPS meter — count frames, publish once per second.
+  useEffect(() => {
+    let frames = 0;
+    let lastPublish = performance.now();
+    let raf = 0;
+    const tick = () => {
+      frames++;
+      const now = performance.now();
+      if (now - lastPublish >= 1000) {
+        setFps(Math.round((frames * 1000) / (now - lastPublish)));
+        frames = 0;
+        lastPublish = now;
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
   }, []);
 
   const drift = simTimeMs - wallNow;
@@ -41,6 +61,22 @@ export function HeaderHUD() {
         />
         <Stat label="Sim (UTC)" value={new Date(simTimeMs).toISOString().slice(11, 19)} />
         <Stat label="Δ vs now" value={driftLabel} />
+        <Stat
+          label="FPS"
+          value={
+            <span
+              className={
+                fps >= 55
+                  ? "text-emerald-400"
+                  : fps >= 30
+                    ? "text-space-warn"
+                    : "text-space-bad"
+              }
+            >
+              {fps || "—"}
+            </span>
+          }
+        />
         <div className="flex items-center gap-1.5">
           <span
             className={`h-2 w-2 rounded-full ${statusColor(status)}`}
@@ -53,7 +89,7 @@ export function HeaderHUD() {
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex flex-col leading-tight">
       <span className="text-[9px] uppercase tracking-widest text-space-dim">{label}</span>
