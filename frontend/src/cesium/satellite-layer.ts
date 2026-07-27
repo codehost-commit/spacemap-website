@@ -64,9 +64,6 @@ const BILLBOARD_ADD_BELOW_SQ = 25_000_000 ** 2;
 // Additions happen instantly because a missing primitive is a correctness bug;
 // deletions can wait so we don't churn the collection every frame.
 const BAND_CHECK_INTERVAL_MS = 500;
-const INTERPOLATION_INTERVAL_MS = 50;
-const MAX_INTERPOLATION_AHEAD_MS = 300;
-const MAX_INTERPOLATION_BEHIND_MS = 300;
 
 // Culling constants.
 const EARTH_R_M = 6_378_137;
@@ -88,16 +85,12 @@ export class SatelliteLayer {
   private readonly billboardClassById = new Map<number, number>();
   private readonly pointPosById = new Map<number, Float64Array>();
   private readonly billboardPosById = new Map<number, Float64Array>();
-  private readonly pointSnapIndexById = new Map<number, number>();
-  private readonly billboardSnapIndexById = new Map<number, number>();
   private hoveredId: number | null = null;
   private selectedId: number | null = null;
   private catchupCursor = 0;
   private prevSnapSimMs: number | null = null;
   private lastBandCheckMs = 0;
-  private lastInterpolationMs = 0;
   private generation = 0;
-  private latestSnap: PropagationSnapshot | null = null;
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -124,7 +117,6 @@ export class SatelliteLayer {
     highlightId: number | null,
     cameraEcef: Cesium.Cartesian3 | null,
   ): void {
-    this.latestSnap = snap;
     if (this.selectedId !== highlightId) {
       const prev = this.selectedId;
       this.selectedId = highlightId;
@@ -230,7 +222,6 @@ export class SatelliteLayer {
         this.pointIndex.delete(id);
         this.pointClassById.delete(id);
         this.pointPosById.delete(id);
-        this.pointSnapIndexById.delete(id);
         p = undefined;
       }
       if (!p && wantPoint) {
@@ -246,10 +237,8 @@ export class SatelliteLayer {
         this.pointIndex.set(id, p);
         this.pointClassById.set(id, cls);
         this.pointPosById.set(id, new Float64Array([sx, sy, sz]));
-        this.pointSnapIndexById.set(id, n);
         this.applyStyle(id);
       } else if (p) {
-        this.pointSnapIndexById.set(id, n);
         const prevPos = this.pointPosById.get(id);
         if (!prevPos || prevPos[0] !== sx || prevPos[1] !== sy || prevPos[2] !== sz) {
           p.position = this.scratch;
@@ -274,7 +263,6 @@ export class SatelliteLayer {
         this.billboardIndex.delete(id);
         this.billboardClassById.delete(id);
         this.billboardPosById.delete(id);
-        this.billboardSnapIndexById.delete(id);
         b = undefined;
       }
       if (!b && wantBillboard) {
@@ -292,10 +280,8 @@ export class SatelliteLayer {
         this.billboardIndex.set(id, b);
         this.billboardClassById.set(id, cls);
         this.billboardPosById.set(id, new Float64Array([sx, sy, sz]));
-        this.billboardSnapIndexById.set(id, n);
         this.applyStyle(id);
       } else if (b) {
-        this.billboardSnapIndexById.set(id, n);
         const prevPos = this.billboardPosById.get(id);
         if (!prevPos || prevPos[0] !== sx || prevPos[1] !== sy || prevPos[2] !== sz) {
           b.position = this.scratch;
@@ -327,7 +313,6 @@ export class SatelliteLayer {
         this.pointIndex.delete(id);
         this.pointClassById.delete(id);
         this.pointPosById.delete(id);
-        this.pointSnapIndexById.delete(id);
         this.seenGeneration.delete(id);
       }
     }
@@ -337,42 +322,9 @@ export class SatelliteLayer {
         this.billboardIndex.delete(id);
         this.billboardClassById.delete(id);
         this.billboardPosById.delete(id);
-        this.billboardSnapIndexById.delete(id);
         this.seenGeneration.delete(id);
       }
     }
-  }
-
-  tickInterpolation(simTimeMs: number): void {
-    const snap = this.latestSnap;
-    if (!snap) return;
-    const now = performance.now();
-    if (now - this.lastInterpolationMs < INTERPOLATION_INTERVAL_MS) return;
-    this.lastInterpolationMs = now;
-
-    const dtMs = Math.max(
-      -MAX_INTERPOLATION_BEHIND_MS,
-      Math.min(MAX_INTERPOLATION_AHEAD_MS, simTimeMs - snap.timeMs),
-    );
-    if (Math.abs(dtMs) < 1) return;
-    const dtSec = dtMs / 1000;
-
-    this.interpolateCollection(
-      this.pointIndex,
-      this.pointPosById,
-      this.pointSnapIndexById,
-      snap.ecefPos,
-      snap.ecefVel,
-      dtSec,
-    );
-    this.interpolateCollection(
-      this.billboardIndex,
-      this.billboardPosById,
-      this.billboardSnapIndexById,
-      snap.ecefPos,
-      snap.ecefVel,
-      dtSec,
-    );
   }
 
   positionOf(noradId: number): Cesium.Cartesian3 | null {
@@ -419,42 +371,8 @@ export class SatelliteLayer {
     this.billboardClassById.clear();
     this.pointPosById.clear();
     this.billboardPosById.clear();
-    this.pointSnapIndexById.clear();
-    this.billboardSnapIndexById.clear();
     this.catchupCursor = 0;
     this.prevSnapSimMs = null;
     this.lastBandCheckMs = 0;
-    this.lastInterpolationMs = 0;
-    this.latestSnap = null;
-  }
-
-  private interpolateCollection<T extends { position: Cesium.Cartesian3 }>(
-    index: Map<number, T>,
-    posById: Map<number, Float64Array>,
-    snapIndexById: Map<number, number>,
-    ecefPos: Float32Array,
-    ecefVel: Float32Array,
-    dtSec: number,
-  ): void {
-    for (const [id, primitive] of index) {
-      const snapIndex = snapIndexById.get(id);
-      if (snapIndex == null) continue;
-      const base = snapIndex * 3;
-      const x = ecefPos[base] + ecefVel[base] * dtSec;
-      const y = ecefPos[base + 1] + ecefVel[base + 1] * dtSec;
-      const z = ecefPos[base + 2] + ecefVel[base + 2] * dtSec;
-      const prev = posById.get(id);
-      if (prev && prev[0] === x && prev[1] === y && prev[2] === z) continue;
-      primitive.position.x = x;
-      primitive.position.y = y;
-      primitive.position.z = z;
-      if (prev) {
-        prev[0] = x;
-        prev[1] = y;
-        prev[2] = z;
-      } else {
-        posById.set(id, new Float64Array([x, y, z]));
-      }
-    }
   }
 }
