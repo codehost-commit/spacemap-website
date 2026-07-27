@@ -5,10 +5,11 @@ import { findInSnapshot } from "../state/snapshot-util.js";
 import { computeTelemetry } from "../simulation/client-telemetry.js";
 
 const ISS_NORAD = 25544;
-// NASA's public HD Earth-viewing / ISS livestream. If NASA rotates the URL
-// the panel still renders; the user can click through to YouTube.
+// ISS live YouTube embed. Autoplay works only when muted per browser policy;
+// controls are hidden for a clean panel — click through to youtube.com to
+// unmute or interact.
 const ISS_LIVE_EMBED =
-  "https://www.youtube.com/embed/H999s0P1Er0?autoplay=1&mute=1";
+  "https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0";
 
 /**
  * Floating ISS live-stream + telemetry panel. Uses the propagator snapshot
@@ -68,7 +69,9 @@ export function IssCamera() {
           title="ISS live stream"
           src={ISS_LIVE_EMBED}
           className="h-full w-full"
-          allow="autoplay; encrypted-media"
+          frameBorder={0}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerPolicy="strict-origin-when-cross-origin"
           allowFullScreen
         />
       </div>

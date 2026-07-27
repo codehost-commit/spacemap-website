@@ -26,6 +26,9 @@ export function OverlayToolbar() {
 
   return (
     <div className="pointer-events-auto absolute right-4 top-1/2 z-10 flex -translate-y-1/2 flex-col gap-2 backdrop-blur">
+      <button className={btn(openOverlays.has("leaderboard"))} onClick={() => toggleOverlay("leaderboard")} title="Global closest-pairs leaderboard">
+        ⚠
+      </button>
       <button className={btn(openOverlays.has("iss"))} onClick={() => toggleOverlay("iss")} title="ISS live camera">
         ISS
       </button>
