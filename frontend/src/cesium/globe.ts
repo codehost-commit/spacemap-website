@@ -46,6 +46,10 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
 
   viewer.clock.shouldAnimate = true;
   viewer.clock.multiplier = 1;
+  const controller = scene.screenSpaceCameraController;
+  controller.maximumMovementRatio = 0.08;
+  controller.inertiaSpin = 0.82;
+  controller.inertiaTranslate = 0.82;
 
   // Bloom — subtle glow on bright pixels (satellites, sun, bright stars).
   // Deliberately gentle: HDR mode + aggressive uniforms tonemap the base

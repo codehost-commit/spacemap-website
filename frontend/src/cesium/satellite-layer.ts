@@ -64,6 +64,10 @@ const BILLBOARD_ADD_BELOW_SQ = 25_000_000 ** 2;
 // Additions happen instantly because a missing primitive is a correctness bug;
 // deletions can wait so we don't churn the collection every frame.
 const BAND_CHECK_INTERVAL_MS = 500;
+const VIEW_MARGIN_RAD = 0.6;
+const VIEW_RELEASE_MARGIN_RAD = 0.9;
+const OFFSCREEN_NEAR_RESERVE_SQ = 12_000_000 ** 2;
+const HORIZON_PREWARM_FACTOR = 1.18;
 
 // Culling constants.
 const EARTH_R_M = 6_378_137;
@@ -115,7 +119,7 @@ export class SatelliteLayer {
     snap: PropagationSnapshot,
     filter: Set<OrbitClass>,
     highlightId: number | null,
-    cameraEcef: Cesium.Cartesian3 | null,
+    camera: Cesium.Camera | null,
   ): void {
     if (this.selectedId !== highlightId) {
       const prev = this.selectedId;
@@ -148,7 +152,13 @@ export class SatelliteLayer {
     let cy = 0;
     let cz = 0;
     let camTangentSq = 0;
-    if (cameraEcef) {
+    let dirX = 0;
+    let dirY = 0;
+    let dirZ = 0;
+    let activeConeDot = -1;
+    let releaseConeDot = -1;
+    if (camera) {
+      const cameraEcef = camera.positionWC;
       cx = cameraEcef.x;
       cy = cameraEcef.y;
       cz = cameraEcef.z;
@@ -157,6 +167,18 @@ export class SatelliteLayer {
         cameraCulling = true;
         camTangentSq = cMagSq - EARTH_R_SQ;
       }
+      const dir = Cesium.Cartesian3.normalize(camera.directionWC, new Cesium.Cartesian3());
+      dirX = dir.x;
+      dirY = dir.y;
+      dirZ = dir.z;
+      const frustum = camera.frustum as Cesium.PerspectiveFrustum;
+      const verticalHalfFov = (frustum.fov ?? Math.PI / 3) / 2;
+      const horizontalHalfFov = Math.atan(
+        Math.tan(verticalHalfFov) * (frustum.aspectRatio ?? 16 / 9),
+      );
+      const baseHalfAngle = Math.max(verticalHalfFov, horizontalHalfFov);
+      activeConeDot = Math.cos(Math.min(Math.PI - 0.01, baseHalfAngle + VIEW_MARGIN_RAD));
+      releaseConeDot = Math.cos(Math.min(Math.PI - 0.01, baseHalfAngle + VIEW_RELEASE_MARGIN_RAD));
     }
 
     // Band-check gating: additions happen every frame (correctness), removals
@@ -171,19 +193,21 @@ export class SatelliteLayer {
       const cls = orbitClass[n];
       if (!this.filterMask[cls]) continue;
       const id = ids[n];
-      this.seenGeneration.set(id, generation);
-
       const sx = ecefPos[n * 3];
       const sy = ecefPos[n * 3 + 1];
       const sz = ecefPos[n * 3 + 2];
+      const hadRenderable = this.pointIndex.has(id) || this.billboardIndex.has(id);
 
       // Visibility test.
       let visible = !cameraCulling;
+      let frontish = !cameraCulling;
       if (cameraCulling) {
         const dotCS = cx * sx + cy * sy + cz * sz;
         const sMagSq = sx * sx + sy * sy + sz * sz;
         const satTangentSq = sMagSq > EARTH_R_SQ ? sMagSq - EARTH_R_SQ : 0;
-        visible = dotCS > EARTH_R_SQ - Math.sqrt(camTangentSq * satTangentSq);
+        const horizonTerm = Math.sqrt(camTangentSq * satTangentSq);
+        visible = dotCS > EARTH_R_SQ - horizonTerm;
+        frontish = dotCS > EARTH_R_SQ - HORIZON_PREWARM_FACTOR * horizonTerm;
       }
       const inRolling = forceAll
         ? true
@@ -191,16 +215,29 @@ export class SatelliteLayer {
           ? n >= this.catchupCursor || n < catchupLo2
           : n >= this.catchupCursor && n < catchupHi;
       const alwaysUpdate = id === this.selectedId || id === this.hoveredId;
-      if (!visible && !inRolling && !alwaysUpdate) continue;
 
       // Camera-distance² for band decisions (cheap: 3 subs + 3 muls + 2 adds).
       let camDistSq = 0;
+      let inActiveCone = true;
+      let inReleaseCone = true;
       if (cameraCulling) {
         const dx = sx - cx;
         const dy = sy - cy;
         const dz = sz - cz;
         camDistSq = dx * dx + dy * dy + dz * dz;
+        const invDist = 1 / (Math.sqrt(camDistSq) || 1);
+        const viewDot = (dx * dirX + dy * dirY + dz * dirZ) * invDist;
+        inActiveCone = viewDot >= activeConeDot;
+        inReleaseCone = viewDot >= releaseConeDot;
       }
+      const nearReserve = cameraCulling && camDistSq <= OFFSCREEN_NEAR_RESERVE_SQ;
+      const shouldRender =
+        alwaysUpdate ||
+        nearReserve ||
+        (frontish && inActiveCone) ||
+        (hadRenderable && frontish && inReleaseCone);
+      if (!shouldRender) continue;
+      this.seenGeneration.set(id, generation);
 
       // Whether each primitive kind is "wanted" (i.e., inside the add band).
       // No-camera fallback: keep both (matches previous behaviour).
@@ -298,6 +335,8 @@ export class SatelliteLayer {
           this.billboardClassById.set(id, cls);
         }
       }
+
+      if (alwaysUpdate || inRolling || hadRenderable) this.applyStyle(id);
     }
 
     // Advance rolling cursor once per snapshot.

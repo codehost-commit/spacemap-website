@@ -182,7 +182,7 @@ export function GlobeCanvas() {
           s.snapshot,
           s.filter,
           s.selectedNoradId,
-          viewer.scene.camera.positionWC,
+          viewer.scene.camera,
         );
         trails.ingest(s.snapshot, s.filter);
         void heatmap.ingest(s.snapshot);
@@ -208,7 +208,7 @@ export function GlobeCanvas() {
             s.snapshot,
             s.filter,
             s.selectedNoradId,
-            viewer.scene.camera.positionWC,
+            viewer.scene.camera,
           );
           trails.ingest(s.snapshot, s.filter, { force: true });
         }
