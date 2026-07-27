@@ -102,10 +102,12 @@ export const useStore = create<StoreState>((set) => ({
   filter: new Set(defaultFilter),
   trailMode: "selected",
   heatmapOn: false,
-  terminatorOn: false,
-  graticuleOn: false,
-  countriesOn: false,
-  citiesOn: false,
+  // Cartographic overlays default ON — they read as "professional map" and
+  // users can flick them off from the filter panel if they want a clean look.
+  terminatorOn: true,
+  graticuleOn: true,
+  countriesOn: true,
+  citiesOn: true,
   imageryId: "arcgis",
 
   savedIds: new Set(),

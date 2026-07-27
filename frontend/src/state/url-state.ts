@@ -21,6 +21,10 @@ interface UrlState {
   f?: OrbitClass[];
   trail?: "off" | "selected" | "visible";
   heat?: boolean;
+  term?: boolean;
+  grid?: boolean;
+  ctry?: boolean;
+  city?: boolean;
 }
 
 const DEBOUNCE_MS = 400;
@@ -53,6 +57,10 @@ function applyFromUrl(): void {
   if (state.f) useStore.getState().setFilter(state.f);
   if (state.trail) useStore.getState().setTrailMode(state.trail);
   if (state.heat != null) useStore.getState().setHeatmap(state.heat);
+  if (state.term != null) useStore.getState().setTerminator(state.term);
+  if (state.grid != null) useStore.getState().setGraticule(state.grid);
+  if (state.ctry != null) useStore.getState().setCountries(state.ctry);
+  if (state.city != null) useStore.getState().setCities(state.city);
   if (state.t) getClockControls()?.jumpTo(new Date(state.t));
 }
 
@@ -68,6 +76,11 @@ function writeToUrl(): void {
   }
   if (s.trailMode !== "selected") parts.push(`trail=${s.trailMode}`);
   if (s.heatmapOn) parts.push(`heat=1`);
+  // Overlays default ON — only encode when the user has turned one off.
+  if (!s.terminatorOn) parts.push(`term=0`);
+  if (!s.graticuleOn) parts.push(`grid=0`);
+  if (!s.countriesOn) parts.push(`ctry=0`);
+  if (!s.citiesOn) parts.push(`city=0`);
   // Only pin sim time when it's noticeably off from wall clock (paused or scrubbed).
   if (Math.abs(s.simTimeMs - Date.now()) > 60_000 || s.simPaused) {
     parts.push(`t=${Math.round(s.simTimeMs)}`);
@@ -110,6 +123,18 @@ function parseHash(hash: string): UrlState {
         break;
       case "heat":
         out.heat = v === "1" || v === "true";
+        break;
+      case "term":
+        out.term = !(v === "0" || v === "false");
+        break;
+      case "grid":
+        out.grid = !(v === "0" || v === "false");
+        break;
+      case "ctry":
+        out.ctry = !(v === "0" || v === "false");
+        break;
+      case "city":
+        out.city = !(v === "0" || v === "false");
         break;
     }
   }

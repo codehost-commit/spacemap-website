@@ -42,17 +42,10 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
   viewer.clock.shouldAnimate = true;
   viewer.clock.multiplier = 1;
 
-  // Enable HDR framebuffer — required for bloom to look right on bright
-  // satellites without washing out the imagery. Falls back gracefully on
-  // devices where HDR isn't supported.
-  try {
-    (scene as unknown as { highDynamicRange: boolean }).highDynamicRange = true;
-  } catch {
-    /* older Cesium / unsupported context */
-  }
-
-  // Bloom + HDR — real starlight glow on satellites and the sun. The uniforms
-  // here favour selective glow (bright pixels only) so ocean/land don't blur.
+  // Bloom — subtle glow on bright pixels (satellites, sun, bright stars).
+  // Deliberately gentle: HDR mode + aggressive uniforms tonemap the base
+  // imagery to near-black, so we stick to the LDR default framebuffer and
+  // dial the bloom just past Cesium's defaults.
   try {
     const lib = Cesium.PostProcessStageLibrary as unknown as {
       createBloomStage?: () => Cesium.PostProcessStage;
@@ -61,15 +54,12 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
     if (bloom) {
       bloom.enabled = true;
       const u = bloom.uniforms as Record<string, unknown>;
-      // Bright-pixel threshold: only pixels above `brightness` bloom. Negative
-      // values effectively lower the threshold — good for our dim points.
-      u.contrast = 160;
-      u.brightness = -0.5;
+      u.contrast = 128;
+      u.brightness = -0.25;
       u.glowOnly = false;
-      // Gaussian blur radius controls how far the glow spreads.
-      u.delta = 1.6;
-      u.sigma = 3.4;
-      u.stepSize = 1.5;
+      u.delta = 1.2;
+      u.sigma = 2.4;
+      u.stepSize = 1.0;
       scene.postProcessStages.add(bloom);
     }
   } catch (err) {
