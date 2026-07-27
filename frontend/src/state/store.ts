@@ -9,6 +9,7 @@ import { ORBIT_CLASSES } from "@spacemap/shared";
 export type CatalogStatus = "idle" | "loading" | "ready" | "error";
 export type TrailMode = "off" | "selected" | "visible";
 export type CameraMode = "orbit" | "follow" | "pov";
+export type VisualLayerId = "graticule" | "labels" | "terminator";
 
 export interface SatelliteIndexEntry {
   noradId: number;
@@ -41,6 +42,7 @@ interface StoreState {
   savedIds: Set<number>;
   notifyEnabled: boolean;
   openOverlays: Set<OverlayId>;
+  visualLayers: Set<VisualLayerId>;
 
   simTimeMs: number;
   simMultiplier: number;
@@ -66,6 +68,7 @@ interface StoreState {
   setNotifyEnabled: (v: boolean) => void;
   toggleOverlay: (id: OverlayId) => void;
   setOverlay: (id: OverlayId, open: boolean) => void;
+  toggleVisualLayer: (id: VisualLayerId) => void;
 
   setClock: (timeMs: number, multiplier: number, paused: boolean) => void;
 }
@@ -96,6 +99,7 @@ export const useStore = create<StoreState>((set) => ({
   savedIds: new Set(),
   notifyEnabled: false,
   openOverlays: new Set(),
+  visualLayers: new Set<VisualLayerId>(["terminator"]),
 
   simTimeMs: Date.now(),
   simMultiplier: 1,
@@ -161,6 +165,13 @@ export const useStore = create<StoreState>((set) => ({
       if (open) next.add(id);
       else next.delete(id);
       return { openOverlays: next };
+    }),
+  toggleVisualLayer: (id) =>
+    set((s) => {
+      const next = new Set(s.visualLayers);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return { visualLayers: next };
     }),
 
   setClock: (simTimeMs, simMultiplier, simPaused) =>
