@@ -96,6 +96,9 @@ export function GlobeCanvas() {
     const onMoveEnd = viewer.camera.moveEnd.addEventListener(() => {
       cameraMoving = false;
     });
+    const interpTick = viewer.scene.preRender.addEventListener(() => {
+      layer.tickInterpolation(useStore.getState().simTimeMs);
+    });
 
     // Multi-pick: try the exact pixel first, then spiral outward through a
     // ring of nearby pixels so tiny satellite dots are actually catchable.
@@ -111,7 +114,6 @@ export function GlobeCanvas() {
     const HOVER_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
       [4, 0], [-4, 0], [0, 4], [0, -4],
-      [3, 3], [-3, 3], [3, -3], [-3, -3],
     ];
     const CLICK_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
@@ -158,7 +160,7 @@ export function GlobeCanvas() {
     // Hover — throttled multi-pick + layer.setHovered so the nearest satellite
     // gets a visible ring. Users get a preview of what will be selected on click.
     let lastHoverMs = 0;
-    const HOVER_INTERVAL_MS = 40;
+    const HOVER_INTERVAL_MS = 80;
     handler.setInputAction(
       (ev: { endPosition: Cesium.Cartesian2 }) => {
         if (cameraMoving) return;
@@ -260,6 +262,7 @@ export function GlobeCanvas() {
       unsubSnapshot();
       unsubUi();
       handler.destroy();
+      interpTick();
       onMoveStart();
       onMoveEnd();
       tileHandler();
