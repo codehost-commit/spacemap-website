@@ -137,12 +137,18 @@ export function GlobeCanvas() {
       Cesium.ScreenSpaceEventType.MOUSE_MOVE,
     );
 
-    // Snapshot → render loop.
+    // Snapshot → render loop. Camera position is passed into the layer so
+    // it can horizon-cull ~half the catalog on any given frame.
     let lastTick = -1;
     const unsubSnapshot = useStore.subscribe((s) => {
       if (s.snapshot && s.snapshotTick !== lastTick) {
         lastTick = s.snapshotTick;
-        layer.update(s.snapshot, s.filter, s.selectedNoradId);
+        layer.update(
+          s.snapshot,
+          s.filter,
+          s.selectedNoradId,
+          viewer.scene.camera.positionWC,
+        );
         trails.ingest(s.snapshot, s.filter);
         void heatmap.ingest(s.snapshot);
       }
@@ -163,7 +169,12 @@ export function GlobeCanvas() {
       if (s.filter !== lastFilterRef) {
         lastFilterRef = s.filter;
         if (s.snapshot) {
-          layer.update(s.snapshot, s.filter, s.selectedNoradId);
+          layer.update(
+            s.snapshot,
+            s.filter,
+            s.selectedNoradId,
+            viewer.scene.camera.positionWC,
+          );
           trails.ingest(s.snapshot, s.filter);
         }
       }

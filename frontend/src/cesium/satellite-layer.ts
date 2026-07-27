@@ -13,22 +13,52 @@ import { buildSatelliteIcon } from "./satellite-icon.js";
  *   • Billboard      — canvas-drawn satellite silhouette, fades in as the
  *                       camera approaches.
  *
- * Both live at exactly the same ECEF position and share the same `id` (NORAD),
- * so picking hits either one and returns the right satellite. `translucencyByDistance`
- * cross-fades them cleanly around the LOD threshold.
+ * ## Horizon culling
+ *
+ * The main-thread cost of a snapshot is dominated by the ~30 000 position
+ * writes we do into two Cesium collections. Roughly half the catalog is
+ * behind Earth from the camera's perspective at any moment, so we skip
+ * writes for those slots. Two-horizon test used:
+ *
+ *   dot(C, S) > R² − √((|C|²−R²) × (|S|²−R²))
+ *
+ * where C is the camera in ECEF, S is the satellite in ECEF, and R is
+ * Earth's radius. This is exactly the "the tangent cones from C and S
+ * touching the sphere overlap" condition — no arccosines, no branches.
+ *
+ * ## Back-side freshness
+ *
+ * A satellite that stays occluded isn't updated, so if the user rotates the
+ * globe suddenly, the far side would show stale positions from whenever they
+ * last rotated away. To keep everyone reasonably fresh:
+ *
+ * Each snapshot we refresh a *rolling batch* of catalog slots regardless of
+ * visibility. The batch size is chosen so we cover the full catalog within
+ * TARGET_STALE_SIM_MS of sim time — the batch grows automatically when the
+ * user time-warps at 100× or 1000× (since more sim time passes per wall
+ * snapshot). Time discontinuities (Now / Jump…) are detected via a large
+ * jump in snap.timeMs and trigger a one-shot full refresh so nothing is
+ * left frozen at a wildly wrong position.
  */
 
 // LOD cross-fade thresholds in metres (camera-to-primitive distance).
-// Billboards start bleeding in at 25 000 km (mid-zoom) so they're visible
-// well before you get "close", and completely take over inside 3 000 km.
-const CLOSE_M = 3_000_000;   // fully billboards
-const FAR_M = 25_000_000;    // fully points
+const CLOSE_M = 3_000_000;
+const FAR_M = 25_000_000;
 
 const POINT_FADE = new Cesium.NearFarScalar(CLOSE_M, 0, FAR_M, 1);
 const BILLBOARD_FADE = new Cesium.NearFarScalar(CLOSE_M, 1, FAR_M, 0);
-// Grow the billboard as the camera gets closer — mimics perspective. Below
-// 400 km distance we clamp so it doesn't fill the screen.
 const BILLBOARD_SCALE = new Cesium.NearFarScalar(400_000, 1.6, 20_000_000, 0.55);
+
+// Culling constants.
+const EARTH_R_M = 6_378_137;
+const EARTH_R_SQ = EARTH_R_M * EARTH_R_M;
+// How stale a culled satellite is allowed to become (in sim time). Chosen so
+// LEO satellites drift < ~40 km before their next update.
+const TARGET_STALE_SIM_MS = 5_000;
+// A sim-time jump larger than this triggers a one-shot full refresh — covers
+// "Now" and "Jump…" clock changes so we never wake up with the far side of
+// the sky frozen at yesterday's positions.
+const FULL_REFRESH_JUMP_SIM_MS = 30_000;
 
 export class SatelliteLayer {
   private readonly points: Cesium.PointPrimitiveCollection;
@@ -40,6 +70,8 @@ export class SatelliteLayer {
   private readonly scratch = new Cesium.Cartesian3();
   private hoveredId: number | null = null;
   private selectedId: number | null = null;
+  private catchupCursor = 0;
+  private prevSnapSimMs: number | null = null;
 
   constructor(scene: Cesium.Scene) {
     this.points = scene.primitives.add(new Cesium.PointPrimitiveCollection());
@@ -64,6 +96,7 @@ export class SatelliteLayer {
     snap: PropagationSnapshot,
     filter: Set<OrbitClass>,
     highlightId: number | null,
+    cameraEcef: Cesium.Cartesian3 | null,
   ): void {
     this.selectedId = highlightId;
     const filterMask = new Uint8Array(ORBIT_CLASSES.length);
@@ -71,20 +104,91 @@ export class SatelliteLayer {
       filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
     }
 
-    const seen = new Set<number>();
     const { count, ids, ecefPos, orbitClass } = snap;
+
+    // -- Rolling batch + full-refresh detection ---------------------------
+    const simDt = this.prevSnapSimMs != null
+      ? Math.abs(snap.timeMs - this.prevSnapSimMs)
+      : Number.POSITIVE_INFINITY;
+    this.prevSnapSimMs = snap.timeMs;
+
+    // A discontinuity in sim time (Now / Jump…) → refresh everyone once.
+    // First-ever snapshot also lands here because simDt starts at Infinity.
+    const forceAll = simDt > FULL_REFRESH_JUMP_SIM_MS;
+
+    // Rolling batch size scales with elapsed sim time so all sats get
+    // refreshed within TARGET_STALE_SIM_MS of sim time. Paused (simDt = 0)
+    // → 0 batch size (nothing's moving anyway).
+    const rollingCount = forceAll
+      ? count
+      : Math.min(count, Math.ceil((count * simDt) / TARGET_STALE_SIM_MS));
+
+    // Precompute the wrap-around window [catchupCursor, catchupCursor+rollingCount).
+    const catchupEnd = this.catchupCursor + rollingCount;
+    const catchupWraps = catchupEnd > count;
+    const catchupHi = catchupWraps ? count : catchupEnd;
+    const catchupLo2 = catchupWraps ? catchupEnd - count : 0;
+
+    // -- Culling precomputation -------------------------------------------
+    // Two-horizon test constants — undefined when camera unavailable or
+    // inside the sphere (in which case we simply update everything).
+    let cameraCulling = false;
+    let cx = 0;
+    let cy = 0;
+    let cz = 0;
+    let camTangentSq = 0;
+    if (cameraEcef) {
+      cx = cameraEcef.x;
+      cy = cameraEcef.y;
+      cz = cameraEcef.z;
+      const cMagSq = cx * cx + cy * cy + cz * cz;
+      if (cMagSq > EARTH_R_SQ * 1.001) {
+        cameraCulling = true;
+        camTangentSq = cMagSq - EARTH_R_SQ;
+      }
+    }
+
+    const seen = new Set<number>();
 
     for (let n = 0; n < count; n++) {
       const cls = orbitClass[n];
       if (!filterMask[cls]) continue;
       const id = ids[n];
       seen.add(id);
-      this.scratch.x = ecefPos[n * 3];
-      this.scratch.y = ecefPos[n * 3 + 1];
-      this.scratch.z = ecefPos[n * 3 + 2];
+
+      const sx = ecefPos[n * 3];
+      const sy = ecefPos[n * 3 + 1];
+      const sz = ecefPos[n * 3 + 2];
+
+      // Visibility test — is the satellite above the camera's horizon?
+      let visible = !cameraCulling;
+      if (cameraCulling) {
+        const dotCS = cx * sx + cy * sy + cz * sz;
+        const sMagSq = sx * sx + sy * sy + sz * sz;
+        const satTangentSq = sMagSq > EARTH_R_SQ ? sMagSq - EARTH_R_SQ : 0;
+        visible = dotCS > EARTH_R_SQ - Math.sqrt(camTangentSq * satTangentSq);
+      }
+
+      // Rolling batch — force update for a wrapping slice each snapshot so
+      // occluded satellites don't drift forever.
+      const inRolling = forceAll
+        ? true
+        : catchupWraps
+          ? n >= this.catchupCursor || n < catchupLo2
+          : n >= this.catchupCursor && n < catchupHi;
+
+      // Also always update selected/hovered so their styling is correct even
+      // when they're technically behind the horizon.
+      const alwaysUpdate = id === this.selectedId || id === this.hoveredId;
+
+      if (!visible && !inRolling && !alwaysUpdate) continue;
+
+      // -- Write path --------------------------------------------------
+      this.scratch.x = sx;
+      this.scratch.y = sy;
+      this.scratch.z = sz;
       const color = this.colorByClass[cls];
 
-      // --- Point (far LOD) ---
       let p = this.pointIndex.get(id);
       if (!p) {
         p = this.points.add({
@@ -102,7 +206,6 @@ export class SatelliteLayer {
         if (p.color !== color) p.color = color;
       }
 
-      // --- Billboard (close LOD) ---
       let b = this.billboardIndex.get(id);
       if (!b) {
         b = this.billboards.add({
@@ -125,7 +228,13 @@ export class SatelliteLayer {
       this.applyStyle(id);
     }
 
+    // Advance rolling cursor once per snapshot.
+    this.catchupCursor = catchupEnd % count;
+
     // Reap primitives that dropped out of the current filter / catalog.
+    // Note: we iterate `seen` from the loop above which added every slot the
+    // filter accepted (visible or not), so this only removes truly-dropped
+    // satellites — not culled ones.
     for (const [id, p] of this.pointIndex) {
       if (!seen.has(id)) {
         this.points.remove(p);
@@ -173,5 +282,7 @@ export class SatelliteLayer {
     this.billboards.removeAll();
     this.pointIndex.clear();
     this.billboardIndex.clear();
+    this.catchupCursor = 0;
+    this.prevSnapSimMs = null;
   }
 }
