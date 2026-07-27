@@ -8,8 +8,7 @@ import { ORBIT_CLASS_COLOR, classifyOrbit, type OrbitClass, type Tle } from "@sp
  * satellite came from and where it's going next.
  */
 export class OrbitTrail {
-  private glow: Cesium.Primitive | null = null;
-  private ribbon: Cesium.Primitive | null = null;
+  private polyline: Cesium.Primitive | null = null;
 
   constructor(private readonly scene: Cesium.Scene) {}
 
@@ -56,77 +55,31 @@ export class OrbitTrail {
     const color = Cesium.Color.fromCssColorString(ORBIT_CLASS_COLOR[orbitClass]);
     color.alpha = 0.92;
 
-    this.glow = this.scene.primitives.add(
+    this.polyline = this.scene.primitives.add(
       new Cesium.Primitive({
         geometryInstances: new Cesium.GeometryInstance({
           geometry: new Cesium.PolylineGeometry({
             positions,
-            width: 2.8,
+            width: 1.6,
             vertexFormat: Cesium.PolylineMaterialAppearance.VERTEX_FORMAT,
           }),
         }),
         appearance: new Cesium.PolylineMaterialAppearance({
           material: Cesium.Material.fromType("PolylineGlow", {
-            glowPower: 0.22,
-            taperPower: 0.3,
-            color: color.withAlpha(0.42),
+            glowPower: 0.25,
+            taperPower: 0.6,
+            color,
           }),
         }),
         asynchronous: false,
       }),
     );
-    this.ribbon = buildGradientRibbon(this.scene, positions, color);
   }
 
   clear(): void {
-    if (this.glow) this.scene.primitives.remove(this.glow);
-    if (this.ribbon) this.scene.primitives.remove(this.ribbon);
-    this.glow = null;
-    this.ribbon = null;
+    if (this.polyline) {
+      this.scene.primitives.remove(this.polyline);
+      this.polyline = null;
+    }
   }
-}
-
-function buildGradientRibbon(
-  scene: Cesium.Scene,
-  positions: Cesium.Cartesian3[],
-  color: Cesium.Color,
-): Cesium.Primitive {
-  const instances: Cesium.GeometryInstance[] = [];
-  const last = positions.length - 1;
-  for (let i = 0; i < last; i++) {
-    const startT = i / last;
-    const endT = (i + 1) / last;
-    const startColor = fadeColor(color, startT);
-    const endColor = fadeColor(color, endT);
-    instances.push(
-      new Cesium.GeometryInstance({
-        geometry: new Cesium.PolylineGeometry({
-          positions: [positions[i], positions[i + 1]],
-          width: 1.9,
-          colors: [startColor, endColor],
-          colorsPerVertex: true,
-          vertexFormat: Cesium.PolylineColorAppearance.VERTEX_FORMAT,
-        }),
-      }),
-    );
-  }
-
-  return scene.primitives.add(
-    new Cesium.Primitive({
-      geometryInstances: instances,
-      appearance: new Cesium.PolylineColorAppearance(),
-      asynchronous: false,
-    }),
-  );
-}
-
-function fadeColor(base: Cesium.Color, t: number): Cesium.Color {
-  const alpha = Math.pow(t, 1.45) * 0.95;
-  const intensity = 0.45 + 0.55 * t;
-  return new Cesium.Color(
-    Cesium.Math.lerp(0.08, base.red, intensity),
-    Cesium.Math.lerp(0.14, base.green, intensity),
-    Cesium.Math.lerp(0.2, base.blue, intensity),
-    alpha,
-  );
 }
