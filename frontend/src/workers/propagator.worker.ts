@@ -14,6 +14,7 @@ import { ORBIT_CLASS_INDEX, classifyOrbit } from "@spacemap/shared";
 
 type LoadMsg = { type: "load"; tles: Tle[] };
 type PropagateMsg = { type: "propagate"; timeMs: number };
+type PingMsg = { type: "ping"; nonce: number };
 type ConjunctionMsg = {
   type: "conjunction";
   requestId: number;
@@ -23,7 +24,7 @@ type ConjunctionMsg = {
   endMs: number;
   coarseStepSec: number;
 };
-type InMsg = LoadMsg | PropagateMsg | ConjunctionMsg;
+type InMsg = LoadMsg | PropagateMsg | PingMsg | ConjunctionMsg;
 
 interface Record {
   id: number;
@@ -38,6 +39,13 @@ self.onmessage = (ev: MessageEvent<InMsg>) => {
   if (msg.type === "load") load(msg.tles);
   else if (msg.type === "propagate") propagate(msg.timeMs);
   else if (msg.type === "conjunction") conjunction(msg);
+  else if (msg.type === "ping") {
+    (self as unknown as Worker).postMessage({
+      type: "pong",
+      nonce: msg.nonce,
+      catalogSize: records.length,
+    });
+  }
 };
 
 function load(tles: Tle[]): void {

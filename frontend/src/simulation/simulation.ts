@@ -17,6 +17,8 @@ export class Simulation {
     number,
     (result: ConjunctionResult | Error) => void
   >();
+  private nextPingNonce = 1;
+  private pingWaiters = new Map<number, (rtt: number) => void>();
 
   constructor(private readonly viewer: Cesium.Viewer) {
     this.worker = new PropagatorWorker();
@@ -64,6 +66,27 @@ export class Simulation {
     this.worker.terminate();
     this.conjunctionWaiters.clear();
   }
+
+  /** Round-trip ping to the propagator worker. Used by the diagnose runner. */
+  ping(): Promise<{ rttMs: number; catalogSize: number }> {
+    const nonce = this.nextPingNonce++;
+    const start = performance.now();
+    return new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        this.pingWaiters.delete(nonce);
+        reject(new Error("worker ping timed out"));
+      }, 5000);
+      // The handler stores the reply's catalog size on this closure so we
+      // can pass it out with the RTT.
+      this.pingCatalogTemp = 0;
+      this.pingWaiters.set(nonce, (endMs) => {
+        clearTimeout(timeout);
+        resolve({ rttMs: endMs - start, catalogSize: this.pingCatalogTemp });
+      });
+      this.worker.postMessage({ type: "ping", nonce });
+    });
+  }
+  private pingCatalogTemp = 0;
 
   /** Run a conjunction search between two satellites in the worker. */
   runConjunction(
@@ -154,6 +177,17 @@ export class Simulation {
         this.requestPropagation(
           Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
         );
+      }
+      return;
+    }
+
+    if (m.type === "pong") {
+      const r = msg as { type: "pong"; nonce: number; catalogSize: number };
+      const cb = this.pingWaiters.get(r.nonce);
+      if (cb) {
+        this.pingWaiters.delete(r.nonce);
+        this.pingCatalogTemp = r.catalogSize;
+        cb(performance.now());
       }
       return;
     }
