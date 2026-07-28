@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import emblemSrc from "../assets/brand-emblem.png";
 
 const NAV_LINKS = [
   { to: "/", label: "Home" },
+  { to: "/features", label: "Features" },
   { to: "/about", label: "About" },
   { to: "/contact", label: "Contact" },
 ];
@@ -12,13 +13,29 @@ const NAV_LINKS = [
 export function SiteHeader() {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
   // On the tracker page, use no header (tracker has its own HUD)
   const isTracker = pathname === "/tracker";
+
+  useEffect(() => {
+    if (isTracker) return;
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [isTracker]);
+
   if (isTracker) return null;
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50">
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
+        scrolled
+          ? "liquid-glass"
+          : ""
+      }`}
+    >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3 group">
@@ -67,7 +84,7 @@ export function SiteHeader() {
 
       {/* Mobile nav */}
       {mobileOpen && (
-        <div className="md:hidden border-t border-white/10 bg-[#06101a]/95 backdrop-blur-xl">
+        <div className="md:hidden border-t border-white/10 liquid-glass">
           <nav className="flex flex-col px-6 py-4 gap-1">
             {NAV_LINKS.map((link) => (
               <Link

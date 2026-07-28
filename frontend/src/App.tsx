@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SiteLayout } from "./components/SiteLayout.js";
 import { HomePage } from "./pages/HomePage.js";
+import { FeaturesPage } from "./pages/FeaturesPage.js";
 import { AboutPage } from "./pages/AboutPage.js";
 import { TrackerPage } from "./pages/TrackerPage.js";
 import { ContactPage } from "./pages/ContactPage.js";
@@ -14,6 +15,7 @@ export function App() {
       <Routes>
         <Route element={<SiteLayout />}>
           <Route path="/" element={<HomePage />} />
+          <Route path="/features" element={<FeaturesPage />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/tracker" element={<TrackerPage />} />

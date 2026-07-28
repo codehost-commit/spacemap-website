@@ -43,7 +43,7 @@ export function SiteFooter() {
             </h4>
             <ul className="space-y-3">
               <li><FooterLink to="/tracker">Tracker</FooterLink></li>
-              <li><FooterLink to="/#features">Features</FooterLink></li>
+              <li><FooterLink to="/features">Features</FooterLink></li>
             </ul>
           </div>
 

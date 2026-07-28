@@ -1,0 +1,41 @@
+declare module "lucide-react" {
+  import { FC, SVGAttributes } from "react";
+  interface IconProps extends SVGAttributes<SVGElement> {
+    size?: number | string;
+    strokeWidth?: number | string;
+  }
+  type Icon = FC<IconProps>;
+
+  export const Globe: Icon;
+  export const Satellite: Icon;
+  export const Search: Icon;
+  export const Activity: Icon;
+  export const Shield: Icon;
+  export const Clock: Icon;
+  export const Zap: Icon;
+  export const Eye: Icon;
+  export const MapPin: Icon;
+  export const Camera: Icon;
+  export const Layers: Icon;
+  export const BarChart3: Icon;
+  export const Rocket: Icon;
+  export const Radio: Icon;
+  export const Crosshair: Icon;
+  export const Timer: Icon;
+  export const Orbit: Icon;
+  export const SlidersHorizontal: Icon;
+  export const Menu: Icon;
+  export const X: Icon;
+  export const Send: Icon;
+  export const CheckCircle: Icon;
+  export const ArrowRight: Icon;
+  export const Star: Icon;
+  export const Users: Icon;
+  export const Code: Icon;
+  export const Heart: Icon;
+  export const ExternalLink: Icon;
+  export const ChevronRight: Icon;
+  export const Cpu: Icon;
+  export const ShieldCheck: Icon;
+  export const AlertTriangle: Icon;
+}
