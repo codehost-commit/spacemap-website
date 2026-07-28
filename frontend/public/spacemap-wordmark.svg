@@ -1,25 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 96" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 110" fill="none">
   <defs>
-    <linearGradient id="sweep" x1="18" y1="10" x2="86" y2="86" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#9fe8ff" />
-      <stop offset="100%" stop-color="#4da3ff" />
+    <linearGradient id="sweep" x1="12" y1="12" x2="100" y2="96" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#58d4ff" />
+      <stop offset="100%" stop-color="#1b84ff" />
     </linearGradient>
   </defs>
-  <g transform="translate(6 8)">
-    <circle cx="42" cy="41" r="34" fill="none" stroke="#1a2a3e" stroke-width="1.5" opacity="0.65" />
+  <g transform="translate(0 4)">
     <path
-      d="M63 16C56 10 47 7 36 7C21 7 11 16 11 28C11 42 23 47 38 50C51 53 59 56 59 66C59 77 49 85 34 85C23 85 14 81 8 74"
+      d="M96 19C83 10 67 6 47 6C25 6 10 18 10 37C10 57 26 66 49 72C69 77 83 82 83 96C83 111 69 121 46 121C28 121 14 114 4 103"
       fill="none"
       stroke="url(#sweep)"
-      stroke-width="9"
+      stroke-width="13"
       stroke-linecap="round"
       stroke-linejoin="round"
     />
-    <path d="M58 20C68 26 74 35 74 45C74 57 65 66 51 70" fill="none" stroke="#f0b85b" stroke-width="2.5" stroke-linecap="round" opacity="0.9" />
-    <circle cx="73" cy="45" r="4" fill="#f0b85b" />
-    <circle cx="74" cy="45" r="10" fill="none" stroke="#f0b85b" stroke-width="1.4" opacity="0.45" />
+    <path d="M18 86C36 61 55 42 93 18" fill="none" stroke="#dff7ff" stroke-width="5.5" stroke-linecap="round" opacity="0.95" />
+    <circle cx="54" cy="54" r="11" fill="#f3bd61" />
+    <circle cx="54" cy="54" r="18" fill="none" stroke="#f3bd61" stroke-width="1.6" opacity="0.35" />
+    <circle cx="15" cy="100" r="2.5" fill="#58d4ff" />
+    <circle cx="97" cy="17" r="3" fill="#f3bd61" />
   </g>
-  <text x="106" y="60" fill="#edf3fb" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="44" font-weight="600" letter-spacing="1.2">Space</text>
-  <text x="310" y="60" fill="#7fd8ff" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="44" font-weight="600" letter-spacing="1.2">Map</text>
-  <text x="107" y="80" fill="#7a93af" font-family="'JetBrains Mono', monospace" font-size="10" letter-spacing="3.2">LIVE ORBITAL INTELLIGENCE</text>
+  <text x="118" y="67" fill="#edf3fb" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="48" font-weight="600" letter-spacing="1.2">pace</text>
+  <text x="290" y="67" fill="#7fd8ff" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="48" font-weight="600" letter-spacing="1.2">Map</text>
 </svg>

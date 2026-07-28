@@ -1,20 +1,20 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="sweep" x1="12" y1="11" x2="48" y2="54" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#9fe8ff" />
-      <stop offset="100%" stop-color="#4da3ff" />
+    <linearGradient id="sweep" x1="10" y1="10" x2="52" y2="55" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#58d4ff" />
+      <stop offset="100%" stop-color="#1b84ff" />
     </linearGradient>
   </defs>
   <rect width="64" height="64" rx="16" fill="#08111d" />
-  <circle cx="31" cy="31" r="23" fill="none" stroke="#1b2c41" stroke-width="1.3" opacity="0.85" />
   <path
-    d="M46 14C41 10 34 8 27 8C17 8 10 15 10 24C10 34 19 38 30 41C40 43 46 45 46 53C46 61 38 67 28 67C19 67 12 63 7 58"
+    d="M52 12C44 7 34 5 23 5C12 5 5 13 5 23C5 34 14 39 26 42C38 45 46 48 46 56C46 65 38 72 25 72C16 72 8 68 2 62"
     fill="none"
     stroke="url(#sweep)"
-    stroke-width="5.8"
+    stroke-width="7.5"
     stroke-linecap="round"
     stroke-linejoin="round"
   />
-  <path d="M42 17C49 22 53 29 53 36C53 44 47 50 37 53" fill="none" stroke="#f0b85b" stroke-width="2.1" stroke-linecap="round" opacity="0.95" />
-  <circle cx="53" cy="36" r="3.2" fill="#f0b85b" />
+  <path d="M10 46C20 32 29 23 49 11" fill="none" stroke="#dff7ff" stroke-width="3.5" stroke-linecap="round" opacity="0.95" />
+  <circle cx="31" cy="31" r="7.5" fill="#f3bd61" />
+  <circle cx="31" cy="31" r="11.5" fill="none" stroke="#f3bd61" stroke-width="1.1" opacity="0.35" />
 </svg>

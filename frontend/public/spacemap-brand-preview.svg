@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 700" fill="none">
+  <rect width="1200" height="700" fill="#08111d" />
+  <rect x="50" y="48" width="1100" height="604" rx="28" fill="#0d1826" stroke="#22344a" />
+  <text x="88" y="110" fill="#8ea4be" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2">SPACEMAP BRAND PREVIEW</text>
+  <rect x="88" y="160" width="1024" height="144" rx="22" fill="#101c2b" stroke="#22344a" />
+  <image href="spacemap-wordmark.svg" x="118" y="184" width="430" height="88" />
+  <rect x="894" y="188" width="122" height="44" rx="22" fill="#0d1a28" stroke="#294457" />
+  <text x="925" y="216" fill="#8fe2ff" font-family="'JetBrains Mono', monospace" font-size="18" letter-spacing="2">ADMIN</text>
+  <rect x="118" y="330" width="360" height="160" rx="22" fill="#101c2b" stroke="#22344a" />
+  <text x="146" y="378" fill="#edf3fb" font-family="'JetBrains Mono', monospace" font-size="22">Locate me</text>
+  <rect x="88" y="520" width="170" height="92" rx="26" fill="#101c2b" stroke="#22344a" />
+  <image href="favicon.svg" x="109" y="541" width="50" height="50" />
+  <text x="178" y="575" fill="#edf3fb" font-family="'Space Grotesk', 'Inter', sans-serif" font-size="32" font-weight="600">Favicon</text>
+  <rect x="310" y="520" width="802" height="92" rx="26" fill="#101c2b" stroke="#22344a" />
+  <image href="spacemap-wordmark.svg" x="334" y="540" width="360" height="54" />
+</svg>

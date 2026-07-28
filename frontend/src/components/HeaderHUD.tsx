@@ -48,7 +48,7 @@ export function HeaderHUD() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
-      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[22rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/92 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[18.5rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/92 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <BrandMark compact />
           <button
