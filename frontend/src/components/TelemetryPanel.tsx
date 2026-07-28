@@ -43,7 +43,7 @@ export function TelemetryPanel() {
 
   if (selected == null) {
     return (
-      <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-28 z-10 w-[19.25rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-space-border bg-space-panel/92 p-4 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-[8.75rem] z-10 w-[19.25rem] max-w-[calc(100vw-2rem)] rounded-2xl border border-space-border bg-space-panel/92 p-4 text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <div className="text-space-dim">
           Click any satellite, or search by name / NORAD id.
         </div>
@@ -52,7 +52,7 @@ export function TelemetryPanel() {
   }
 
   return (
-    <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-28 z-10 flex max-h-[36vh] w-[19.25rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-space-border bg-space-panel/92 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+    <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-[8.75rem] z-10 flex w-[19.25rem] max-w-[calc(100vw-2rem)] flex-col rounded-2xl border border-space-border bg-space-panel/92 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <header className="flex items-start justify-between gap-2 border-b border-space-border px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
@@ -102,7 +102,7 @@ export function TelemetryPanel() {
         ))}
       </div>
 
-      <div className="overflow-auto">
+      <div>
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-4 font-mono text-xs">
           <Field label="Latitude" value={live ? fmt(live.latDeg, 3, "°") : "—"} />
           <Field label="Longitude" value={live ? fmt(live.lonDeg, 3, "°") : "—"} />
