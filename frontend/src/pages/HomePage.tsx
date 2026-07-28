@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { HeroGlobe } from "../components/HeroGlobe.js";
 import {
   Globe,
   Satellite,
@@ -98,40 +99,9 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Right: animated product showcase */}
+          {/* Right: animated 3D globe with satellite particles */}
           <div className="relative flex items-center justify-center">
-            {/* Glow behind image */}
-            <div className="absolute inset-0 rounded-full bg-[#4d96e8]/20 blur-[80px]" />
-
-            {/* Orbiting ring animations */}
-            <div className="absolute inset-[-20px] animate-[spin_30s_linear_infinite]">
-              <div className="absolute top-1/2 left-0 -translate-y-1/2 h-2.5 w-2.5 rounded-full bg-[#8ed8ff] shadow-[0_0_12px_#8ed8ff]" />
-            </div>
-            <div className="absolute inset-[-35px] animate-[spin_45s_linear_infinite_reverse]">
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-[#4d96e8] shadow-[0_0_10px_#4d96e8]" />
-              <div className="absolute bottom-0 left-1/2 -translate-x-1/2 h-2 w-2 rounded-full bg-[#a7e2ff] shadow-[0_0_10px_#a7e2ff]" />
-            </div>
-            <div className="absolute inset-[-50px] animate-[spin_60s_linear_infinite]">
-              <div className="absolute top-1/2 right-0 -translate-y-1/2 h-1.5 w-1.5 rounded-full bg-white/80 shadow-[0_0_8px_white]" />
-              <div className="absolute bottom-[15%] left-[10%] h-1.5 w-1.5 rounded-full bg-[#8ed8ff]/70 shadow-[0_0_8px_#8ed8ff]" />
-            </div>
-
-            {/* Orbit ring lines */}
-            <div className="absolute inset-[-20px] rounded-full border border-[#4d96e8]/20 animate-[spin_30s_linear_infinite]" />
-            <div className="absolute inset-[-35px] rounded-full border border-[#8ed8ff]/15 animate-[spin_45s_linear_infinite_reverse]" />
-            <div className="absolute inset-[-50px] rounded-full border border-white/10 animate-[spin_60s_linear_infinite]" />
-
-            {/* Product screenshot */}
-            <div className="relative w-full max-w-[520px] aspect-square rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl shadow-[#4d96e8]/20">
-              <img
-                src={import.meta.env.BASE_URL + "brand/tracker-hero.png"}
-                alt="SpaceMap Tracker showing Earth with thousands of tracked satellites"
-                className="h-full w-full object-cover animate-[slowZoom_40s_ease-in-out_infinite_alternate]"
-                draggable={false}
-              />
-              {/* Slight overlay for blend */}
-              <div className="absolute inset-0 bg-gradient-to-t from-[#06101a]/40 via-transparent to-transparent" />
-            </div>
+            <HeroGlobe className="w-full aspect-square max-w-[580px]" />
           </div>
         </div>
 

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import emblemSrc from "../assets/brand-emblem.png";
 
-const founderImg = "/brand/founder.jpeg";
+const founderImg = (import.meta.env.BASE_URL || "/") + "brand/founder.jpeg";
 
 const HOW_IT_WORKS = [
   {

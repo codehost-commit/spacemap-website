@@ -2,9 +2,10 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
 /**
- * Lightweight Three.js Earth globe for the hero section.
- * Renders a stylised sphere with orbit rings and animated satellite dots.
- * All orbits are kept tight so satellites never leave the viewport.
+ * Animated hero globe with ~3 000 orbiting satellite particles.
+ * Mimics the look of the real SpaceMap tracker: color-coded dots
+ * (red, pink, white, orange, cyan, green) swarming around Earth
+ * in LEO / MEO / GEO-like shells. Fully animated every frame.
  */
 export function HeroGlobe({ className }: { className?: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -13,9 +14,10 @@ export function HeroGlobe({ className }: { className?: string }) {
     const container = containerRef.current;
     if (!container) return;
 
+    /* ── renderer & scene ─────────────────────────────── */
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0.3, 3.8);
+    camera.position.set(0, 0.4, 3.6);
     camera.lookAt(0, 0, 0);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -23,143 +25,178 @@ export function HeroGlobe({ className }: { className?: string }) {
     renderer.setClearColor(0x000000, 0);
     container.appendChild(renderer.domElement);
 
-    // Earth sphere with procedural shader
+    /* ── Earth sphere (procedural ocean + land shader) ── */
     const earthGeo = new THREE.SphereGeometry(1, 64, 64);
     const earthMat = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
+        varying vec3 vPos;
+        void main(){
           vNormal = normalize(normalMatrix * normal);
-          vPosition = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
+          vPos    = position;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }`,
       fragmentShader: `
         varying vec3 vNormal;
-        varying vec3 vPosition;
-        void main() {
-          vec3 deepNavy = vec3(0.024, 0.063, 0.106);
-          vec3 midBlue = vec3(0.141, 0.361, 0.565);
-          vec3 accentBlue = vec3(0.557, 0.847, 1.0);
-          float fresnel = pow(1.0 - abs(dot(vNormal, vec3(0.0, 0.0, 1.0))), 2.5);
-          float lat = vPosition.y;
-          float lon = atan(vPosition.x, vPosition.z);
-          float landNoise = sin(lon * 3.0 + lat * 2.0) * cos(lat * 5.0 + lon * 4.0);
-          landNoise += sin(lon * 7.0 - lat * 3.0) * 0.5;
-          float landMask = smoothstep(0.1, 0.4, landNoise);
-          vec3 surface = mix(deepNavy * 1.5, midBlue * 0.8, landMask * 0.6);
-          vec3 rim = accentBlue * fresnel * 0.7;
-          float diffuse = max(dot(vNormal, normalize(vec3(1.0, 0.5, 1.0))), 0.0);
-          surface *= 0.4 + diffuse * 0.6;
-          gl_FragColor = vec4(surface + rim, 1.0);
-        }
-      `,
-      transparent: false,
+        varying vec3 vPos;
+        void main(){
+          float lat = vPos.y;
+          float lon = atan(vPos.x, vPos.z);
+          float n1  = sin(lon*3.0+lat*2.0)*cos(lat*5.0+lon*4.0);
+          float n2  = sin(lon*7.0-lat*3.0)*0.5;
+          float land = smoothstep(0.1, 0.4, n1+n2);
+
+          vec3 ocean = vec3(0.04,0.12,0.22);
+          vec3 green = vec3(0.08,0.18,0.10);
+          vec3 col   = mix(ocean, green, land*0.7);
+
+          float diff = max(dot(vNormal, normalize(vec3(1.0,0.5,1.0))),0.0);
+          col *= 0.35 + diff*0.65;
+
+          float fres = pow(1.0 - abs(dot(vNormal,vec3(0,0,1))), 2.5);
+          col += vec3(0.30,0.59,0.91) * fres * 0.55;
+
+          gl_FragColor = vec4(col,1.0);
+        }`,
     });
     const earth = new THREE.Mesh(earthGeo, earthMat);
     scene.add(earth);
 
-    // Atmosphere glow
-    const atmosGeo = new THREE.SphereGeometry(1.08, 64, 64);
+    /* ── atmosphere glow ──────────────────────────────── */
+    const atmosGeo = new THREE.SphereGeometry(1.12, 64, 64);
     const atmosMat = new THREE.ShaderMaterial({
       vertexShader: `
         varying vec3 vNormal;
-        void main() {
+        void main(){
           vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-      `,
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
+        }`,
       fragmentShader: `
         varying vec3 vNormal;
-        void main() {
-          float intensity = pow(0.65 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 2.0);
-          vec3 glowColor = vec3(0.302, 0.588, 0.91);
-          gl_FragColor = vec4(glowColor, intensity * 0.5);
-        }
-      `,
+        void main(){
+          float i = pow(0.62 - dot(vNormal, vec3(0,0,1)), 2.0);
+          gl_FragColor = vec4(0.30,0.59,0.91, i*0.45);
+        }`,
       transparent: true,
       side: THREE.BackSide,
       depthWrite: false,
     });
     scene.add(new THREE.Mesh(atmosGeo, atmosMat));
 
-    // Orbit rings (kept tight: 1.2 to 1.45 radius so they stay fully in frame)
-    const createOrbitRing = (
-      radius: number,
-      tiltX: number,
-      tiltZ: number,
-      color: number,
-      opacity: number
-    ) => {
-      const curve = new THREE.EllipseCurve(0, 0, radius, radius, 0, Math.PI * 2, false, 0);
-      const points = curve.getPoints(128);
-      const geo = new THREE.BufferGeometry().setFromPoints(
-        points.map((p) => new THREE.Vector3(p.x, 0, p.y))
-      );
-      const mat = new THREE.LineBasicMaterial({ color, transparent: true, opacity });
-      const ring = new THREE.Line(geo, mat);
-      ring.rotation.x = tiltX;
-      ring.rotation.z = tiltZ;
-      return ring;
+    /* ── satellite particles ──────────────────────────── */
+    const SAT_COUNT = 3000;
+
+    // Colors matching the real tracker
+    const palette = [
+      new THREE.Color(0.95, 0.20, 0.25), // red
+      new THREE.Color(0.95, 0.20, 0.25),
+      new THREE.Color(1.00, 0.45, 0.55), // pink
+      new THREE.Color(1.00, 0.45, 0.55),
+      new THREE.Color(1.00, 0.70, 0.30), // orange
+      new THREE.Color(1.00, 1.00, 1.00), // white
+      new THREE.Color(1.00, 1.00, 1.00),
+      new THREE.Color(0.30, 0.85, 1.00), // cyan
+      new THREE.Color(0.20, 0.80, 0.35), // green
+      new THREE.Color(0.30, 0.30, 1.00), // blue
+    ];
+
+    // Per-satellite orbital parameters
+    const orbitR   = new Float32Array(SAT_COUNT);
+    const incl     = new Float32Array(SAT_COUNT);
+    const raan     = new Float32Array(SAT_COUNT);
+    const phase    = new Float32Array(SAT_COUNT);
+    const spd      = new Float32Array(SAT_COUNT);
+
+    const positions = new Float32Array(SAT_COUNT * 3);
+    const colors    = new Float32Array(SAT_COUNT * 3);
+    const sizes     = new Float32Array(SAT_COUNT);
+
+    for (let i = 0; i < SAT_COUNT; i++) {
+      const bucket = Math.random();
+      if (bucket < 0.70) {
+        orbitR[i] = 1.08 + Math.random() * 0.35;           // LEO
+      } else if (bucket < 0.85) {
+        orbitR[i] = 1.50 + Math.random() * 0.30;           // MEO
+      } else if (bucket < 0.95) {
+        orbitR[i] = 1.85 + Math.random() * 0.08;           // GEO
+      } else {
+        orbitR[i] = 1.20 + Math.random() * 0.80;           // HEO
+      }
+
+      // Inclination
+      if (bucket >= 0.85 && bucket < 0.95) {
+        incl[i] = (Math.random() * 15) * Math.PI / 180;    // GEO near-equatorial
+      } else {
+        incl[i] = (20 + Math.random() * 80) * Math.PI / 180;
+      }
+      if (Math.random() > 0.5) incl[i] = Math.PI - incl[i];
+
+      raan[i]  = Math.random() * Math.PI * 2;
+      phase[i] = Math.random() * Math.PI * 2;
+      spd[i]   = (0.15 + Math.random() * 0.15) / Math.pow(orbitR[i], 1.5);
+
+      const c = palette[Math.floor(Math.random() * palette.length)];
+      colors[i * 3]     = c.r;
+      colors[i * 3 + 1] = c.g;
+      colors[i * 3 + 2] = c.b;
+
+      sizes[i] = 2.0 + Math.random() * 2.5;
+    }
+
+    const satGeo = new THREE.BufferGeometry();
+    satGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+    satGeo.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
+    satGeo.setAttribute("size",     new THREE.BufferAttribute(sizes, 1));
+
+    const satMat = new THREE.ShaderMaterial({
+      vertexShader: `
+        attribute float size;
+        varying vec3 vColor;
+        void main(){
+          vColor = color;
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = size * (300.0 / -mv.z);
+          gl_Position  = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        varying vec3 vColor;
+        void main(){
+          float d = length(gl_PointCoord - 0.5) * 2.0;
+          if(d > 1.0) discard;
+          float alpha = 1.0 - smoothstep(0.0, 1.0, d);
+          vec3 col = vColor + vec3(0.3) * (1.0 - d);
+          gl_FragColor = vec4(col, alpha * 0.85);
+        }`,
+      transparent: true,
+      depthWrite: false,
+      vertexColors: true,
+    });
+
+    const satPoints = new THREE.Points(satGeo, satMat);
+    scene.add(satPoints);
+
+    /* ── faint orbit guide rings ──────────────────────── */
+    const makeRing = (r: number, col: number, opacity: number) => {
+      const pts: THREE.Vector3[] = [];
+      for (let a = 0; a <= 128; a++) {
+        const t = (a / 128) * Math.PI * 2;
+        pts.push(new THREE.Vector3(r * Math.cos(t), 0, r * Math.sin(t)));
+      }
+      const g = new THREE.BufferGeometry().setFromPoints(pts);
+      const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity });
+      return new THREE.Line(g, m);
     };
 
-    const ring1 = createOrbitRing(1.2, Math.PI * 0.35, -0.2, 0x4d96e8, 0.5);
-    const ring2 = createOrbitRing(1.32, Math.PI * 0.42, 0.15, 0x8ed8ff, 0.35);
-    const ring3 = createOrbitRing(1.45, Math.PI * 0.28, -0.35, 0xa7e2ff, 0.2);
-    scene.add(ring1, ring2, ring3);
+    const geoRing = makeRing(1.89, 0xccaa33, 0.35);
+    geoRing.rotation.x = Math.PI * 0.08;
+    scene.add(geoRing);
 
-    // Multiple satellite dots on each orbit
-    const satGeo = new THREE.SphereGeometry(0.025, 8, 8);
-    interface SatDot {
-      mesh: THREE.Mesh;
-      radius: number;
-      tiltX: number;
-      tiltZ: number;
-      speed: number;
-      offset: number;
-    }
+    const leoRing = makeRing(1.30, 0x4d96e8, 0.12);
+    leoRing.rotation.x = Math.PI * 0.45;
+    leoRing.rotation.z = -0.2;
+    scene.add(leoRing);
 
-    const satellites: SatDot[] = [];
-    const orbitConfigs = [
-      { radius: 1.2, tiltX: Math.PI * 0.35, tiltZ: -0.2, color: 0x8ed8ff },
-      { radius: 1.32, tiltX: Math.PI * 0.42, tiltZ: 0.15, color: 0xa7e2ff },
-      { radius: 1.45, tiltX: Math.PI * 0.28, tiltZ: -0.35, color: 0x4d96e8 },
-    ];
-    // 3 sats per orbit, evenly spaced
-    for (const orbit of orbitConfigs) {
-      for (let j = 0; j < 3; j++) {
-        const mat = new THREE.MeshBasicMaterial({ color: orbit.color });
-        const mesh = new THREE.Mesh(satGeo, mat);
-        scene.add(mesh);
-        satellites.push({
-          mesh,
-          radius: orbit.radius,
-          tiltX: orbit.tiltX,
-          tiltZ: orbit.tiltZ,
-          speed: 0.3 + Math.random() * 0.25,
-          offset: (j / 3) * Math.PI * 2,
-        });
-      }
-    }
-
-    // Grid dots on the globe surface
-    const dotGeo = new THREE.SphereGeometry(0.008, 6, 6);
-    const dotMat = new THREE.MeshBasicMaterial({ color: 0x8ed8ff, transparent: true, opacity: 0.4 });
-    for (let lat = -80; lat <= 80; lat += 20) {
-      for (let lon = 0; lon < 360; lon += 20) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = lon * (Math.PI / 180);
-        const x = 1.005 * Math.sin(phi) * Math.cos(theta);
-        const y = 1.005 * Math.cos(phi);
-        const z = 1.005 * Math.sin(phi) * Math.sin(theta);
-        const dot = new THREE.Mesh(dotGeo, dotMat);
-        dot.position.set(x, y, z);
-        earth.add(dot);
-      }
-    }
-
-    // Resize handler
+    /* ── resize ───────────────────────────────────────── */
     const onResize = () => {
       const { width, height } = container.getBoundingClientRect();
       if (width === 0 || height === 0) return;
@@ -167,49 +204,63 @@ export function HeroGlobe({ className }: { className?: string }) {
       camera.updateProjectionMatrix();
       renderer.setSize(width, height);
     };
-    const resizeObserver = new ResizeObserver(onResize);
-    resizeObserver.observe(container);
+    const ro = new ResizeObserver(onResize);
+    ro.observe(container);
     onResize();
 
-    // Z-axis vector reused each frame
-    const zAxis = new THREE.Vector3(0, 0, 1);
-
-    // Animation loop
+    /* ── animation loop ───────────────────────────────── */
     let raf = 0;
+    const _v  = new THREE.Vector3();
+    const _q1 = new THREE.Quaternion();
+    const _q2 = new THREE.Quaternion();
+    const _xA = new THREE.Vector3(1, 0, 0);
+    const _yA = new THREE.Vector3(0, 1, 0);
+
     const animate = () => {
       raf = requestAnimationFrame(animate);
       const t = performance.now() * 0.001;
 
-      earth.rotation.y = t * 0.08;
+      earth.rotation.y = t * 0.06;
+      geoRing.rotation.y = t * 0.02;
+      leoRing.rotation.y = t * 0.03;
 
-      ring1.rotation.y = t * 0.1;
-      ring2.rotation.y = t * -0.07;
-      ring3.rotation.y = t * 0.04;
+      // Update satellite positions every frame
+      const pos = satGeo.attributes.position as THREE.BufferAttribute;
+      for (let i = 0; i < SAT_COUNT; i++) {
+        const angle = phase[i] + t * spd[i];
+        const r = orbitR[i];
 
-      // Animate each satellite along its orbit
-      for (const sat of satellites) {
-        const angle = t * sat.speed + sat.offset;
-        sat.mesh.position.set(
-          sat.radius * Math.cos(angle),
-          sat.radius * Math.sin(angle) * Math.sin(sat.tiltX),
-          sat.radius * Math.sin(angle) * Math.cos(sat.tiltX)
-        );
-        sat.mesh.position.applyAxisAngle(zAxis, sat.tiltZ);
+        _v.set(r * Math.cos(angle), 0, r * Math.sin(angle));
+
+        _q1.setFromAxisAngle(_xA, incl[i]);
+        _q2.setFromAxisAngle(_yA, raan[i]);
+        _q2.multiply(_q1);
+        _v.applyQuaternion(_q2);
+
+        pos.array[i * 3]     = _v.x;
+        pos.array[i * 3 + 1] = _v.y;
+        pos.array[i * 3 + 2] = _v.z;
       }
+      pos.needsUpdate = true;
 
       renderer.render(scene, camera);
     };
     animate();
 
+    /* ── cleanup ──────────────────────────────────────── */
     return () => {
       cancelAnimationFrame(raf);
-      resizeObserver.disconnect();
+      ro.disconnect();
       renderer.dispose();
-      container.removeChild(renderer.domElement);
+      if (renderer.domElement.parentNode) {
+        container.removeChild(renderer.domElement);
+      }
       earthGeo.dispose();
       earthMat.dispose();
       atmosGeo.dispose();
       atmosMat.dispose();
+      satGeo.dispose();
+      satMat.dispose();
     };
   }, []);
 
