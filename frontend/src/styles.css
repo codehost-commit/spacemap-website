@@ -17,8 +17,9 @@ body {
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
   background-image:
-    radial-gradient(circle at top left, rgba(127, 216, 255, 0.08), transparent 28%),
-    radial-gradient(circle at top right, rgba(246, 197, 107, 0.06), transparent 22%);
+    radial-gradient(circle at top left, rgba(142, 216, 255, 0.1), transparent 24%),
+    radial-gradient(circle at top right, rgba(216, 179, 106, 0.08), transparent 20%),
+    linear-gradient(180deg, #081420 0%, #06101a 42%, #050c14 100%);
 }
 
 .spacemap-brand {
@@ -27,30 +28,20 @@ body {
   min-width: 0;
 }
 
-.spacemap-brand-lockup {
-  width: 11.75rem;
+.spacemap-wordmark-image {
+  width: 13.4rem;
   height: auto;
-  overflow: visible;
-  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.18));
+  display: block;
+  user-select: none;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.18));
 }
 
-.spacemap-brand-compact .spacemap-brand-lockup {
-  width: 10.9rem;
-}
-
-.spacemap-wordmark-text {
-  font-family: theme("fontFamily.sans");
-  font-size: 48px;
-  font-weight: 600;
-  letter-spacing: 0.025em;
-}
-
-.spacemap-wordmark-main {
-  fill: #edf3fb;
-}
-
-.spacemap-wordmark-map {
-  fill: theme("colors.space.accent");
+.spacemap-brand-emblem {
+  width: 5rem;
+  height: auto;
+  display: block;
+  user-select: none;
+  filter: drop-shadow(0 10px 22px rgba(0, 0, 0, 0.2));
 }
 
 .cesium-container {
@@ -119,8 +110,11 @@ body {
     width: auto !important;
     max-width: calc(100vw - 1rem);
   }
-  .spacemap-brand-lockup {
-    width: 9.8rem;
+  .spacemap-wordmark-image {
+    width: 10.6rem;
+  }
+  .spacemap-brand-emblem {
+    width: 4.25rem;
   }
   /* Time controls wrap onto multiple rows if needed. */
   .spacemap-timecontrols {
