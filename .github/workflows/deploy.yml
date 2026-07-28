@@ -37,18 +37,12 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
-      - name: Derive base URL from repo name
-        id: base
-        run: |
-          REPO_NAME="${GITHUB_REPOSITORY##*/}"
-          echo "base=/${REPO_NAME}/" >> "$GITHUB_OUTPUT"
-
       - name: Typecheck
         run: npm run typecheck
 
       - name: Build frontend
         env:
-          VITE_BASE_URL: ${{ steps.base.outputs.base }}
+          VITE_BASE_URL: /
         run: npm run build -w frontend
 
       - name: Fetch TLE snapshot for bundling
