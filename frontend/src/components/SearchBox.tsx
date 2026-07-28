@@ -39,7 +39,7 @@ export function SearchBox() {
   };
 
   return (
-    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-4 z-20 w-96 -translate-x-1/2 font-mono text-xs">
+    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-4 z-20 w-[26rem] max-w-[calc(100vw-22rem)] -translate-x-1/2 font-mono text-xs">
       <input
         type="text"
         value={q}
@@ -49,15 +49,15 @@ export function SearchBox() {
         }}
         onFocus={() => setOpen(true)}
         placeholder="Search satellite name or NORAD id…"
-        className="w-full rounded-md border border-space-border bg-space-panel/90 px-3 py-2 text-space-text placeholder:text-space-dim focus:border-space-accent focus:outline-none"
+        className="w-full rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 text-[13px] text-space-text shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl placeholder:text-space-dim/90 focus:border-space-accent focus:outline-none focus:ring-1 focus:ring-space-accent/30"
       />
       {open && results.length > 0 && (
-        <ul className="mt-1 max-h-80 overflow-auto rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
+        <ul className="mt-2 max-h-80 overflow-auto rounded-2xl border border-space-border bg-space-panel/95 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
           {results.map((r) => (
             <li key={r.noradId}>
               <button
                 onClick={() => focus(r.noradId, r.name)}
-                className="flex w-full items-center justify-between px-3 py-1.5 text-left hover:bg-white/5"
+                className="flex w-full items-center justify-between px-4 py-2 text-left hover:bg-white/5"
               >
                 <span className="truncate text-space-text">{r.name}</span>
                 <span className="ml-2 shrink-0 text-space-dim">#{r.noradId}</span>

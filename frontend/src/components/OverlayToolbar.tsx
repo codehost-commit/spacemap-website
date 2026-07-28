@@ -22,7 +22,7 @@ export function OverlayToolbar() {
   };
 
   return (
-    <div className="spacemap-toolbar pointer-events-auto absolute right-4 top-1/2 z-10 flex w-32 -translate-y-1/2 flex-col gap-1.5">
+    <div className="spacemap-toolbar pointer-events-auto absolute right-4 top-1/2 z-20 flex w-32 -translate-y-1/2 flex-col gap-2.5">
       <ToolbarButton
         icon="⚠"
         label="Risks"
@@ -86,7 +86,7 @@ function ToolbarButton({
     <button
       onClick={onClick}
       title={title}
-      className={`flex h-9 w-full items-center gap-2 rounded-md border px-2 font-mono text-[11px] backdrop-blur transition ${
+      className={`flex h-10 w-full items-center gap-2 rounded-2xl border px-3 font-mono text-[11px] shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition ${
         active
           ? "border-space-accent bg-space-accent/15 text-space-accent"
           : "border-space-border bg-space-panel/85 text-space-text hover:border-space-accent/60 hover:text-space-accent"

@@ -29,7 +29,7 @@ body {
 }
 
 .spacemap-wordmark-image {
-  width: 13.4rem;
+  width: 14rem;
   height: auto;
   display: block;
   user-select: none;
@@ -72,7 +72,7 @@ body {
     width: auto !important;
     max-width: none !important;
     transform: none !important;
-    top: 3.75rem !important;
+    top: 4.35rem !important;
   }
   /* Filter panel becomes a slim strip on the left. */
   .spacemap-filter {
@@ -111,7 +111,7 @@ body {
     max-width: calc(100vw - 1rem);
   }
   .spacemap-wordmark-image {
-    width: 10.6rem;
+    width: 11.2rem;
   }
   .spacemap-brand-emblem {
     width: 4.25rem;

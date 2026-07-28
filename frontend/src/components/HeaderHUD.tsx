@@ -48,7 +48,7 @@ export function HeaderHUD() {
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
-      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[18.5rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/92 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19.25rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 shadow-[0_24px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <BrandMark compact />
           <button
@@ -57,7 +57,7 @@ export function HeaderHUD() {
               useStore.getState().setAdminOpen(true);
             }}
             title="Admin console (developer)"
-            className="rounded-full border border-[#294457] bg-[#0d1a28] px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[#8fe2ff] transition hover:border-[#4e708d] hover:text-[#ccefff]"
+            className="rounded-full border border-[#345066] bg-[#101d2a] px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[#a7e2ff] transition hover:border-[#55748f] hover:text-[#eef7ff]"
           >
             ADMIN
           </button>
@@ -65,7 +65,7 @@ export function HeaderHUD() {
         <LocateButton />
       </div>
 
-      <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 font-mono text-xs backdrop-blur">
+      <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <Stat label="Catalog" value={catalogSize.toLocaleString()} />
         <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
         <Stat

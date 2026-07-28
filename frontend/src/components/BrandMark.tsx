@@ -1,3 +1,6 @@
+import wordmarkSrc from "../assets/brand-wordmark.png";
+import emblemSrc from "../assets/brand-emblem.png";
+
 type BrandMarkProps = {
   compact?: boolean;
 };
@@ -7,7 +10,7 @@ export function BrandMark({ compact = false }: BrandMarkProps) {
     <div className={`spacemap-brand ${compact ? "spacemap-brand-compact" : ""}`}>
       <img
         className="spacemap-wordmark-image"
-        src="/brand/wordmark-1.png"
+        src={wordmarkSrc}
         alt="SpaceMap"
         draggable={false}
       />
@@ -19,7 +22,7 @@ export function BrandEmblem() {
   return (
     <img
       className="spacemap-brand-emblem"
-      src="/brand/emblem-2.png"
+      src={emblemSrc}
       alt="SpaceMap emblem"
       draggable={false}
     />
