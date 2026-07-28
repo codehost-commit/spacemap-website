@@ -1,12 +1,12 @@
-import * as satellite from "satellite.js";
+import * as satellite from 'satellite.js';
 import {
   classifyOrbit,
   type OrbitalElements,
   type SatelliteState,
   type SatelliteTelemetry,
   type Tle,
-} from "@spacemap/shared";
-import type { TleCatalog } from "../tle/catalog.js";
+} from '@spacemap/shared';
+import type { TleCatalog } from '../tle/catalog.js';
 
 interface Record {
   tle: Tle;
@@ -91,7 +91,7 @@ export class Propagator {
     timeMs: number,
   ): SatelliteState | null {
     const pv = satellite.propagate(rec.satrec, date);
-    if (!pv || typeof pv.position === "boolean" || typeof pv.velocity === "boolean") {
+    if (!pv || typeof pv.position === 'boolean' || typeof pv.velocity === 'boolean') {
       return null;
     }
     const posEci = pv.position;
@@ -181,11 +181,7 @@ function isSunlit(state: SatelliteState, date: Date): boolean {
   const dot = (x * sun.x + y * sun.y + z * sun.z) / r;
   if (dot >= 0) return true;
   // Behind Earth relative to sun — check if outside Earth's cylindrical shadow.
-  const cross = Math.hypot(
-    y * sun.z - z * sun.y,
-    z * sun.x - x * sun.z,
-    x * sun.y - y * sun.x,
-  );
+  const cross = Math.hypot(y * sun.z - z * sun.y, z * sun.x - x * sun.z, x * sun.y - y * sun.x);
   return cross > 6378.137;
 }
 

@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Star field rendered on top of the Cesium skybox. Two data paths:
@@ -22,27 +22,33 @@ interface StarSeed {
   rgb: [number, number, number];
 }
 
-const NAMED_STARS: Array<{ name: string; raH: number; decDeg: number; mag: number; rgb: [number, number, number] }> = [
-  { name: "Sirius", raH: 6.7525, decDeg: -16.7161, mag: -1.46, rgb: [1.0, 1.0, 1.0] },
-  { name: "Canopus", raH: 6.3992, decDeg: -52.6957, mag: -0.72, rgb: [1.0, 0.98, 0.9] },
-  { name: "Arcturus", raH: 14.2612, decDeg: 19.1824, mag: -0.05, rgb: [1.0, 0.85, 0.6] },
-  { name: "Rigil Kentaurus", raH: 14.6599, decDeg: -60.8354, mag: -0.01, rgb: [1.0, 0.95, 0.85] },
-  { name: "Vega", raH: 18.6156, decDeg: 38.7837, mag: 0.03, rgb: [0.85, 0.9, 1.0] },
-  { name: "Capella", raH: 5.2782, decDeg: 45.998, mag: 0.08, rgb: [1.0, 0.95, 0.75] },
-  { name: "Rigel", raH: 5.2423, decDeg: -8.2016, mag: 0.13, rgb: [0.7, 0.8, 1.0] },
-  { name: "Procyon", raH: 7.6551, decDeg: 5.225, mag: 0.34, rgb: [1.0, 1.0, 0.95] },
-  { name: "Achernar", raH: 1.6286, decDeg: -57.2367, mag: 0.46, rgb: [0.6, 0.75, 1.0] },
-  { name: "Betelgeuse", raH: 5.9195, decDeg: 7.407, mag: 0.42, rgb: [1.0, 0.6, 0.4] },
-  { name: "Altair", raH: 19.8464, decDeg: 8.8683, mag: 0.77, rgb: [1.0, 0.98, 0.95] },
-  { name: "Aldebaran", raH: 4.5987, decDeg: 16.5093, mag: 0.85, rgb: [1.0, 0.7, 0.5] },
-  { name: "Antares", raH: 16.4901, decDeg: -26.4319, mag: 1.09, rgb: [1.0, 0.55, 0.4] },
-  { name: "Spica", raH: 13.4199, decDeg: -11.1614, mag: 1.04, rgb: [0.65, 0.75, 1.0] },
-  { name: "Pollux", raH: 7.7553, decDeg: 28.0262, mag: 1.14, rgb: [1.0, 0.85, 0.6] },
-  { name: "Fomalhaut", raH: 22.9608, decDeg: -29.622, mag: 1.16, rgb: [1.0, 0.98, 0.95] },
-  { name: "Deneb", raH: 20.6906, decDeg: 45.2803, mag: 1.25, rgb: [0.9, 0.95, 1.0] },
-  { name: "Regulus", raH: 10.1395, decDeg: 11.9672, mag: 1.4, rgb: [0.9, 0.95, 1.0] },
-  { name: "Castor", raH: 7.5766, decDeg: 31.8883, mag: 1.58, rgb: [0.95, 0.98, 1.0] },
-  { name: "Polaris", raH: 2.5301, decDeg: 89.2641, mag: 1.98, rgb: [1.0, 0.95, 0.85] },
+const NAMED_STARS: Array<{
+  name: string;
+  raH: number;
+  decDeg: number;
+  mag: number;
+  rgb: [number, number, number];
+}> = [
+  { name: 'Sirius', raH: 6.7525, decDeg: -16.7161, mag: -1.46, rgb: [1.0, 1.0, 1.0] },
+  { name: 'Canopus', raH: 6.3992, decDeg: -52.6957, mag: -0.72, rgb: [1.0, 0.98, 0.9] },
+  { name: 'Arcturus', raH: 14.2612, decDeg: 19.1824, mag: -0.05, rgb: [1.0, 0.85, 0.6] },
+  { name: 'Rigil Kentaurus', raH: 14.6599, decDeg: -60.8354, mag: -0.01, rgb: [1.0, 0.95, 0.85] },
+  { name: 'Vega', raH: 18.6156, decDeg: 38.7837, mag: 0.03, rgb: [0.85, 0.9, 1.0] },
+  { name: 'Capella', raH: 5.2782, decDeg: 45.998, mag: 0.08, rgb: [1.0, 0.95, 0.75] },
+  { name: 'Rigel', raH: 5.2423, decDeg: -8.2016, mag: 0.13, rgb: [0.7, 0.8, 1.0] },
+  { name: 'Procyon', raH: 7.6551, decDeg: 5.225, mag: 0.34, rgb: [1.0, 1.0, 0.95] },
+  { name: 'Achernar', raH: 1.6286, decDeg: -57.2367, mag: 0.46, rgb: [0.6, 0.75, 1.0] },
+  { name: 'Betelgeuse', raH: 5.9195, decDeg: 7.407, mag: 0.42, rgb: [1.0, 0.6, 0.4] },
+  { name: 'Altair', raH: 19.8464, decDeg: 8.8683, mag: 0.77, rgb: [1.0, 0.98, 0.95] },
+  { name: 'Aldebaran', raH: 4.5987, decDeg: 16.5093, mag: 0.85, rgb: [1.0, 0.7, 0.5] },
+  { name: 'Antares', raH: 16.4901, decDeg: -26.4319, mag: 1.09, rgb: [1.0, 0.55, 0.4] },
+  { name: 'Spica', raH: 13.4199, decDeg: -11.1614, mag: 1.04, rgb: [0.65, 0.75, 1.0] },
+  { name: 'Pollux', raH: 7.7553, decDeg: 28.0262, mag: 1.14, rgb: [1.0, 0.85, 0.6] },
+  { name: 'Fomalhaut', raH: 22.9608, decDeg: -29.622, mag: 1.16, rgb: [1.0, 0.98, 0.95] },
+  { name: 'Deneb', raH: 20.6906, decDeg: 45.2803, mag: 1.25, rgb: [0.9, 0.95, 1.0] },
+  { name: 'Regulus', raH: 10.1395, decDeg: 11.9672, mag: 1.4, rgb: [0.9, 0.95, 1.0] },
+  { name: 'Castor', raH: 7.5766, decDeg: 31.8883, mag: 1.58, rgb: [0.95, 0.98, 1.0] },
+  { name: 'Polaris', raH: 2.5301, decDeg: 89.2641, mag: 1.98, rgb: [1.0, 0.95, 0.85] },
 ];
 
 export class StarCatalog {
@@ -73,9 +79,7 @@ export class StarCatalog {
     // Rotate the whole collection each frame from ECI → current ECEF.
     this.tickDispose = this.scene.preRender.addEventListener(() => {
       const date = Cesium.JulianDate.toDate(this.viewer.clock.currentTime);
-      const gmst = greenwichSiderealTime(
-        date.getTime() / 86_400_000 + 2440587.5,
-      );
+      const gmst = greenwichSiderealTime(date.getTime() / 86_400_000 + 2440587.5);
       const c = Math.cos(-gmst);
       const s = Math.sin(-gmst);
       Cesium.Matrix4.fromArray(

@@ -1,6 +1,6 @@
-import * as Cesium from "cesium";
-import * as satellite from "satellite.js";
-import { ORBIT_CLASS_COLOR, classifyOrbit, type OrbitClass, type Tle } from "@spacemap/shared";
+import * as Cesium from 'cesium';
+import * as satellite from 'satellite.js';
+import { ORBIT_CLASS_COLOR, classifyOrbit, type OrbitClass, type Tle } from '@spacemap/shared';
 
 /**
  * Selected-satellite orbit ribbon. Rendered as a clean ellipse in the CURRENT
@@ -89,13 +89,13 @@ export class OrbitTrail {
 
     const positions: Cesium.Cartesian3[] = [];
     const colors: Cesium.Color[] = [];
-    let orbitClass: OrbitClass = "UNKNOWN";
+    let orbitClass: OrbitClass = 'UNKNOWN';
     let orbitHueRgb: [number, number, number] | null = null;
 
     for (let i = 0; i < SAMPLES; i++) {
       const t = new Date(startMs + i * dtMs);
       const pv = satellite.propagate(satrec, t);
-      if (!pv || typeof pv.position === "boolean") continue;
+      if (!pv || typeof pv.position === 'boolean') continue;
       const p = pv.position;
       // ECI (TEME) → current-frame ECEF via z-rotation by -GMST(now), km→m.
       const x = (cosG * p.x + sinG * p.y) * 1000;
@@ -103,7 +103,7 @@ export class OrbitTrail {
       const z = p.z * 1000;
       positions.push(new Cesium.Cartesian3(x, y, z));
 
-      if (orbitClass === "UNKNOWN") {
+      if (orbitClass === 'UNKNOWN') {
         // Classify from an actual sample so trail color reflects reality.
         const altKm = Math.hypot(p.x, p.y, p.z) - 6378.137;
         orbitClass = classifyOrbit(altKm, (satrec.inclo * 180) / Math.PI, satrec.ecco);

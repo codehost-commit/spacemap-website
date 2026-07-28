@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import { GROUND_STATIONS, type StationType } from "../data/ground-stations.js";
+import * as Cesium from 'cesium';
+import { GROUND_STATIONS, type StationType } from '../data/ground-stations.js';
 
 /**
  * Ground infrastructure overlay — DSN dishes, launch pads, notable amateur
@@ -14,15 +14,15 @@ const TIER_MAX_DIST_M: Record<1 | 2 | 3, number> = {
 };
 
 const TYPE_COLOR: Record<StationType, Cesium.Color> = {
-  dsn: new Cesium.Color(1.0, 0.75, 0.35, 1.0),      // amber for antennas
-  launch: new Cesium.Color(1.0, 0.42, 0.42, 1.0),   // red for pads
+  dsn: new Cesium.Color(1.0, 0.75, 0.35, 1.0), // amber for antennas
+  launch: new Cesium.Color(1.0, 0.42, 0.42, 1.0), // red for pads
   tracking: new Cesium.Color(0.55, 0.85, 1.0, 1.0), // pale blue
 };
 
 const TYPE_ICON: Record<StationType, string> = {
-  dsn: "◉",
-  launch: "▲",
-  tracking: "◆",
+  dsn: '◉',
+  launch: '▲',
+  tracking: '◆',
 };
 
 export class GroundStations {

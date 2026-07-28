@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import type { PropagationSnapshot } from "@spacemap/shared";
+import * as Cesium from 'cesium';
+import type { PropagationSnapshot } from '@spacemap/shared';
 
 /**
  * Registry: which NORAD id gets which GLB. Anything not listed falls back to
@@ -10,12 +10,12 @@ import type { PropagationSnapshot } from "@spacemap/shared";
 const MODEL_URL = (name: string) => `${import.meta.env.BASE_URL}models/${name}`;
 
 const SPECIFIC_MODELS: Record<number, string> = {
-  25544: MODEL_URL("iss.glb"),      // ISS (ZARYA)
-  20580: MODEL_URL("hubble.glb"),   // HUBBLE SPACE TELESCOPE
-  50463: MODEL_URL("jwst.glb"),     // JAMES WEBB SPACE TELESCOPE (L2 halo)
+  25544: MODEL_URL('iss.glb'), // ISS (ZARYA)
+  20580: MODEL_URL('hubble.glb'), // HUBBLE SPACE TELESCOPE
+  50463: MODEL_URL('jwst.glb'), // JAMES WEBB SPACE TELESCOPE (L2 halo)
 };
 
-const GENERIC_MODEL = MODEL_URL("voyager.glb");
+const GENERIC_MODEL = MODEL_URL('voyager.glb');
 
 export function modelUrlFor(noradId: number): string {
   return SPECIFIC_MODELS[noradId] ?? GENERIC_MODEL;
@@ -85,7 +85,7 @@ export class SatelliteModel {
       this.updateTransform();
       model.show = !this.hidden;
     } catch (err) {
-      console.warn("[satellite-model] failed to load", url, err);
+      console.warn('[satellite-model] failed to load', url, err);
     }
   }
 

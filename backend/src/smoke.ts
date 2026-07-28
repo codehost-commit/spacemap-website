@@ -5,10 +5,10 @@
  *
  * Run with:  npm run smoke -w backend
  */
-import { parseTleText } from "./tle/parse.js";
-import { Propagator } from "./propagation/propagator.js";
-import { TleCatalog } from "./tle/catalog.js";
-import type { Tle } from "@spacemap/shared";
+import { parseTleText } from './tle/parse.js';
+import { Propagator } from './propagation/propagator.js';
+import { TleCatalog } from './tle/catalog.js';
+import type { Tle } from '@spacemap/shared';
 
 const iss = `ISS (ZARYA)
 1 25544U 98067A   24170.75000000  .00016717  00000+0  30571-3 0  9994
@@ -28,9 +28,9 @@ const propagator = new Propagator(catalog);
 // Propagator was constructed against an empty catalog; force a rebuild.
 (propagator as unknown as { rebuild: (t: Tle[]) => void }).rebuild(tles);
 
-const at = new Date("2024-06-19T00:00:00Z");
-console.log("State:", propagator.propagate(25544, at));
+const at = new Date('2024-06-19T00:00:00Z');
+console.log('State:', propagator.propagate(25544, at));
 const telemetry = propagator.telemetry(25544, at);
-console.log("Elements:", telemetry?.elements);
-console.log("Sunlit:", telemetry?.sunlit);
-console.log("Relativistic offset (s):", telemetry?.relativisticOffsetSec);
+console.log('Elements:', telemetry?.elements);
+console.log('Sunlit:', telemetry?.sunlit);
+console.log('Relativistic offset (s):', telemetry?.relativisticOffsetSec);

@@ -1,11 +1,11 @@
-import * as satellite from "satellite.js";
+import * as satellite from 'satellite.js';
 import {
   classifyOrbit,
   type OrbitalElements,
   type SatelliteState,
   type SatelliteTelemetry,
-} from "@spacemap/shared";
-import { getLocalSatRec, getLocalTle } from "./catalog-store.js";
+} from '@spacemap/shared';
+import { getLocalSatRec, getLocalTle } from './catalog-store.js';
 
 /**
  * Client-side port of the backend telemetry endpoint. Runs entirely in the
@@ -18,7 +18,7 @@ export function computeTelemetry(noradId: number, at: Date): SatelliteTelemetry 
   if (!satrec || !tle) return null;
 
   const pv = satellite.propagate(satrec, at);
-  if (!pv || typeof pv.position === "boolean" || typeof pv.velocity === "boolean") return null;
+  if (!pv || typeof pv.position === 'boolean' || typeof pv.velocity === 'boolean') return null;
   const gmst = satellite.gstime(at);
   const geo = satellite.eciToGeodetic(pv.position, gmst);
   const altKm = geo.height;
@@ -100,11 +100,7 @@ function isSunlit(state: SatelliteState, date: Date): boolean {
   const r = Math.hypot(x, y, z);
   const dot = (x * sun.x + y * sun.y + z * sun.z) / r;
   if (dot >= 0) return true;
-  const cross = Math.hypot(
-    y * sun.z - z * sun.y,
-    z * sun.x - x * sun.z,
-    x * sun.y - y * sun.x,
-  );
+  const cross = Math.hypot(y * sun.z - z * sun.y, z * sun.x - x * sun.z, x * sun.y - y * sun.x);
   return cross > 6378.137;
 }
 

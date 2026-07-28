@@ -1,4 +1,4 @@
-import { ORBIT_CLASSES, type OrbitClass, type PropagationSnapshot } from "@spacemap/shared";
+import { ORBIT_CLASSES, type OrbitClass, type PropagationSnapshot } from '@spacemap/shared';
 
 export interface SnapshotRow {
   index: number;
@@ -30,7 +30,7 @@ function rowAt(snap: PropagationSnapshot, i: number): SnapshotRow {
     lonDeg: snap.geodetic[i * 3 + 1],
     altKm: snap.geodetic[i * 3 + 2],
     speedKmS: snap.speed[i],
-    orbitClass: ORBIT_CLASSES[snap.orbitClass[i]] ?? "UNKNOWN",
+    orbitClass: ORBIT_CLASSES[snap.orbitClass[i]] ?? 'UNKNOWN',
     eci: [snap.eciPos[i * 3], snap.eciPos[i * 3 + 1], snap.eciPos[i * 3 + 2]],
   };
 }
@@ -64,7 +64,7 @@ export function nearestNeighbors(
     const entry = {
       noradId: snap.ids[i],
       distanceKm: d,
-      orbitClass: ORBIT_CLASSES[snap.orbitClass[i]] ?? "UNKNOWN",
+      orbitClass: ORBIT_CLASSES[snap.orbitClass[i]] ?? 'UNKNOWN',
     };
     // Insert in sorted order.
     let pos = out.length;
@@ -146,8 +146,8 @@ export function closestPairs(
       const entry: ClosestPair = {
         aId: ids[i],
         bId: ids[j],
-        aClass: ORBIT_CLASSES[orbitClass[i]] ?? "UNKNOWN",
-        bClass: ORBIT_CLASSES[orbitClass[j]] ?? "UNKNOWN",
+        aClass: ORBIT_CLASSES[orbitClass[i]] ?? 'UNKNOWN',
+        bClass: ORBIT_CLASSES[orbitClass[j]] ?? 'UNKNOWN',
         distanceKm: Math.sqrt(d2) / 1000,
         relSpeedKmS: relSpeed,
       };
@@ -210,10 +210,8 @@ export function overheadPasses(
     const dz = snap.ecefPos[i * 3 + 2] - obsZ;
     // Rotate ECEF vector into local ENU frame at observer.
     const east = -Math.sin(lonR) * dx + Math.cos(lonR) * dy;
-    const north =
-      -sinLat * Math.cos(lonR) * dx - sinLat * Math.sin(lonR) * dy + cosLat * dz;
-    const up =
-      cosLat * Math.cos(lonR) * dx + cosLat * Math.sin(lonR) * dy + sinLat * dz;
+    const north = -sinLat * Math.cos(lonR) * dx - sinLat * Math.sin(lonR) * dy + cosLat * dz;
+    const up = cosLat * Math.cos(lonR) * dx + cosLat * Math.sin(lonR) * dy + sinLat * dz;
     const range = Math.hypot(east, north, up);
     const elevation = Math.asin(up / range);
     const elevDeg = (elevation * 180) / Math.PI;

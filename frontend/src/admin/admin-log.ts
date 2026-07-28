@@ -9,7 +9,7 @@
  * that only sees diagnose output.
  */
 
-export type LogSeverity = "info" | "debug" | "warn" | "error" | "cmd" | "out" | "success";
+export type LogSeverity = 'info' | 'debug' | 'warn' | 'error' | 'cmd' | 'out' | 'success';
 
 export interface LogEntry {
   /** Millisecond timestamp. */
@@ -47,7 +47,7 @@ class AdminLog {
     if (!this.buffers.has(name)) this.buffers.set(name, []);
   }
 
-  push(bufferName: string, partial: Omit<LogEntry, "ts" | "seq">): void {
+  push(bufferName: string, partial: Omit<LogEntry, 'ts' | 'seq'>): void {
     const entry: LogEntry = { ...partial, ts: Date.now(), seq: this.nextSeq++ };
     let buf = this.buffers.get(bufferName);
     if (!buf) {
@@ -78,7 +78,7 @@ class AdminLog {
   }
 
   remove(bufferName: string): void {
-    if (bufferName === "main") return; // main is permanent
+    if (bufferName === 'main') return; // main is permanent
     this.buffers.delete(bufferName);
     // Fire empty snapshot so subscribers can unmount.
     this.emit(bufferName, []);
@@ -102,14 +102,14 @@ class AdminLog {
       try {
         fn(entries);
       } catch (err) {
-        console.warn("[adminLog] listener threw", err);
+        console.warn('[adminLog] listener threw', err);
       }
     }
   }
 }
 
 export const adminLog = new AdminLog();
-adminLog.ensureBuffer("main");
+adminLog.ensureBuffer('main');
 
 /** Convenience: push to main. */
 export function logMain(
@@ -118,5 +118,5 @@ export function logMain(
   text: string,
   data?: Record<string, unknown>,
 ): void {
-  adminLog.push("main", { channel, severity, text, data });
+  adminLog.push('main', { channel, severity, text, data });
 }

@@ -1,17 +1,20 @@
-import type { Tle } from "@spacemap/shared";
+import type { Tle } from '@spacemap/shared';
 
 /**
  * Parse a CelesTrak-style 3-line TLE text blob (name, line1, line2 repeating).
  * Returns valid TLEs only; malformed groups are logged and skipped.
  */
 export function parseTleText(text: string): Tle[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trimEnd())
+    .filter(Boolean);
   const out: Tle[] = [];
   for (let i = 0; i + 2 < lines.length; i += 3) {
     const name = lines[i].trim();
     const l1 = lines[i + 1];
     const l2 = lines[i + 2];
-    if (!l1.startsWith("1 ") || !l2.startsWith("2 ")) {
+    if (!l1.startsWith('1 ') || !l2.startsWith('2 ')) {
       // Not aligned to a 3-line group — try to resync by consuming one line.
       i -= 2;
       continue;

@@ -4,17 +4,17 @@
  * Generated at module init so there's no image asset dependency.
  */
 export function buildSatelliteIcon(size = 64): string {
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return "";
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return '';
 
   ctx.clearRect(0, 0, size, size);
-  ctx.fillStyle = "#ffffff";
-  ctx.strokeStyle = "#ffffff";
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
   const cx = size / 2;
   const cy = size / 2;
@@ -56,5 +56,5 @@ export function buildSatelliteIcon(size = 64): string {
   ctx.lineTo(cx, cy - bodyH / 2);
   ctx.stroke();
 
-  return canvas.toDataURL("image/png");
+  return canvas.toDataURL('image/png');
 }

@@ -1,5 +1,5 @@
-import { useStore } from "../state/store.js";
-import { IMAGERY_LAYERS } from "../cesium/imagery.js";
+import { useStore } from '../state/store.js';
+import { IMAGERY_LAYERS } from '../cesium/imagery.js';
 
 /**
  * Small imagery-layer dropdown pinned inside the filter panel. Cheap to
@@ -13,9 +13,7 @@ export function ImageryPicker() {
 
   return (
     <div className="mb-4">
-      <div className="mb-2 text-[9px] uppercase tracking-widest text-space-dim">
-        Earth imagery
-      </div>
+      <div className="mb-2 text-[9px] uppercase tracking-widest text-space-dim">Earth imagery</div>
       <select
         value={imageryId}
         onChange={(e) => setImagery(e.target.value)}
@@ -27,9 +25,7 @@ export function ImageryPicker() {
           </option>
         ))}
       </select>
-      <div className="mt-1 text-[10px] leading-snug text-space-dim">
-        {active.description}
-      </div>
+      <div className="mt-1 text-[10px] leading-snug text-space-dim">{active.description}</div>
     </div>
   );
 }

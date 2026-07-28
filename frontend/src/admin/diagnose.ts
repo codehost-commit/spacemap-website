@@ -1,15 +1,15 @@
-import * as Cesium from "cesium";
-import * as satellite from "satellite.js";
-import { adminLog } from "./admin-log.js";
-import { getInstruments } from "./registry.js";
-import { readHeapMb } from "./instrumentation.js";
-import { useStore } from "../state/store.js";
-import { getClockControls } from "../simulation/clock-controls.js";
-import { getSimulation } from "../simulation/simulation.js";
-import { IMAGERY_LAYERS } from "../cesium/imagery.js";
-import { computeTelemetry } from "../simulation/client-telemetry.js";
-import { getLocalTle, localCatalogSize } from "../simulation/catalog-store.js";
-import { ORBIT_CLASSES, type OrbitClass } from "@spacemap/shared";
+import * as Cesium from 'cesium';
+import * as satellite from 'satellite.js';
+import { adminLog } from './admin-log.js';
+import { getInstruments } from './registry.js';
+import { readHeapMb } from './instrumentation.js';
+import { useStore } from '../state/store.js';
+import { getClockControls } from '../simulation/clock-controls.js';
+import { getSimulation } from '../simulation/simulation.js';
+import { IMAGERY_LAYERS } from '../cesium/imagery.js';
+import { computeTelemetry } from '../simulation/client-telemetry.js';
+import { getLocalTle, localCatalogSize } from '../simulation/catalog-store.js';
+import { ORBIT_CLASSES, type OrbitClass } from '@spacemap/shared';
 
 /**
  * Full-fat 5-minute diagnostic. Tests as much of the system as is safe to
@@ -140,12 +140,12 @@ let running = false;
 
 export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseReport | null> {
   if (running) {
-    adminLog.push(bufferName, { channel: "diag", severity: "warn", text: "already running" });
+    adminLog.push(bufferName, { channel: 'diag', severity: 'warn', text: 'already running' });
     return null;
   }
   const instruments = getInstruments();
   if (!instruments) {
-    adminLog.push(bufferName, { channel: "diag", severity: "error", text: "engine not ready" });
+    adminLog.push(bufferName, { channel: 'diag', severity: 'error', text: 'engine not ready' });
     return null;
   }
 
@@ -154,14 +154,14 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
   const startWallMs = Date.now();
   const startPerfMs = performance.now();
 
-  const log = (text: string, sev: "info" | "warn" | "error" | "success" = "info") =>
-    adminLog.push(bufferName, { channel: "diag", severity: sev, text });
+  const log = (text: string, sev: 'info' | 'warn' | 'error' | 'success' = 'info') =>
+    adminLog.push(bufferName, { channel: 'diag', severity: sev, text });
 
-  const banner = (t: string) => log("═══ " + t + " ".repeat(Math.max(0, 55 - t.length - 4)));
-  banner("SPACEMAP SELF-DIAGNOSE v2 · 5-minute deep sweep");
+  const banner = (t: string) => log('═══ ' + t + ' '.repeat(Math.max(0, 55 - t.length - 4)));
+  banner('SPACEMAP SELF-DIAGNOSE v2 · 5-minute deep sweep');
   log(`Started ${new Date(startWallMs).toISOString()}`);
-  log("Do not interact — the app is being driven by the test.");
-  log("");
+  log('Do not interact — the app is being driven by the test.');
+  log('');
 
   const memSamples: Array<{ tMs: number; mb: number }> = [];
   const memInterval = setInterval(() => {
@@ -174,10 +174,10 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
     const pct = Math.min(100, (elapsed / TOTAL_DURATION_MS) * 100);
     const remainMs = Math.max(0, TOTAL_DURATION_MS - elapsed);
     adminLog.push(bufferName, {
-      channel: "diag",
-      severity: "info",
+      channel: 'diag',
+      severity: 'info',
       text: `${renderBar(pct, 30)} ${pct.toFixed(0)}% • ETA ${(remainMs / 1000).toFixed(0)}s`,
-      progressId: "overall",
+      progressId: 'overall',
     });
   }, 500);
 
@@ -205,45 +205,43 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
 
   try {
     // ================== Section 1 — Static inventory & probes ===============
-    banner("SECTION 1 · Inventory & offline probes");
+    banner('SECTION 1 · Inventory & offline probes');
 
-    log("[1/17] Engine feature inventory");
+    log('[1/17] Engine feature inventory');
     report.featureInventory = gatherFeatureInventory(viewer);
     logInventory(log, report.featureInventory);
 
-    log("[2/17] Bundled asset checks");
-    report.bundledAssets = await probeBundledAssets((msg) => log("  · " + msg));
+    log('[2/17] Bundled asset checks');
+    report.bundledAssets = await probeBundledAssets((msg) => log('  · ' + msg));
 
-    log("[3/17] External endpoint reachability");
-    report.externalEndpoints = await probeExternalEndpoints((msg) => log("  · " + msg));
+    log('[3/17] External endpoint reachability');
+    report.externalEndpoints = await probeExternalEndpoints((msg) => log('  · ' + msg));
 
-    log("[4/17] Worker round-trip latency (10 pings)");
-    report.workerLatency = await measureWorkerLatency((msg) => log("  · " + msg));
+    log('[4/17] Worker round-trip latency (10 pings)');
+    report.workerLatency = await measureWorkerLatency((msg) => log('  · ' + msg));
 
-    log("[5/17] SGP4 physics accuracy (ISS)");
-    report.physicsAccuracy = { iss: measurePhysicsAccuracy((msg) => log("  · " + msg)) };
+    log('[5/17] SGP4 physics accuracy (ISS)');
+    report.physicsAccuracy = { iss: measurePhysicsAccuracy((msg) => log('  · ' + msg)) };
 
-    log("[6/17] Interaction latency micro-benchmarks");
-    report.interactionLatency = await measureInteractionLatency(viewer, (msg) =>
-      log("  · " + msg),
-    );
+    log('[6/17] Interaction latency micro-benchmarks');
+    report.interactionLatency = await measureInteractionLatency(viewer, (msg) => log('  · ' + msg));
 
     // ================== Section 2 — FPS phases ==================
-    banner("SECTION 2 · FPS phases");
+    banner('SECTION 2 · FPS phases');
 
-    log("[7/17] Baseline FPS · no interaction · 15 s");
-    report.phases.push(await measurePhase(bufferName, "baseline", 15_000));
+    log('[7/17] Baseline FPS · no interaction · 15 s');
+    report.phases.push(await measurePhase(bufferName, 'baseline', 15_000));
 
-    log("[8/17] Camera pan · orbit Earth · 20 s");
+    log('[8/17] Camera pan · orbit Earth · 20 s');
     report.phases.push(
-      await measurePhase(bufferName, "camera_pan", 20_000, (dtSec) => {
+      await measurePhase(bufferName, 'camera_pan', 20_000, (dtSec) => {
         viewer.camera.rotate(Cesium.Cartesian3.UNIT_Z, 0.35 * dtSec);
       }),
     );
 
-    log("[9/17] Zoom cycles · sinusoidal · 20 s");
+    log('[9/17] Zoom cycles · sinusoidal · 20 s');
     report.phases.push(
-      await measurePhase(bufferName, "zoom_cycles", 20_000, (dtSec, elapsedMs) => {
+      await measurePhase(bufferName, 'zoom_cycles', 20_000, (dtSec, elapsedMs) => {
         const t = elapsedMs / 1000;
         const factor = Math.sin(t * 0.9);
         if (factor > 0) viewer.camera.zoomIn(150_000 * dtSec * factor);
@@ -251,36 +249,36 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
       }),
     );
 
-    log("[10/17] Altitude impact (LEO / MEO / GEO / far)");
-    report.altitudeImpact = await measureAltitudeImpact(viewer, (msg) => log("  · " + msg));
+    log('[10/17] Altitude impact (LEO / MEO / GEO / far)');
+    report.altitudeImpact = await measureAltitudeImpact(viewer, (msg) => log('  · ' + msg));
 
     // ================== Section 3 — What-if sweeps ==================
-    banner("SECTION 3 · Overlay / imagery / filter sweeps");
+    banner('SECTION 3 · Overlay / imagery / filter sweeps');
 
-    log("[11/17] Imagery layer impact");
-    report.imageryImpact = await measureImageryImpact((msg) => log("  · " + msg));
+    log('[11/17] Imagery layer impact');
+    report.imageryImpact = await measureImageryImpact((msg) => log('  · ' + msg));
 
-    log("[12/17] Overlay impact");
-    report.overlayImpact = await measureOverlayImpact((msg) => log("  · " + msg));
+    log('[12/17] Overlay impact');
+    report.overlayImpact = await measureOverlayImpact((msg) => log('  · ' + msg));
 
-    log("[13/17] Orbit-class filter impact");
-    report.filterImpact = await measureFilterImpact((msg) => log("  · " + msg));
+    log('[13/17] Orbit-class filter impact');
+    report.filterImpact = await measureFilterImpact((msg) => log('  · ' + msg));
 
-    log("[14/17] Camera mode impact");
-    report.cameraModeImpact = await measureCameraModeImpact((msg) => log("  · " + msg));
+    log('[14/17] Camera mode impact');
+    report.cameraModeImpact = await measureCameraModeImpact((msg) => log('  · ' + msg));
 
-    log("[15/17] Time-warp impact");
-    report.timeWarpImpact = await measureTimeWarpImpact((msg) => log("  · " + msg));
+    log('[15/17] Time-warp impact');
+    report.timeWarpImpact = await measureTimeWarpImpact((msg) => log('  · ' + msg));
 
     // ================== Section 4 — Cool-down + stress ==================
-    banner("SECTION 4 · Cool-down + stress test");
+    banner('SECTION 4 · Cool-down + stress test');
 
-    log("[16/17] Conjunction stress test");
-    const conjMs = await runConjunctionStress((msg) => log("  · " + msg));
+    log('[16/17] Conjunction stress test');
+    const conjMs = await runConjunctionStress((msg) => log('  · ' + msg));
     if (conjMs != null) report.workerLatency.conjunctionMs = conjMs;
 
-    log("[17/17] Cool-down · 10 s");
-    report.phases.push(await measurePhase(bufferName, "cooldown", 10_000));
+    log('[17/17] Cool-down · 10 s');
+    report.phases.push(await measurePhase(bufferName, 'cooldown', 10_000));
   } finally {
     restoreState(saved);
     unsubSnap();
@@ -319,16 +317,16 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
   }));
 
   // ================== Final print + download ==================
-  log("");
-  banner("REPORT SUMMARY");
+  log('');
+  banner('REPORT SUMMARY');
   log(`Duration: ${(report.durationMs / 1000).toFixed(1)}s`);
-  log(`Baseline FPS: ${report.phases[0]?.fps.avg.toFixed(1) ?? "?"}`);
+  log(`Baseline FPS: ${report.phases[0]?.fps.avg.toFixed(1) ?? '?'}`);
   log(
     `Cadence: ${report.snapshotStats.avgIntervalMs.toFixed(0)} ms (p99 ${report.snapshotStats.p99IntervalMs.toFixed(0)} ms)`,
   );
   log(
-    `Memory: start ${report.memoryTrend.startMb ?? "?"} MB → end ${report.memoryTrend.endMb ?? "?"} MB (peak ${report.memoryTrend.peakMb ?? "?"} MB)${
-      report.memoryTrend.leakSuspected ? " · LEAK SUSPECTED" : ""
+    `Memory: start ${report.memoryTrend.startMb ?? '?'} MB → end ${report.memoryTrend.endMb ?? '?'} MB (peak ${report.memoryTrend.peakMb ?? '?'} MB)${
+      report.memoryTrend.leakSuspected ? ' · LEAK SUSPECTED' : ''
     }`,
   );
   if (report.physicsAccuracy.iss) {
@@ -336,15 +334,15 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
       `Physics: ISS alt err ${report.physicsAccuracy.iss.altError_km.toFixed(3)} km · speed err ${report.physicsAccuracy.iss.speedError_kms.toFixed(4)} km/s`,
     );
   }
-  log("");
-  log("── Top recommendations ──");
+  log('');
+  log('── Top recommendations ──');
   for (const rec of report.recommendations.slice(0, 15)) log(`  • ${rec}`);
-  log("");
+  log('');
 
   const filename = `spacemap-diagnose-${Date.now()}.json`;
   downloadJson(report, filename);
-  log(`Report saved as ${filename}`, "success");
-  log("Type /clear to reset this terminal.");
+  log(`Report saved as ${filename}`, 'success');
+  log('Type /clear to reset this terminal.');
 
   running = false;
   return report;
@@ -354,9 +352,9 @@ export async function runSelfDiagnose(bufferName: string): Promise<DiagnoseRepor
 
 function emptyReport(startMs: number): DiagnoseReport {
   return {
-    version: "2.0.0",
+    version: '2.0.0',
     startedAt: new Date(startMs).toISOString(),
-    finishedAt: "",
+    finishedAt: '',
     durationMs: 0,
     system: {},
     webgl: null,
@@ -433,8 +431,8 @@ async function measurePhase(
       frames = 0;
       lastFpsSampleMs = now;
       adminLog.push(bufferName, {
-        channel: "diag",
-        severity: "info",
+        channel: 'diag',
+        severity: 'info',
         text: `  ${name}: ${renderBar(((now - startMs) / durationMs) * 100, 20)} ${fps.toFixed(1)} fps`,
         progressId: `phase-${name}`,
       });
@@ -507,11 +505,7 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
  * sample of the next test — the imagery-impact phase in the previous report
  * clearly contaminated overlay measurements this way.
  */
-function waitForTilesSettled(
-  viewer: Cesium.Viewer,
-  steadyMs = 600,
-  maxMs = 8_000,
-): Promise<void> {
+function waitForTilesSettled(viewer: Cesium.Viewer, steadyMs = 600, maxMs = 8_000): Promise<void> {
   return new Promise<void>((resolve) => {
     const start = performance.now();
     let lastRemaining = -1;
@@ -524,14 +518,12 @@ function waitForTilesSettled(
       if (timer) clearInterval(timer);
     };
 
-    unsub = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
-      (remaining: number) => {
-        if (remaining !== lastRemaining) {
-          lastRemaining = remaining;
-          lastChangeMs = performance.now();
-        }
-      },
-    );
+    unsub = viewer.scene.globe.tileLoadProgressEvent.addEventListener((remaining: number) => {
+      if (remaining !== lastRemaining) {
+        lastRemaining = remaining;
+        lastChangeMs = performance.now();
+      }
+    });
     timer = setInterval(() => {
       const now = performance.now();
       const stable = lastRemaining === 0 && now - lastChangeMs >= steadyMs;
@@ -545,8 +537,8 @@ function waitForTilesSettled(
 
 function renderBar(pct: number, width: number): string {
   const filled = Math.max(0, Math.min(width, Math.floor((pct / 100) * width)));
-  if (filled >= width) return "[" + "=".repeat(width) + "]";
-  return "[" + "=".repeat(filled) + ">" + " ".repeat(width - filled - 1) + "]";
+  if (filled >= width) return '[' + '='.repeat(width) + ']';
+  return '[' + '='.repeat(filled) + '>' + ' '.repeat(width - filled - 1) + ']';
 }
 
 // ========================== state save / restore ==========================
@@ -584,14 +576,14 @@ function snapshotState(): SavedState {
 
 function restoreState(s: SavedState): void {
   const st = useStore.getState();
-  st.setTrailMode(s.trailMode as "off" | "selected" | "visible");
+  st.setTrailMode(s.trailMode as 'off' | 'selected' | 'visible');
   st.setHeatmap(s.heatmap);
   st.setTerminator(s.terminator);
   st.setGraticule(s.graticule);
   st.setCountries(s.countries);
   st.setCities(s.cities);
   st.setImagery(s.imageryId);
-  st.setCameraMode(s.cameraMode as "orbit" | "follow" | "pov");
+  st.setCameraMode(s.cameraMode as 'orbit' | 'follow' | 'pov');
   st.setFilter(s.filter as OrbitClass[]);
   const clock = getClockControls();
   clock?.setMultiplier(s.multiplier || 1);
@@ -615,7 +607,7 @@ function gatherSystemInfo(): Record<string, unknown> {
     viewport: { width: window.innerWidth, height: window.innerHeight },
     heapMb: readHeapMb(),
     location: location.href,
-    serviceWorkerControlled: "serviceWorker" in navigator && !!navigator.serviceWorker.controller,
+    serviceWorkerControlled: 'serviceWorker' in navigator && !!navigator.serviceWorker.controller,
   };
 }
 
@@ -623,10 +615,10 @@ function gatherWebGLInfo(viewer: Cesium.Viewer): Record<string, unknown> | null 
   try {
     const canvas = viewer.scene.canvas;
     const gl =
-      (canvas.getContext("webgl2") as WebGL2RenderingContext | null) ||
-      (canvas.getContext("webgl") as WebGLRenderingContext | null);
+      (canvas.getContext('webgl2') as WebGL2RenderingContext | null) ||
+      (canvas.getContext('webgl') as WebGLRenderingContext | null);
     if (!gl) return null;
-    const debugExt = gl.getExtension("WEBGL_debug_renderer_info");
+    const debugExt = gl.getExtension('WEBGL_debug_renderer_info');
     return {
       version: gl.getParameter(gl.VERSION),
       shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
@@ -696,7 +688,7 @@ function gatherFeatureInventory(viewer: Cesium.Viewer): Record<string, unknown> 
     },
     notifyEnabled: s.notifyEnabled,
     availableImageryLayers: IMAGERY_LAYERS.map((i) => i.id),
-    availableModels: ["iss", "hubble", "jwst", "voyager"],
+    availableModels: ['iss', 'hubble', 'jwst', 'voyager'],
   };
 }
 
@@ -711,15 +703,15 @@ function logInventory(log: (msg: string) => void, inv: Record<string, unknown>):
 async function probeBundledAssets(log: (msg: string) => void): Promise<AssetProbe[]> {
   const base = import.meta.env.BASE_URL;
   const paths = [
-    "data/tles.txt",
-    "data/stars.bin",
-    "data/countries.geojson",
-    "models/iss.glb",
-    "models/hubble.glb",
-    "models/voyager.glb",
-    "models/jwst.glb",
-    "cesium/Cesium.js",
-    "sw.js",
+    'data/tles.txt',
+    'data/stars.bin',
+    'data/countries.geojson',
+    'models/iss.glb',
+    'models/hubble.glb',
+    'models/voyager.glb',
+    'models/jwst.glb',
+    'cesium/Cesium.js',
+    'sw.js',
   ];
   const out: AssetProbe[] = [];
   for (const path of paths) {
@@ -731,19 +723,19 @@ async function probeBundledAssets(log: (msg: string) => void): Promise<AssetProb
     let cached = false;
     let error: string | undefined;
     try {
-      const res = await fetch(url, { cache: "no-store" });
+      const res = await fetch(url, { cache: 'no-store' });
       status = res.status;
       ok = res.ok;
       const bytes = await res.arrayBuffer();
       sizeBytes = bytes.byteLength;
-      cached = res.headers.get("cf-cache-status") === "HIT" || res.headers.get("age") != null;
+      cached = res.headers.get('cf-cache-status') === 'HIT' || res.headers.get('age') != null;
     } catch (err) {
       error = err instanceof Error ? err.message : String(err);
     }
     const latencyMs = performance.now() - start;
     out.push({ path, ok, status, latencyMs, sizeBytes, cached, error });
     log(
-      `${ok ? "✓" : "✗"} ${path} → ${status ?? "err"} · ${sizeBytes != null ? `${Math.round(sizeBytes / 1024)}KB` : "?"} · ${latencyMs.toFixed(0)}ms${error ? " · " + error : ""}`,
+      `${ok ? '✓' : '✗'} ${path} → ${status ?? 'err'} · ${sizeBytes != null ? `${Math.round(sizeBytes / 1024)}KB` : '?'} · ${latencyMs.toFixed(0)}ms${error ? ' · ' + error : ''}`,
     );
   }
   return out;
@@ -752,28 +744,28 @@ async function probeBundledAssets(log: (msg: string) => void): Promise<AssetProb
 async function probeExternalEndpoints(log: (msg: string) => void): Promise<EndpointProbe[]> {
   const endpoints: Array<{ name: string; url: string; timeoutMs: number }> = [
     {
-      name: "ArcGIS tile",
-      url: "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0",
+      name: 'ArcGIS tile',
+      url: 'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/0/0/0',
       timeoutMs: 5000,
     },
     {
-      name: "NASA GIBS tile",
-      url: "https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/BlueMarble_ShadedRelief_Bathymetry/default/500m/0/0/0.jpeg",
+      name: 'NASA GIBS tile',
+      url: 'https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/BlueMarble_ShadedRelief_Bathymetry/default/500m/0/0/0.jpeg',
       timeoutMs: 5000,
     },
     {
-      name: "Launch Library 2",
-      url: "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&mode=list",
+      name: 'Launch Library 2',
+      url: 'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=1&mode=list',
       timeoutMs: 5000,
     },
     {
-      name: "CelesTrak",
-      url: "https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle",
+      name: 'CelesTrak',
+      url: 'https://celestrak.org/NORAD/elements/gp.php?GROUP=stations&FORMAT=tle',
       timeoutMs: 5000,
     },
     {
-      name: "jsdelivr CDN",
-      url: "https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@main/README.md",
+      name: 'jsdelivr CDN',
+      url: 'https://cdn.jsdelivr.net/gh/nvkelso/natural-earth-vector@main/README.md',
       timeoutMs: 5000,
     },
   ];
@@ -794,15 +786,15 @@ async function probeExternalEndpoints(log: (msg: string) => void): Promise<Endpo
     const latencyMs = performance.now() - start;
     out.push({ name: ep.name, url: ep.url, reachable, latencyMs, status, error });
     log(
-      `${reachable ? "✓" : "✗"} ${ep.name} → ${status ?? "err"} · ${latencyMs.toFixed(0)}ms${error ? " · " + error : ""}`,
+      `${reachable ? '✓' : '✗'} ${ep.name} → ${status ?? 'err'} · ${latencyMs.toFixed(0)}ms${error ? ' · ' + error : ''}`,
     );
   }
   return out;
 }
 
-async function measureWorkerLatency(log: (msg: string) => void): Promise<
-  DiagnoseReport["workerLatency"]
-> {
+async function measureWorkerLatency(
+  log: (msg: string) => void,
+): Promise<DiagnoseReport['workerLatency']> {
   const sim = getSimulation();
   if (!sim) return { samples: 0, ping: null, conjunctionMs: null, initialLoadMs: null };
   const rtts: number[] = [];
@@ -816,23 +808,25 @@ async function measureWorkerLatency(log: (msg: string) => void): Promise<
     await sleep(80);
   }
   const ping = computeFps(rtts); // reuse stats shape
-  log(`RTT avg ${ping.avg.toFixed(1)} ms · p50 ${ping.p50.toFixed(1)} · p99 ${ping.p99.toFixed(1)}`);
+  log(
+    `RTT avg ${ping.avg.toFixed(1)} ms · p50 ${ping.p50.toFixed(1)} · p99 ${ping.p99.toFixed(1)}`,
+  );
   return { samples: rtts.length, ping, conjunctionMs: null, initialLoadMs: null };
 }
 
 function measurePhysicsAccuracy(
   log: (msg: string) => void,
-): DiagnoseReport["physicsAccuracy"]["iss"] {
+): DiagnoseReport['physicsAccuracy']['iss'] {
   // Known-good ISS TLE from mid-2024 and expected propagation snapshot at
   // 2024-06-19T00:00:00Z. Cross-checked against Space-Track.
   const referenceTle = {
     noradId: 25544,
-    name: "ISS (ZARYA)",
-    line1: "1 25544U 98067A   24170.75000000  .00016717  00000+0  30571-3 0  9994",
-    line2: "2 25544  51.6412 213.1946 0009873  54.5312  63.2500 15.49913225 12345",
-    epoch: "2024-06-18T18:00:00Z",
+    name: 'ISS (ZARYA)',
+    line1: '1 25544U 98067A   24170.75000000  .00016717  00000+0  30571-3 0  9994',
+    line2: '2 25544  51.6412 213.1946 0009873  54.5312  63.2500 15.49913225 12345',
+    epoch: '2024-06-18T18:00:00Z',
   };
-  const at = new Date("2024-06-19T00:00:00Z");
+  const at = new Date('2024-06-19T00:00:00Z');
   // Reference values are what we shipped in the smoke test (SGP4 output for
   // this exact TLE / time). Errors here catch propagator regressions.
   const reference = {
@@ -843,11 +837,7 @@ function measurePhysicsAccuracy(
   try {
     const satrec = satellite.twoline2satrec(referenceTle.line1, referenceTle.line2);
     const pv = satellite.propagate(satrec, at);
-    if (
-      !pv ||
-      typeof pv.position === "boolean" ||
-      typeof pv.velocity === "boolean"
-    ) return null;
+    if (!pv || typeof pv.position === 'boolean' || typeof pv.velocity === 'boolean') return null;
     const gmst = satellite.gstime(at);
     const geo = satellite.eciToGeodetic(pv.position, gmst);
     const altKm = geo.height;
@@ -879,7 +869,7 @@ function measurePhysicsAccuracy(
     log(
       `speed ${iss.computedSpeed_kms.toFixed(4)} km/s (ref ${reference.speedKmS}) · Δ ${iss.speedError_kms.toFixed(5)}`,
     );
-    log(`period ${iss.computedPeriod_min.toFixed(2)} min · ${iss.ok ? "OK" : "FAIL"}`);
+    log(`period ${iss.computedPeriod_min.toFixed(2)} min · ${iss.ok ? 'OK' : 'FAIL'}`);
     return iss;
   } catch (err) {
     log(`physics accuracy failed: ${err instanceof Error ? err.message : err}`);
@@ -890,8 +880,8 @@ function measurePhysicsAccuracy(
 async function measureInteractionLatency(
   viewer: Cesium.Viewer,
   log: (msg: string) => void,
-): Promise<DiagnoseReport["interactionLatency"]> {
-  const out: DiagnoseReport["interactionLatency"] = {
+): Promise<DiagnoseReport['interactionLatency']> {
+  const out: DiagnoseReport['interactionLatency'] = {
     layerUpdateMs: null,
     filterToggleMs: null,
     scenePickMs: null,
@@ -903,18 +893,20 @@ async function measureInteractionLatency(
 
   // Search scan — linear over the index.
   const t1 = performance.now();
-  const needle = "star";
+  const needle = 'star';
   let hits = 0;
   for (const e of store.index) {
     if (e.name.toLowerCase().includes(needle)) hits++;
   }
   out.searchScanMs = performance.now() - t1;
-  log(`search scan (${store.index.length.toLocaleString()} names): ${out.searchScanMs.toFixed(2)} ms · ${hits} hits`);
+  log(
+    `search scan (${store.index.length.toLocaleString()} names): ${out.searchScanMs.toFixed(2)} ms · ${hits} hits`,
+  );
 
   // Filter toggle — measure real state change latency.
   const orig = new Set(store.filter);
   const t2 = performance.now();
-  store.setFilter(["LEO" as OrbitClass]);
+  store.setFilter(['LEO' as OrbitClass]);
   await sleep(0);
   out.filterToggleMs = performance.now() - t2;
   store.setFilter([...orig] as OrbitClass[]);
@@ -945,9 +937,9 @@ async function measureInteractionLatency(
 async function measureAltitudeImpact(
   viewer: Cesium.Viewer,
   log: (msg: string) => void,
-): Promise<DiagnoseReport["altitudeImpact"]> {
+): Promise<DiagnoseReport['altitudeImpact']> {
   const altitudes = [500, 2000, 10000, 35786, 100000];
-  const out: DiagnoseReport["altitudeImpact"] = [];
+  const out: DiagnoseReport['altitudeImpact'] = [];
   for (const altKm of altitudes) {
     viewer.camera.setView({
       destination: Cesium.Cartesian3.fromDegrees(0, 0, altKm * 1000),
@@ -965,9 +957,9 @@ async function measureAltitudeImpact(
 
 async function measureImageryImpact(
   log: (msg: string) => void,
-): Promise<DiagnoseReport["imageryImpact"]> {
+): Promise<DiagnoseReport['imageryImpact']> {
   const viewer = getInstruments()!.viewer;
-  const out: DiagnoseReport["imageryImpact"] = [];
+  const out: DiagnoseReport['imageryImpact'] = [];
   for (const layer of IMAGERY_LAYERS) {
     useStore.getState().setImagery(layer.id);
     // Wait for the new imagery's tiles to fully stream in before sampling —
@@ -982,36 +974,36 @@ async function measureImageryImpact(
 
 async function measureOverlayImpact(
   log: (msg: string) => void,
-): Promise<DiagnoseReport["overlayImpact"]> {
+): Promise<DiagnoseReport['overlayImpact']> {
   const viewer = getInstruments()!.viewer;
   const overlays: Array<{ key: string; on: () => void; off: () => void }> = [
     {
-      key: "trails=visible",
-      on: () => useStore.getState().setTrailMode("visible"),
-      off: () => useStore.getState().setTrailMode("selected"),
+      key: 'trails=visible',
+      on: () => useStore.getState().setTrailMode('visible'),
+      off: () => useStore.getState().setTrailMode('selected'),
     },
     {
-      key: "heatmap",
+      key: 'heatmap',
       on: () => useStore.getState().setHeatmap(true),
       off: () => useStore.getState().setHeatmap(false),
     },
     {
-      key: "terminator",
+      key: 'terminator',
       on: () => useStore.getState().setTerminator(true),
       off: () => useStore.getState().setTerminator(false),
     },
     {
-      key: "graticule",
+      key: 'graticule',
       on: () => useStore.getState().setGraticule(true),
       off: () => useStore.getState().setGraticule(false),
     },
     {
-      key: "countries",
+      key: 'countries',
       on: () => useStore.getState().setCountries(true),
       off: () => useStore.getState().setCountries(false),
     },
     {
-      key: "cities",
+      key: 'cities',
       on: () => useStore.getState().setCities(true),
       off: () => useStore.getState().setCities(false),
     },
@@ -1019,10 +1011,10 @@ async function measureOverlayImpact(
   // Before the sweep, let any tile streaming from the previous phase settle.
   // Previous report showed 5+ FPS of contamination bleeding from imagery
   // changes into overlay measurements.
-  log("waiting for scene to settle before overlay sweep…");
+  log('waiting for scene to settle before overlay sweep…');
   await waitForTilesSettled(viewer, 1000, 10_000);
 
-  const out: DiagnoseReport["overlayImpact"] = [];
+  const out: DiagnoseReport['overlayImpact'] = [];
   for (const o of overlays) {
     o.off();
     await waitForTilesSettled(viewer, 500, 4_000);
@@ -1032,23 +1024,25 @@ async function measureOverlayImpact(
     const onFps = await sampleFps(3000);
     const delta = offFps.avg - onFps.avg;
     out.push({ overlay: o.key, onFps: onFps.avg, offFps: offFps.avg, deltaFps: delta });
-    log(`${o.key}: on ${onFps.avg.toFixed(1)} · off ${offFps.avg.toFixed(1)} · Δ ${delta.toFixed(1)}`);
+    log(
+      `${o.key}: on ${onFps.avg.toFixed(1)} · off ${offFps.avg.toFixed(1)} · Δ ${delta.toFixed(1)}`,
+    );
   }
   return out;
 }
 
 async function measureFilterImpact(
   log: (msg: string) => void,
-): Promise<DiagnoseReport["filterImpact"]> {
+): Promise<DiagnoseReport['filterImpact']> {
   const viewer = getInstruments()!.viewer;
   const combos: Array<{ label: string; classes: OrbitClass[] }> = [
-    { label: "all", classes: [...ORBIT_CLASSES] },
-    { label: "LEO only", classes: ["LEO"] },
-    { label: "GEO only", classes: ["GEO"] },
-    { label: "MEO only", classes: ["MEO"] },
-    { label: "none", classes: [] },
+    { label: 'all', classes: [...ORBIT_CLASSES] },
+    { label: 'LEO only', classes: ['LEO'] },
+    { label: 'GEO only', classes: ['GEO'] },
+    { label: 'MEO only', classes: ['MEO'] },
+    { label: 'none', classes: [] },
   ];
-  const out: DiagnoseReport["filterImpact"] = [];
+  const out: DiagnoseReport['filterImpact'] = [];
   for (const c of combos) {
     useStore.getState().setFilter(c.classes);
     await waitForTilesSettled(viewer, 400, 3_000);
@@ -1067,11 +1061,11 @@ async function measureFilterImpact(
 
 async function measureCameraModeImpact(
   log: (msg: string) => void,
-): Promise<DiagnoseReport["cameraModeImpact"]> {
+): Promise<DiagnoseReport['cameraModeImpact']> {
   const viewer = getInstruments()!.viewer;
   const st = useStore.getState();
-  const out: DiagnoseReport["cameraModeImpact"] = [];
-  const modes: Array<"orbit" | "follow" | "pov"> = ["orbit", "follow", "pov"];
+  const out: DiagnoseReport['cameraModeImpact'] = [];
+  const modes: Array<'orbit' | 'follow' | 'pov'> = ['orbit', 'follow', 'pov'];
   if (st.selectedNoradId == null) {
     st.select(25544);
     await sleep(500);
@@ -1083,15 +1077,15 @@ async function measureCameraModeImpact(
     out.push({ mode: m, fps: fps.avg });
     log(`camera=${m}: ${fps.avg.toFixed(1)} fps`);
   }
-  st.setCameraMode("orbit");
+  st.setCameraMode('orbit');
   return out;
 }
 
 async function measureTimeWarpImpact(
   log: (msg: string) => void,
-): Promise<DiagnoseReport["timeWarpImpact"]> {
+): Promise<DiagnoseReport['timeWarpImpact']> {
   const clock = getClockControls();
-  const out: DiagnoseReport["timeWarpImpact"] = [];
+  const out: DiagnoseReport['timeWarpImpact'] = [];
   for (const m of [1, 5, 10, 25, 100, 1000, -1000]) {
     clock?.setMultiplier(m);
     await sleep(1500);
@@ -1126,9 +1120,16 @@ async function runConjunctionStress(log: (msg: string) => void): Promise<number 
 
 function summarizeMemoryTrend(
   samples: Array<{ tMs: number; mb: number }>,
-): DiagnoseReport["memoryTrend"] {
+): DiagnoseReport['memoryTrend'] {
   if (samples.length === 0) {
-    return { startMb: null, endMb: null, peakMb: null, deltaMb: null, samples: [], leakSuspected: false };
+    return {
+      startMb: null,
+      endMb: null,
+      peakMb: null,
+      deltaMb: null,
+      samples: [],
+      leakSuspected: false,
+    };
   }
   const first = samples[0].mb;
   const last = samples[samples.length - 1].mb;
@@ -1137,11 +1138,9 @@ function summarizeMemoryTrend(
   // A rough leak heuristic: last quartile is more than 30% higher than first.
   const q1End = Math.floor(samples.length / 4);
   const q4Start = Math.floor((samples.length * 3) / 4);
-  const q1Avg =
-    samples.slice(0, q1End).reduce((a, b) => a + b.mb, 0) / Math.max(1, q1End);
+  const q1Avg = samples.slice(0, q1End).reduce((a, b) => a + b.mb, 0) / Math.max(1, q1End);
   const q4Avg =
-    samples.slice(q4Start).reduce((a, b) => a + b.mb, 0) /
-    Math.max(1, samples.length - q4Start);
+    samples.slice(q4Start).reduce((a, b) => a + b.mb, 0) / Math.max(1, samples.length - q4Start);
   const leakSuspected = q4Avg > q1Avg * 1.3;
   return {
     startMb: first,
@@ -1154,9 +1153,9 @@ function summarizeMemoryTrend(
 }
 
 function downloadJson(data: unknown, filename: string): void {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
+  const a = document.createElement('a');
   a.href = url;
   a.download = filename;
   document.body.appendChild(a);
@@ -1169,9 +1168,9 @@ function downloadJson(data: unknown, filename: string): void {
 
 function generateRecommendations(r: DiagnoseReport): string[] {
   const out: string[] = [];
-  const baseline = r.phases.find((p) => p.name === "baseline");
-  const pan = r.phases.find((p) => p.name === "camera_pan");
-  const zoom = r.phases.find((p) => p.name === "zoom_cycles");
+  const baseline = r.phases.find((p) => p.name === 'baseline');
+  const pan = r.phases.find((p) => p.name === 'camera_pan');
+  const zoom = r.phases.find((p) => p.name === 'zoom_cycles');
 
   if (baseline) {
     if (baseline.fps.avg < 30) {
@@ -1306,6 +1305,7 @@ function generateRecommendations(r: DiagnoseReport): string[] {
     );
   }
 
-  if (out.length === 0) out.push("Nothing obviously wrong. Attach the JSON report for deeper analysis.");
+  if (out.length === 0)
+    out.push('Nothing obviously wrong. Attach the JSON report for deeper analysis.');
   return out;
 }

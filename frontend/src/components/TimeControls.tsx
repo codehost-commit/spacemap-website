@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useStore } from "../state/store.js";
-import { getClockControls } from "../simulation/clock-controls.js";
+import { useState } from 'react';
+import { useStore } from '../state/store.js';
+import { getClockControls } from '../simulation/clock-controls.js';
 
 const SPEEDS = [1, 5, 10, 25, 100, 1000];
 
@@ -9,7 +9,7 @@ export function TimeControls() {
   const multiplier = useStore((s) => s.simMultiplier);
   const paused = useStore((s) => s.simPaused);
   const [showJump, setShowJump] = useState(false);
-  const [jumpValue, setJumpValue] = useState("");
+  const [jumpValue, setJumpValue] = useState('');
 
   const set = (m: number) => getClockControls()?.setMultiplier(m);
   const togglePlay = () => getClockControls()?.setPaused(!paused);
@@ -32,14 +32,16 @@ export function TimeControls() {
       <button
         onClick={togglePlay}
         className="rounded border border-space-border px-2 py-1 text-space-text hover:border-space-accent"
-        title={paused ? "Play" : "Pause"}
+        title={paused ? 'Play' : 'Pause'}
       >
-        {paused ? "▶" : "⏸"}
+        {paused ? '▶' : '⏸'}
       </button>
       <button
         onClick={reverse}
         className={`rounded border px-2 py-1 hover:border-space-accent ${
-          isReversed ? "border-space-accent text-space-accent" : "border-space-border text-space-text"
+          isReversed
+            ? 'border-space-accent text-space-accent'
+            : 'border-space-border text-space-text'
         }`}
         title="Reverse"
       >
@@ -52,8 +54,8 @@ export function TimeControls() {
           onClick={() => set(isReversed ? -s : s)}
           className={`rounded border px-2 py-1 hover:border-space-accent ${
             activeSpeed === s
-              ? "border-space-accent bg-space-accent/10 text-space-accent"
-              : "border-space-border text-space-text"
+              ? 'border-space-accent bg-space-accent/10 text-space-accent'
+              : 'border-space-border text-space-text'
           }`}
         >
           {s}×

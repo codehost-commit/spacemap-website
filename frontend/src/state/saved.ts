@@ -1,6 +1,6 @@
-import { useStore } from "./store.js";
+import { useStore } from './store.js';
 
-const KEY = "spacemap.saved.v1";
+const KEY = 'spacemap.saved.v1';
 
 /** Load persisted saved-satellite ids into the store. Call once on boot. */
 export function loadSavedFromStorage(): void {
@@ -9,7 +9,7 @@ export function loadSavedFromStorage(): void {
     if (!raw) return;
     const arr = JSON.parse(raw) as unknown;
     if (Array.isArray(arr)) {
-      const ids = arr.filter((x): x is number => typeof x === "number");
+      const ids = arr.filter((x): x is number => typeof x === 'number');
       useStore.getState().loadSaved(ids);
     }
   } catch {

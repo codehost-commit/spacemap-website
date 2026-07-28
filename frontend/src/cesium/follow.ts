@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import type { SatelliteLayer } from "./satellite-layer.js";
+import * as Cesium from 'cesium';
+import type { SatelliteLayer } from './satellite-layer.js';
 
 /**
  * Manages "follow satellite" camera lock via a hidden Cesium entity whose
@@ -10,7 +10,10 @@ export class FollowMode {
   private entity: Cesium.Entity | null = null;
   private noradId: number | null = null;
 
-  constructor(private readonly viewer: Cesium.Viewer, private readonly layer: SatelliteLayer) {}
+  constructor(
+    private readonly viewer: Cesium.Viewer,
+    private readonly layer: SatelliteLayer,
+  ) {}
 
   set(noradId: number | null): void {
     if (noradId === this.noradId) return;

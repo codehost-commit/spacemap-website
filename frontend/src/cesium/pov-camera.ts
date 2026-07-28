@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import type { PropagationSnapshot } from "@spacemap/shared";
+import * as Cesium from 'cesium';
+import type { PropagationSnapshot } from '@spacemap/shared';
 
 /**
  * First-person camera mounted on a satellite. Each frame the camera is set to
@@ -84,7 +84,7 @@ export class PovCamera {
       this.fov = Math.min(MAX_FOV_RAD, Math.max(MIN_FOV_RAD, this.fov * factor));
       (cam.frustum as Cesium.PerspectiveFrustum).fov = this.fov;
     };
-    canvas.addEventListener("wheel", this.wheelListener, { passive: false });
+    canvas.addEventListener('wheel', this.wheelListener, { passive: false });
 
     this.unsubPreRender = this.viewer.scene.preRender.addEventListener(() => this.tick());
     this.tick();
@@ -97,7 +97,7 @@ export class PovCamera {
     }
     if (this.wheelListener) {
       const canvas = this.viewer.scene.canvas as HTMLCanvasElement;
-      canvas.removeEventListener("wheel", this.wheelListener);
+      canvas.removeEventListener('wheel', this.wheelListener);
       this.wheelListener = null;
     }
     if (this.savedController && !preserve) {

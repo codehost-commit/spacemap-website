@@ -1,6 +1,6 @@
-import type { Tle } from "@spacemap/shared";
-import { config } from "../config.js";
-import { CelestrakSource } from "./source.js";
+import type { Tle } from '@spacemap/shared';
+import { config } from '../config.js';
+import { CelestrakSource } from './source.js';
 
 /**
  * In-memory TLE catalog with periodic refresh and disk-cache warm start.
@@ -41,7 +41,7 @@ export class TleCatalog {
     }
     await this.refresh();
     this.timer = setInterval(() => {
-      this.refresh().catch((err) => console.error("[tle] refresh failed:", err));
+      this.refresh().catch((err) => console.error('[tle] refresh failed:', err));
     }, config.tleRefreshMs);
   }
 
@@ -54,13 +54,13 @@ export class TleCatalog {
     try {
       const fetched = await this.source.fetchAll();
       if (fetched.length === 0) {
-        console.warn("[tle] refresh returned 0 objects; keeping previous catalog");
+        console.warn('[tle] refresh returned 0 objects; keeping previous catalog');
         return;
       }
       this.replace(fetched);
       console.log(`[tle] refreshed: ${fetched.length} objects`);
     } catch (err) {
-      console.error("[tle] refresh error:", err);
+      console.error('[tle] refresh error:', err);
     }
   }
 
@@ -71,7 +71,7 @@ export class TleCatalog {
       try {
         l(tles);
       } catch (err) {
-        console.error("[tle] listener error:", err);
+        console.error('[tle] listener error:', err);
       }
     }
   }

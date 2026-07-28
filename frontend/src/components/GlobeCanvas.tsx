@@ -1,34 +1,34 @@
-import { useEffect, useRef } from "react";
-import * as Cesium from "cesium";
-import { createViewer } from "../cesium/globe.js";
-import { SatelliteLayer } from "../cesium/satellite-layer.js";
-import { OrbitTrail } from "../cesium/orbit-trail.js";
-import { SonarSweep } from "../cesium/sonar-sweep.js";
-import { HistoryTrails } from "../cesium/history-trails.js";
-import { HeatmapLayer } from "../cesium/heatmap-layer.js";
-import { FollowMode } from "../cesium/follow.js";
-import { PovCamera } from "../cesium/pov-camera.js";
-import { SatelliteModel } from "../cesium/satellite-model.js";
-import { BaseImageryController } from "../cesium/imagery.js";
-import { Terminator } from "../cesium/terminator.js";
-import { Graticule } from "../cesium/graticule.js";
-import { StarCatalog } from "../cesium/star-catalog.js";
-import { Planets } from "../cesium/planets.js";
-import { Countries } from "../cesium/countries.js";
-import { Cities } from "../cesium/cities.js";
-import { GroundStations } from "../cesium/ground-stations.js";
-import { Simulation, installSimulation } from "../simulation/simulation.js";
-import { useStore } from "../state/store.js";
-import { installFocusApi } from "../cesium/focus.js";
-import { installClockControls } from "../simulation/clock-controls.js";
-import { installNotificationWatcher } from "../simulation/notifications.js";
-import { installSavedPersistence, loadSavedFromStorage } from "../state/saved.js";
-import { getLocalTle } from "../simulation/catalog-store.js";
-import { installKeyboardShortcuts } from "../simulation/keyboard.js";
-import { installUrlState } from "../state/url-state.js";
-import { registerInstruments } from "../admin/registry.js";
-import { installInstrumentation } from "../admin/instrumentation.js";
-import { getClockControls } from "../simulation/clock-controls.js";
+import { useEffect, useRef } from 'react';
+import * as Cesium from 'cesium';
+import { createViewer } from '../cesium/globe.js';
+import { SatelliteLayer } from '../cesium/satellite-layer.js';
+import { OrbitTrail } from '../cesium/orbit-trail.js';
+import { SonarSweep } from '../cesium/sonar-sweep.js';
+import { HistoryTrails } from '../cesium/history-trails.js';
+import { HeatmapLayer } from '../cesium/heatmap-layer.js';
+import { FollowMode } from '../cesium/follow.js';
+import { PovCamera } from '../cesium/pov-camera.js';
+import { SatelliteModel } from '../cesium/satellite-model.js';
+import { BaseImageryController } from '../cesium/imagery.js';
+import { Terminator } from '../cesium/terminator.js';
+import { Graticule } from '../cesium/graticule.js';
+import { StarCatalog } from '../cesium/star-catalog.js';
+import { Planets } from '../cesium/planets.js';
+import { Countries } from '../cesium/countries.js';
+import { Cities } from '../cesium/cities.js';
+import { GroundStations } from '../cesium/ground-stations.js';
+import { Simulation, installSimulation } from '../simulation/simulation.js';
+import { useStore } from '../state/store.js';
+import { installFocusApi } from '../cesium/focus.js';
+import { installClockControls } from '../simulation/clock-controls.js';
+import { installNotificationWatcher } from '../simulation/notifications.js';
+import { installSavedPersistence, loadSavedFromStorage } from '../state/saved.js';
+import { getLocalTle } from '../simulation/catalog-store.js';
+import { installKeyboardShortcuts } from '../simulation/keyboard.js';
+import { installUrlState } from '../state/url-state.js';
+import { registerInstruments } from '../admin/registry.js';
+import { installInstrumentation } from '../admin/instrumentation.js';
+import { getClockControls } from '../simulation/clock-controls.js';
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -65,9 +65,7 @@ export function GlobeCanvas() {
 
     // Admin console instrumentation — shared refs + engine event stream.
     const clock = getClockControls();
-    const uninstallRegistry = clock
-      ? registerInstruments({ viewer, layer, sim, clock })
-      : () => {};
+    const uninstallRegistry = clock ? registerInstruments({ viewer, layer, sim, clock }) : () => {};
     const uninstallInstrumentation = installInstrumentation();
 
     // Apply the initial imagery layer immediately so users see something even
@@ -114,17 +112,41 @@ export function GlobeCanvas() {
     //     initiate clicks intentionally, so paying 160 ms once is fine.
     const HOVER_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
-      [4, 0], [-4, 0], [0, 4], [0, -4],
-      [3, 3], [-3, 3], [3, -3], [-3, -3],
+      [4, 0],
+      [-4, 0],
+      [0, 4],
+      [0, -4],
+      [3, 3],
+      [-3, 3],
+      [3, -3],
+      [-3, -3],
     ];
     const CLICK_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
-      [4, 0], [-4, 0], [0, 4], [0, -4],
-      [3, 3], [-3, 3], [3, -3], [-3, -3],
-      [8, 0], [-8, 0], [0, 8], [0, -8],
-      [6, 6], [-6, 6], [6, -6], [-6, -6],
-      [12, 0], [-12, 0], [0, 12], [0, -12],
-      [10, 10], [-10, 10], [10, -10], [-10, -10],
+      [4, 0],
+      [-4, 0],
+      [0, 4],
+      [0, -4],
+      [3, 3],
+      [-3, 3],
+      [3, -3],
+      [-3, -3],
+      [8, 0],
+      [-8, 0],
+      [0, 8],
+      [0, -8],
+      [6, 6],
+      [-6, 6],
+      [6, -6],
+      [-6, -6],
+      [12, 0],
+      [-12, 0],
+      [0, 12],
+      [0, -12],
+      [10, 10],
+      [-10, 10],
+      [10, -10],
+      [-10, -10],
     ];
     const scratchPickPos = new Cesium.Cartesian2();
     const pickWithOffsets = (
@@ -136,9 +158,9 @@ export function GlobeCanvas() {
         scratchPickPos.y = pos.y + dy;
         const picked = viewer.scene.pick(scratchPickPos);
         const id =
-          picked && typeof picked.id === "number"
+          picked && typeof picked.id === 'number'
             ? picked.id
-            : picked?.primitive && typeof picked.primitive.id === "number"
+            : picked?.primitive && typeof picked.primitive.id === 'number'
               ? picked.primitive.id
               : null;
         if (id != null) return id; // early exit — first hit wins
@@ -163,18 +185,15 @@ export function GlobeCanvas() {
     // gets a visible ring. Users get a preview of what will be selected on click.
     let lastHoverMs = 0;
     const HOVER_INTERVAL_MS = 40;
-    handler.setInputAction(
-      (ev: { endPosition: Cesium.Cartesian2 }) => {
-        if (cameraMoving) return;
-        const now = performance.now();
-        if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
-        lastHoverMs = now;
-        const id = pickForHover(ev.endPosition);
-        layer.setHovered(id);
-        viewer.scene.canvas.style.cursor = id != null ? "pointer" : "";
-      },
-      Cesium.ScreenSpaceEventType.MOUSE_MOVE,
-    );
+    handler.setInputAction((ev: { endPosition: Cesium.Cartesian2 }) => {
+      if (cameraMoving) return;
+      const now = performance.now();
+      if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
+      lastHoverMs = now;
+      const id = pickForHover(ev.endPosition);
+      layer.setHovered(id);
+      viewer.scene.canvas.style.cursor = id != null ? 'pointer' : '';
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
     // Snapshot → render loop. Camera position is passed into the layer so
     // it can horizon-cull ~half the catalog on any given frame.
@@ -182,12 +201,7 @@ export function GlobeCanvas() {
     const unsubSnapshot = useStore.subscribe((s) => {
       if (s.snapshot && s.snapshotTick !== lastTick) {
         lastTick = s.snapshotTick;
-        layer.update(
-          s.snapshot,
-          s.filter,
-          s.selectedNoradId,
-          viewer.scene.camera,
-        );
+        layer.update(s.snapshot, s.filter, s.selectedNoradId, viewer.scene.camera);
         trails.ingest(s.snapshot, s.filter);
         void heatmap.ingest(s.snapshot);
       }
@@ -196,8 +210,8 @@ export function GlobeCanvas() {
     // UI state → derived overlays.
     let lastFilterRef: Set<unknown> | null = null;
     let lastSelection: number | null = null;
-    let lastCameraMode = "orbit";
-    let lastTrailMode = "";
+    let lastCameraMode = 'orbit';
+    let lastTrailMode = '';
     let lastHeatmap = false;
     let lastTerminator = false;
     let lastGraticule = false;
@@ -209,12 +223,7 @@ export function GlobeCanvas() {
       if (s.filter !== lastFilterRef) {
         lastFilterRef = s.filter;
         if (s.snapshot) {
-          layer.update(
-            s.snapshot,
-            s.filter,
-            s.selectedNoradId,
-            viewer.scene.camera,
-          );
+          layer.update(s.snapshot, s.filter, s.selectedNoradId, viewer.scene.camera);
           trails.ingest(s.snapshot, s.filter, { force: true });
         }
       }
@@ -230,7 +239,7 @@ export function GlobeCanvas() {
       }
       if (s.trailMode !== lastTrailMode) {
         lastTrailMode = s.trailMode;
-        trails.setEnabled(s.trailMode === "visible");
+        trails.setEnabled(s.trailMode === 'visible');
       }
       if (s.heatmapOn !== lastHeatmap) {
         lastHeatmap = s.heatmapOn;
@@ -315,11 +324,11 @@ function applyCameraMode(
 ): void {
   // In POV of the selected sat, hide the model — otherwise the camera sits
   // inside the mesh and we render the interior.
-  model.setHidden(mode === "pov");
-  if (mode === "follow") {
+  model.setHidden(mode === 'pov');
+  if (mode === 'follow') {
     pov.deactivate();
     follow.set(selectedNoradId);
-  } else if (mode === "pov") {
+  } else if (mode === 'pov') {
     follow.clear();
     if (selectedNoradId != null) pov.activate(selectedNoradId);
     else pov.deactivate();

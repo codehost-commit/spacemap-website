@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
-import { useStore } from "../state/store.js";
-import { closestPairs, type ClosestPair } from "../state/snapshot-util.js";
-import { ORBIT_CLASS_COLOR } from "@spacemap/shared";
+import { useEffect, useState } from 'react';
+import { useStore } from '../state/store.js';
+import { closestPairs, type ClosestPair } from '../state/snapshot-util.js';
+import { ORBIT_CLASS_COLOR } from '@spacemap/shared';
 
 const REFRESH_MS = 3000;
 
@@ -13,7 +13,7 @@ const REFRESH_MS = 3000;
  * (TCA + miss + Pc).
  */
 export function ConjunctionLeaderboard() {
-  const open = useStore((s) => s.openOverlays.has("leaderboard"));
+  const open = useStore((s) => s.openOverlays.has('leaderboard'));
   const setOverlay = useStore((s) => s.setOverlay);
   const names = useStore((s) => s.indexByNorad);
   const select = useStore((s) => s.select);
@@ -61,7 +61,7 @@ export function ConjunctionLeaderboard() {
           </div>
         </div>
         <button
-          onClick={() => setOverlay("leaderboard", false)}
+          onClick={() => setOverlay('leaderboard', false)}
           className="text-space-dim hover:text-space-text"
         >
           ×
@@ -69,30 +69,25 @@ export function ConjunctionLeaderboard() {
       </header>
 
       <div className="border-b border-space-border px-3 py-2 text-[10px] leading-snug text-space-dim">
-        Live pairs currently closest in 3-D space with relative speed &gt; 0.4 km/s
-        (co-orbital cluster-mates filtered out). Click a row to load the full
-        24-hour conjunction analysis in the telemetry panel.
+        Live pairs currently closest in 3-D space with relative speed &gt; 0.4 km/s (co-orbital
+        cluster-mates filtered out). Click a row to load the full 24-hour conjunction analysis in
+        the telemetry panel.
       </div>
 
       <ul className="overflow-auto font-mono text-xs">
-        {computing && pairs.length === 0 && (
-          <li className="p-3 text-space-dim">Scanning…</li>
-        )}
+        {computing && pairs.length === 0 && <li className="p-3 text-space-dim">Scanning…</li>}
         {pairs.length === 0 && !computing && (
-          <li className="p-3 text-space-dim">
-            No qualifying pairs found in the current snapshot.
-          </li>
+          <li className="p-3 text-space-dim">No qualifying pairs found in the current snapshot.</li>
         )}
         {pairs.map((p, idx) => (
-          <li
-            key={`${p.aId}-${p.bId}`}
-            className="border-b border-space-border/40 last:border-b-0"
-          >
+          <li key={`${p.aId}-${p.bId}`} className="border-b border-space-border/40 last:border-b-0">
             <button
               onClick={() => {
                 select(p.aId);
                 setCompare(p.bId);
-                (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(p.aId);
+                (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(
+                  p.aId,
+                );
               }}
               className="grid w-full grid-cols-[auto_1fr_auto_auto] items-center gap-2 px-3 py-2 text-left hover:bg-white/5"
             >
@@ -110,17 +105,15 @@ export function ConjunctionLeaderboard() {
               <span
                 className={
                   p.distanceKm < 5
-                    ? "text-space-bad"
+                    ? 'text-space-bad'
                     : p.distanceKm < 15
-                      ? "text-space-warn"
-                      : "text-space-text"
+                      ? 'text-space-warn'
+                      : 'text-space-text'
                 }
               >
                 {p.distanceKm.toFixed(2)} km
               </span>
-              <span className="text-space-dim">
-                {p.relSpeedKmS.toFixed(2)} km/s
-              </span>
+              <span className="text-space-dim">{p.relSpeedKmS.toFixed(2)} km/s</span>
             </button>
           </li>
         ))}
@@ -130,7 +123,7 @@ export function ConjunctionLeaderboard() {
 }
 
 function ClassDot({ cls }: { cls: string }) {
-  const color = (ORBIT_CLASS_COLOR as Record<string, string>)[cls] ?? "#8899aa";
+  const color = (ORBIT_CLASS_COLOR as Record<string, string>)[cls] ?? '#8899aa';
   return (
     <span
       className="inline-block h-1.5 w-1.5 shrink-0 rounded-full"

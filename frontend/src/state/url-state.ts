@@ -1,7 +1,7 @@
-import { useStore } from "./store.js";
-import type { CameraMode } from "./store.js";
-import { ORBIT_CLASSES, type OrbitClass } from "@spacemap/shared";
-import { getClockControls } from "../simulation/clock-controls.js";
+import { useStore } from './store.js';
+import type { CameraMode } from './store.js';
+import { ORBIT_CLASSES, type OrbitClass } from '@spacemap/shared';
+import { getClockControls } from '../simulation/clock-controls.js';
 
 /**
  * URL-hash state sync so a link like
@@ -19,7 +19,7 @@ interface UrlState {
   img?: string;
   t?: number;
   f?: OrbitClass[];
-  trail?: "off" | "selected" | "visible";
+  trail?: 'off' | 'selected' | 'visible';
   heat?: boolean;
   term?: boolean;
   grid?: boolean;
@@ -39,11 +39,11 @@ export function installUrlState(): () => void {
   });
 
   const onHashChange = () => applyFromUrl();
-  window.addEventListener("hashchange", onHashChange);
+  window.addEventListener('hashchange', onHashChange);
 
   return () => {
     if (timer) clearTimeout(timer);
-    window.removeEventListener("hashchange", onHashChange);
+    window.removeEventListener('hashchange', onHashChange);
     unsub();
   };
 }
@@ -69,12 +69,12 @@ function writeToUrl(): void {
   const parts: string[] = [];
   if (s.selectedNoradId != null) parts.push(`sat=${s.selectedNoradId}`);
   if (s.compareNoradId != null) parts.push(`compare=${s.compareNoradId}`);
-  if (s.cameraMode !== "orbit") parts.push(`cam=${s.cameraMode}`);
-  if (s.imageryId !== "arcgis") parts.push(`img=${s.imageryId}`);
+  if (s.cameraMode !== 'orbit') parts.push(`cam=${s.cameraMode}`);
+  if (s.imageryId !== 'arcgis') parts.push(`img=${s.imageryId}`);
   if (s.filter.size !== ORBIT_CLASSES.length) {
-    parts.push(`f=${[...s.filter].join(",")}`);
+    parts.push(`f=${[...s.filter].join(',')}`);
   }
-  if (s.trailMode !== "selected") parts.push(`trail=${s.trailMode}`);
+  if (s.trailMode !== 'selected') parts.push(`trail=${s.trailMode}`);
   if (s.heatmapOn) parts.push(`heat=1`);
   // Overlays default ON — only encode when the user has turned one off.
   if (!s.terminatorOn) parts.push(`term=0`);
@@ -86,55 +86,55 @@ function writeToUrl(): void {
     parts.push(`t=${Math.round(s.simTimeMs)}`);
   }
 
-  const hash = parts.length > 0 ? "#" + parts.join("&") : "";
+  const hash = parts.length > 0 ? '#' + parts.join('&') : '';
   if (hash === location.hash) return;
-  history.replaceState(null, "", location.pathname + location.search + hash);
+  history.replaceState(null, '', location.pathname + location.search + hash);
 }
 
 function parseHash(hash: string): UrlState {
   const out: UrlState = {};
-  const s = hash.replace(/^#/, "");
+  const s = hash.replace(/^#/, '');
   if (!s) return out;
-  for (const pair of s.split("&")) {
-    const [k, v = ""] = pair.split("=");
+  for (const pair of s.split('&')) {
+    const [k, v = ''] = pair.split('=');
     switch (k) {
-      case "sat":
+      case 'sat':
         if (Number.isFinite(Number(v))) out.sat = Number(v);
         break;
-      case "compare":
+      case 'compare':
         if (Number.isFinite(Number(v))) out.compare = Number(v);
         break;
-      case "cam":
-        if (v === "orbit" || v === "follow" || v === "pov") out.cam = v;
+      case 'cam':
+        if (v === 'orbit' || v === 'follow' || v === 'pov') out.cam = v;
         break;
-      case "img":
+      case 'img':
         out.img = v;
         break;
-      case "t":
+      case 't':
         if (Number.isFinite(Number(v))) out.t = Number(v);
         break;
-      case "f":
+      case 'f':
         out.f = v
-          .split(",")
+          .split(',')
           .filter((c): c is OrbitClass => (ORBIT_CLASSES as readonly string[]).includes(c));
         break;
-      case "trail":
-        if (v === "off" || v === "selected" || v === "visible") out.trail = v;
+      case 'trail':
+        if (v === 'off' || v === 'selected' || v === 'visible') out.trail = v;
         break;
-      case "heat":
-        out.heat = v === "1" || v === "true";
+      case 'heat':
+        out.heat = v === '1' || v === 'true';
         break;
-      case "term":
-        out.term = !(v === "0" || v === "false");
+      case 'term':
+        out.term = !(v === '0' || v === 'false');
         break;
-      case "grid":
-        out.grid = !(v === "0" || v === "false");
+      case 'grid':
+        out.grid = !(v === '0' || v === 'false');
         break;
-      case "ctry":
-        out.ctry = !(v === "0" || v === "false");
+      case 'ctry':
+        out.ctry = !(v === '0' || v === 'false');
         break;
-      case "city":
-        out.city = !(v === "0" || v === "false");
+      case 'city':
+        out.city = !(v === '0' || v === 'false');
         break;
     }
   }

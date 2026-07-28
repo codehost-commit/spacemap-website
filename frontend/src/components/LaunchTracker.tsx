@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useStore } from "../state/store.js";
+import { useEffect, useMemo, useState } from 'react';
+import { useStore } from '../state/store.js';
 
 /**
  * Upcoming-launches panel powered by Launch Library 2 (thespacedevs.com).
@@ -9,7 +9,7 @@ import { useStore } from "../state/store.js";
  * stream URL, a "Watch" button that embeds the YouTube video inline.
  */
 const LL2_URL =
-  "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true";
+  'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true';
 const REFRESH_MS = 5 * 60 * 1000;
 
 interface LL2VidUrl {
@@ -32,7 +32,7 @@ interface LL2Response {
 }
 
 export function LaunchTracker() {
-  const open = useStore((s) => s.openOverlays.has("launches"));
+  const open = useStore((s) => s.openOverlays.has('launches'));
   const setOverlay = useStore((s) => s.setOverlay);
   const [launches, setLaunches] = useState<LL2Launch[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +94,7 @@ export function LaunchTracker() {
           <div className="font-mono text-sm text-space-text">Launch Library 2</div>
         </div>
         <button
-          onClick={() => setOverlay("launches", false)}
+          onClick={() => setOverlay('launches', false)}
           className="text-space-dim hover:text-space-text"
         >
           ×
@@ -128,8 +128,8 @@ export function LaunchTracker() {
       <div className="overflow-auto">
         {error && (
           <div className="p-3 text-xs text-space-warn">
-            Couldn't reach Launch Library ({error}). The service occasionally
-            rate-limits public traffic — try again in a few minutes.
+            Couldn't reach Launch Library ({error}). The service occasionally rate-limits public
+            traffic — try again in a few minutes.
           </div>
         )}
         {launches == null && !error && (
@@ -142,23 +142,18 @@ export function LaunchTracker() {
           {launches?.map((l) => {
             const netMs = new Date(l.net).getTime();
             const dt = netMs - nowMs;
-            const status = l.status?.name ?? "";
+            const status = l.status?.name ?? '';
             const streamUrl = l.vidURLs?.find((v) => v.url)?.url;
             return (
-              <li
-                key={l.id}
-                className="border-b border-space-border/40 px-3 py-2 last:border-b-0"
-              >
+              <li key={l.id} className="border-b border-space-border/40 px-3 py-2 last:border-b-0">
                 <div className="flex items-baseline justify-between gap-2">
-                  <div className="min-w-0 flex-1 truncate text-space-text">
-                    {l.name}
-                  </div>
+                  <div className="min-w-0 flex-1 truncate text-space-text">{l.name}</div>
                   <div className="shrink-0 text-space-accent">{formatCountdown(dt)}</div>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between text-[10px] text-space-dim">
                   <span className="truncate">
-                    {l.rocket?.configuration?.full_name ?? l.rocket?.configuration?.name ?? ""}
-                    {l.pad?.name ? ` · ${l.pad.name}` : ""}
+                    {l.rocket?.configuration?.full_name ?? l.rocket?.configuration?.name ?? ''}
+                    {l.pad?.name ? ` · ${l.pad.name}` : ''}
                   </span>
                   {status && <span className="ml-2 shrink-0">{status}</span>}
                 </div>
@@ -169,15 +164,18 @@ export function LaunchTracker() {
                         onClick={() => setWatching(l.id === watching ? null : l.id)}
                         className={`rounded border px-2 py-0.5 text-[10px] ${
                           watching === l.id
-                            ? "border-space-accent bg-space-accent/10 text-space-accent"
-                            : "border-space-border text-space-text hover:border-space-accent"
+                            ? 'border-space-accent bg-space-accent/10 text-space-accent'
+                            : 'border-space-border text-space-text hover:border-space-accent'
                         }`}
                       >
-                        {watching === l.id ? "Hide video" : "Watch live"}
+                        {watching === l.id ? 'Hide video' : 'Watch live'}
                       </button>
                     )}
                     {l.mission?.description && (
-                      <span className="truncate text-[10px] text-space-dim" title={l.mission.description}>
+                      <span
+                        className="truncate text-[10px] text-space-dim"
+                        title={l.mission.description}
+                      >
                         {l.mission.description}
                       </span>
                     )}
@@ -194,13 +192,13 @@ export function LaunchTracker() {
 
 function formatCountdown(deltaMs: number): string {
   const abs = Math.abs(deltaMs);
-  const sign = deltaMs < 0 ? "T+" : "T-";
+  const sign = deltaMs < 0 ? 'T+' : 'T-';
   const totalSec = Math.floor(abs / 1000);
   const days = Math.floor(totalSec / 86400);
   const hours = Math.floor((totalSec % 86400) / 3600);
   const minutes = Math.floor((totalSec % 3600) / 60);
   const seconds = totalSec % 60;
-  const pad = (n: number) => n.toString().padStart(2, "0");
+  const pad = (n: number) => n.toString().padStart(2, '0');
   if (days > 0) return `${sign}${days}d ${pad(hours)}h ${pad(minutes)}m`;
   if (hours > 0) return `${sign}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   return `${sign}${pad(minutes)}:${pad(seconds)}`;
@@ -214,12 +212,12 @@ function toYoutubeEmbed(url: string): string | null {
   try {
     const u = new URL(url);
     let id: string | null = null;
-    if (u.hostname === "youtu.be") {
+    if (u.hostname === 'youtu.be') {
       id = u.pathname.slice(1);
-    } else if (u.hostname.endsWith("youtube.com") || u.hostname.endsWith("youtube-nocookie.com")) {
-      if (u.pathname === "/watch") id = u.searchParams.get("v");
-      else if (u.pathname.startsWith("/embed/")) return url;
-      else if (u.pathname.startsWith("/live/")) id = u.pathname.split("/")[2];
+    } else if (u.hostname.endsWith('youtube.com') || u.hostname.endsWith('youtube-nocookie.com')) {
+      if (u.pathname === '/watch') id = u.searchParams.get('v');
+      else if (u.pathname.startsWith('/embed/')) return url;
+      else if (u.pathname.startsWith('/live/')) id = u.pathname.split('/')[2];
     }
     if (!id) return null;
     return `https://www.youtube.com/embed/${encodeURIComponent(id)}?autoplay=1&mute=1&controls=1`;

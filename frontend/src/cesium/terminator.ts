@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Draws the solar terminator — the great circle on Earth's surface where the
@@ -65,9 +65,7 @@ export class Terminator {
 
     // Two perpendicular unit vectors spanning the plane whose normal is sunEcef.
     const helper: Cesium.Cartesian3 =
-      Math.abs(sunEcef.z) < 0.9
-        ? new Cesium.Cartesian3(0, 0, 1)
-        : new Cesium.Cartesian3(1, 0, 0);
+      Math.abs(sunEcef.z) < 0.9 ? new Cesium.Cartesian3(0, 0, 1) : new Cesium.Cartesian3(1, 0, 0);
     const u = Cesium.Cartesian3.normalize(
       Cesium.Cartesian3.cross(sunEcef, helper, new Cesium.Cartesian3()),
       new Cesium.Cartesian3(),
@@ -93,7 +91,7 @@ export class Terminator {
       this.polyline = this.collection.add({
         positions,
         width: 1.5,
-        material: Cesium.Material.fromType("Color", {
+        material: Cesium.Material.fromType('Color', {
           color: new Cesium.Color(1, 0.85, 0.4, 0.85),
         }),
       });
@@ -113,8 +111,7 @@ function sunDirectionEcef(date: Date): Cesium.Cartesian3 {
   const n = jd - 2451545.0;
   const L = ((280.46 + 0.9856474 * n) * Math.PI) / 180;
   const g = ((357.528 + 0.9856003 * n) * Math.PI) / 180;
-  const lambda =
-    L + ((1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * Math.PI) / 180;
+  const lambda = L + ((1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * Math.PI) / 180;
   const eps = (23.439 * Math.PI) / 180;
   // Sun direction in ECI (rectangular).
   const ex = Math.cos(lambda);
@@ -124,11 +121,7 @@ function sunDirectionEcef(date: Date): Cesium.Cartesian3 {
   const gmst = greenwichSiderealTime(jd);
   const cosG = Math.cos(gmst);
   const sinG = Math.sin(gmst);
-  return new Cesium.Cartesian3(
-    cosG * ex + sinG * ey,
-    -sinG * ex + cosG * ey,
-    ez,
-  );
+  return new Cesium.Cartesian3(cosG * ex + sinG * ey, -sinG * ex + cosG * ey, ez);
 }
 
 /** Greenwich Mean Sidereal Time in radians, from Julian Date. */

@@ -1,9 +1,9 @@
-import * as Cesium from "cesium";
-import type { ConjunctionResult, PropagationSnapshot, Tle } from "@spacemap/shared";
-import PropagatorWorker from "../workers/propagator.worker.ts?worker";
-import { fetchTles } from "./tle-catalog.js";
-import { setLocalCatalog } from "./catalog-store.js";
-import { useStore } from "../state/store.js";
+import * as Cesium from 'cesium';
+import type { ConjunctionResult, PropagationSnapshot, Tle } from '@spacemap/shared';
+import PropagatorWorker from '../workers/propagator.worker.ts?worker';
+import { fetchTles } from './tle-catalog.js';
+import { setLocalCatalog } from './catalog-store.js';
+import { useStore } from '../state/store.js';
 
 export class Simulation {
   private worker: Worker;
@@ -14,10 +14,7 @@ export class Simulation {
   private readonly minIntervalMs = 180;
   private disposers: Array<() => void> = [];
   private nextRequestId = 1;
-  private conjunctionWaiters = new Map<
-    number,
-    (result: ConjunctionResult | Error) => void
-  >();
+  private conjunctionWaiters = new Map<number, (result: ConjunctionResult | Error) => void>();
   private nextPingNonce = 1;
   private pingWaiters = new Map<number, (rtt: number) => void>();
 
@@ -28,20 +25,18 @@ export class Simulation {
 
   async load(): Promise<void> {
     const store = useStore.getState();
-    store.setCatalogStatus("loading");
+    store.setCatalogStatus('loading');
     try {
       const tles = await fetchTles();
-      this.worker.postMessage({ type: "load", tles });
+      this.worker.postMessage({ type: 'load', tles });
       setLocalCatalog(tles);
       store.setIndex(tles.map((t: Tle) => ({ noradId: t.noradId, name: t.name })));
-      store.setCatalogStatus("ready");
+      store.setCatalogStatus('ready');
       // Fire an immediate propagation now that the worker has data — don't
       // wait for the next Cesium tick.
-      this.requestPropagation(
-        Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
-      );
+      this.requestPropagation(Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime());
     } catch (err) {
-      store.setCatalogStatus("error", err instanceof Error ? err.message : String(err));
+      store.setCatalogStatus('error', err instanceof Error ? err.message : String(err));
       throw err;
     }
   }
@@ -75,7 +70,7 @@ export class Simulation {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pingWaiters.delete(nonce);
-        reject(new Error("worker ping timed out"));
+        reject(new Error('worker ping timed out'));
       }, 5000);
       // The handler stores the reply's catalog size on this closure so we
       // can pass it out with the RTT.
@@ -84,7 +79,7 @@ export class Simulation {
         clearTimeout(timeout);
         resolve({ rttMs: endMs - start, catalogSize: this.pingCatalogTemp });
       });
-      this.worker.postMessage({ type: "ping", nonce });
+      this.worker.postMessage({ type: 'ping', nonce });
     });
   }
   private pingCatalogTemp = 0;
@@ -105,7 +100,7 @@ export class Simulation {
         else resolve(r);
       });
       this.worker.postMessage({
-        type: "conjunction",
+        type: 'conjunction',
         requestId,
         aId,
         bId,
@@ -124,15 +119,13 @@ export class Simulation {
     }
     if (now - this.lastRequestMs < this.minIntervalMs) {
       this.queued = true;
-      this.scheduleQueuedPropagation(
-        Math.max(0, this.minIntervalMs - (now - this.lastRequestMs)),
-      );
+      this.scheduleQueuedPropagation(Math.max(0, this.minIntervalMs - (now - this.lastRequestMs)));
       return;
     }
     this.inflight = true;
     this.lastRequestMs = now;
     this.queued = false;
-    this.worker.postMessage({ type: "propagate", timeMs });
+    this.worker.postMessage({ type: 'propagate', timeMs });
   }
 
   private scheduleQueuedPropagation(delayMs: number): void {
@@ -142,19 +135,17 @@ export class Simulation {
       this.timerScheduled = false;
       if (!this.queued || this.inflight) return;
       this.queued = false;
-      this.requestPropagation(
-        Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime(),
-      );
+      this.requestPropagation(Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime());
     }, delayMs);
   }
 
   private handleWorkerMessage(msg: unknown): void {
-    if (!msg || typeof msg !== "object") return;
+    if (!msg || typeof msg !== 'object') return;
     const m = msg as { type: string };
 
-    if (m.type === "snapshot") {
+    if (m.type === 'snapshot') {
       const s = msg as {
-        type: "snapshot";
+        type: 'snapshot';
         timeMs: number;
         count: number;
         ids: ArrayBuffer;
@@ -184,8 +175,8 @@ export class Simulation {
       return;
     }
 
-    if (m.type === "pong") {
-      const r = msg as { type: "pong"; nonce: number; catalogSize: number };
+    if (m.type === 'pong') {
+      const r = msg as { type: 'pong'; nonce: number; catalogSize: number };
       const cb = this.pingWaiters.get(r.nonce);
       if (cb) {
         this.pingWaiters.delete(r.nonce);
@@ -195,9 +186,9 @@ export class Simulation {
       return;
     }
 
-    if (m.type === "conjunctionResult") {
+    if (m.type === 'conjunctionResult') {
       const r = msg as {
-        type: "conjunctionResult";
+        type: 'conjunctionResult';
         requestId: number;
         result?: ConjunctionResult;
         error?: string;
@@ -205,7 +196,7 @@ export class Simulation {
       const cb = this.conjunctionWaiters.get(r.requestId);
       if (!cb) return;
       this.conjunctionWaiters.delete(r.requestId);
-      cb(r.result ?? new Error(r.error ?? "conjunction failed"));
+      cb(r.result ?? new Error(r.error ?? 'conjunction failed'));
       return;
     }
   }

@@ -1,5 +1,5 @@
-declare module "lucide-react" {
-  import { FC, SVGAttributes } from "react";
+declare module 'lucide-react' {
+  import { FC, SVGAttributes } from 'react';
   interface IconProps extends SVGAttributes<SVGElement> {
     size?: number | string;
     strokeWidth?: number | string;

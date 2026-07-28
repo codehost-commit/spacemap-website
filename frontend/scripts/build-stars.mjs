@@ -15,29 +15,29 @@
  *
  * Usage:  node build-stars.mjs <input.csv> <output.bin> [magLimit]
  */
-import fs from "node:fs";
+import fs from 'node:fs';
 
 const [, , inPath, outPath, magArg] = process.argv;
 if (!inPath || !outPath) {
-  console.error("usage: build-stars.mjs <in.csv> <out.bin> [magLimit=7.0]");
+  console.error('usage: build-stars.mjs <in.csv> <out.bin> [magLimit=7.0]');
   process.exit(1);
 }
 const MAG_LIMIT = Number(magArg ?? 7.0);
 
-const text = fs.readFileSync(inPath, "utf8");
+const text = fs.readFileSync(inPath, 'utf8');
 const lines = text.split(/\r?\n/);
 if (lines.length < 2) {
-  console.error("empty CSV");
+  console.error('empty CSV');
   process.exit(1);
 }
 
 const header = parseCsvRow(lines[0]);
-const raIdx = header.indexOf("ra");
-const decIdx = header.indexOf("dec");
-const magIdx = header.indexOf("mag");
-const ciIdx = header.indexOf("ci");
+const raIdx = header.indexOf('ra');
+const decIdx = header.indexOf('dec');
+const magIdx = header.indexOf('mag');
+const ciIdx = header.indexOf('ci');
 if (raIdx < 0 || decIdx < 0 || magIdx < 0) {
-  console.error("CSV missing required columns (ra/dec/mag)");
+  console.error('CSV missing required columns (ra/dec/mag)');
   process.exit(1);
 }
 
@@ -53,8 +53,8 @@ for (let i = 1; i < lines.length; i++) {
   if (!Number.isFinite(raHours) || !Number.isFinite(decDeg)) continue;
   const ci = ciIdx >= 0 ? Number(cols[ciIdx]) : NaN;
   stars.push([
-    (raHours * Math.PI) / 12,           // RA (hours → radians)
-    (decDeg * Math.PI) / 180,           // Dec (degrees → radians)
+    (raHours * Math.PI) / 12, // RA (hours → radians)
+    (decDeg * Math.PI) / 180, // Dec (degrees → radians)
     mag,
     Number.isFinite(ci) ? ci : 0,
   ]);
@@ -80,7 +80,7 @@ console.log(
 /** Minimal CSV row parser — HYG rows may contain commas inside "quoted" cells. */
 function parseCsvRow(row) {
   const out = [];
-  let field = "";
+  let field = '';
   let inQuotes = false;
   for (let i = 0; i < row.length; i++) {
     const c = row[i];
@@ -95,9 +95,9 @@ function parseCsvRow(row) {
       }
     } else if (c === '"') {
       inQuotes = true;
-    } else if (c === ",") {
+    } else if (c === ',') {
       out.push(field);
-      field = "";
+      field = '';
     } else {
       field += c;
     }

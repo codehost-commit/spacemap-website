@@ -1,5 +1,5 @@
 // three.js is installed manually; this declaration silences TS if @types/three is missing
-declare module "three" {
+declare module 'three' {
   export class Scene {
     add(...objects: any[]): void;
   }
@@ -86,7 +86,16 @@ declare module "three" {
     dispose(): void;
   }
   export class EllipseCurve {
-    constructor(aX: number, aY: number, xRadius: number, yRadius: number, aStartAngle: number, aEndAngle: number, aClockwise: boolean, aRotation: number);
+    constructor(
+      aX: number,
+      aY: number,
+      xRadius: number,
+      yRadius: number,
+      aStartAngle: number,
+      aEndAngle: number,
+      aClockwise: boolean,
+      aRotation: number,
+    );
     getPoints(divisions: number): { x: number; y: number }[];
   }
   export const BackSide: number;

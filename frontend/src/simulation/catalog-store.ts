@@ -1,5 +1,5 @@
-import * as satellite from "satellite.js";
-import type { Tle } from "@spacemap/shared";
+import * as satellite from 'satellite.js';
+import type { Tle } from '@spacemap/shared';
 
 /**
  * Module-level cache of TLEs + parsed SGP4 records, kept OUT of the React

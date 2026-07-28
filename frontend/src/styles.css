@@ -10,9 +10,9 @@ body,
 }
 
 body {
-  font-family: theme("fontFamily.sans");
-  background: theme("colors.space.bg");
-  color: theme("colors.space.text");
+  font-family: theme('fontFamily.sans');
+  background: theme('colors.space.bg');
+  color: theme('colors.space.text');
   -webkit-tap-highlight-color: transparent;
 }
 
@@ -30,8 +30,12 @@ html {
 
 /* Hero product image slow zoom */
 @keyframes slowZoom {
-  from { transform: scale(1); }
-  to   { transform: scale(1.08); }
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.08);
+  }
 }
 
 /* Liquid glass header effect */
@@ -89,7 +93,7 @@ html {
 .cesium-viewer,
 .cesium-widget,
 .cesium-widget canvas {
-  background: theme("colors.space.bg") !important;
+  background: theme('colors.space.bg') !important;
 }
 
 .spacemap-overlay {

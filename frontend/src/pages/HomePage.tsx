@@ -1,55 +1,46 @@
-import { Link } from "react-router-dom";
-import { HeroGlobe } from "../components/HeroGlobe.js";
-import {
-  Globe,
-  Satellite,
-  Search,
-  Shield,
-  Clock,
-  Zap,
-  Eye,
-  ArrowRight,
-} from "lucide-react";
-import emblemSrc from "../assets/brand-emblem.png";
+import { Link } from 'react-router-dom';
+import { HeroGlobe } from '../components/HeroGlobe.js';
+import { Globe, Satellite, Search, Shield, Clock, Zap, Eye, ArrowRight } from 'lucide-react';
+import emblemSrc from '../assets/brand-emblem.png';
 
 const FEATURES = [
   {
     icon: Globe,
-    title: "3D Cesium Globe",
-    desc: "A full-resolution, interactive 3D Earth rendered with CesiumJS. Rotate, zoom, and fly to any point on the planet.",
+    title: '3D Cesium Globe',
+    desc: 'A full-resolution, interactive 3D Earth rendered with CesiumJS. Rotate, zoom, and fly to any point on the planet.',
   },
   {
     icon: Satellite,
-    title: "30,000+ Tracked Objects",
-    desc: "The full active catalog from Space-Track and CelesTrak. LEO, MEO, HEO, GEO, and sub-synchronous orbits, all color-coded.",
+    title: '30,000+ Tracked Objects',
+    desc: 'The full active catalog from Space-Track and CelesTrak. LEO, MEO, HEO, GEO, and sub-synchronous orbits, all color-coded.',
   },
   {
     icon: Search,
-    title: "Instant Search",
-    desc: "Find any satellite by name, NORAD ID, or international designator. Results appear as you type.",
+    title: 'Instant Search',
+    desc: 'Find any satellite by name, NORAD ID, or international designator. Results appear as you type.',
   },
   {
     icon: Shield,
-    title: "100% Client-Side",
-    desc: "SGP4 propagation runs in Web Workers on your CPU. No data is uploaded, no account is required.",
+    title: '100% Client-Side',
+    desc: 'SGP4 propagation runs in Web Workers on your CPU. No data is uploaded, no account is required.',
   },
   {
     icon: Clock,
-    title: "Time Travel",
-    desc: "Scrub through time to replay past events or fast-forward into the future at up to 1000x speed.",
+    title: 'Time Travel',
+    desc: 'Scrub through time to replay past events or fast-forward into the future at up to 1000x speed.',
   },
   {
     icon: Eye,
-    title: "Live ISS Camera",
-    desc: "Stream the ISS external HD camera feed directly inside the tracker, synced to its real-time position.",
+    title: 'Live ISS Camera',
+    desc: 'Stream the ISS external HD camera feed directly inside the tracker, synced to its real-time position.',
   },
 ];
 
 const STATS = [
-  { value: "30,000+", label: "Tracked objects" },
-  { value: "<1s", label: "Refresh interval" },
-  { value: "100%", label: "Client-side" },
-  { value: "0", label: "Data uploaded" },
+  { value: '30,000+', label: 'Tracked objects' },
+  { value: '<1s', label: 'Refresh interval' },
+  { value: '100%', label: 'Client-side' },
+  { value: '0', label: 'Data uploaded' },
 ];
 
 export function HomePage() {
@@ -77,9 +68,8 @@ export function HomePage() {
               </span>
             </h1>
             <p className="mt-6 max-w-xl text-lg text-space-dim md:text-xl">
-              Real-time orbital tracking for every satellite, piece of debris, and
-              spacecraft, rendered on a 3D globe and powered entirely by your
-              browser.
+              Real-time orbital tracking for every satellite, piece of debris, and spacecraft,
+              rendered on a 3D globe and powered entirely by your browser.
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row lg:justify-start sm:justify-center">
               <Link
@@ -118,9 +108,7 @@ export function HomePage() {
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
           {STATS.map((stat) => (
             <div key={stat.label} className="text-center">
-              <div className="text-3xl font-bold text-space-accent md:text-4xl">
-                {stat.value}
-              </div>
+              <div className="text-3xl font-bold text-space-accent md:text-4xl">{stat.value}</div>
               <div className="mt-1 text-sm text-space-dim">{stat.label}</div>
             </div>
           ))}
@@ -138,8 +126,8 @@ export function HomePage() {
               Everything you need for orbital awareness
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-space-dim">
-              From satellite search to conjunction analysis, SpaceMap gives you a
-              mission-control experience in a single browser tab.
+              From satellite search to conjunction analysis, SpaceMap gives you a mission-control
+              experience in a single browser tab.
             </p>
           </div>
 
@@ -153,9 +141,7 @@ export function HomePage() {
                   <f.icon size={22} />
                 </div>
                 <h3 className="text-base font-semibold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-space-dim">
-                  {f.desc}
-                </p>
+                <p className="mt-2 text-sm leading-relaxed text-space-dim">{f.desc}</p>
               </div>
             ))}
           </div>
@@ -176,12 +162,9 @@ export function HomePage() {
       <section className="relative z-10 py-24">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#4d96e8]/10 to-[#8ed8ff]/5 p-12 backdrop-blur-sm md:p-16">
-            <h2 className="text-3xl font-bold text-white md:text-4xl">
-              Ready to explore orbit?
-            </h2>
+            <h2 className="text-3xl font-bold text-white md:text-4xl">Ready to explore orbit?</h2>
             <p className="mx-auto mt-4 max-w-lg text-space-dim">
-              No account needed. No downloads. Just open the tracker and start
-              exploring.
+              No account needed. No downloads. Just open the tracker and start exploring.
             </p>
             <Link
               to="/tracker"

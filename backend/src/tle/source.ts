@@ -1,8 +1,8 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname } from "node:path";
-import type { Tle } from "@spacemap/shared";
-import { config } from "../config.js";
-import { parseTleText } from "./parse.js";
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
+import type { Tle } from '@spacemap/shared';
+import { config } from '../config.js';
+import { parseTleText } from './parse.js';
 
 /**
  * TleSource abstraction lets us swap CelesTrak for Space-Track, a local
@@ -18,7 +18,7 @@ export class CelestrakSource implements TleSource {
   async fetchAll(): Promise<Tle[]> {
     const results = await Promise.allSettled(
       this.urls.map(async (url) => {
-        const res = await fetch(url, { headers: { "User-Agent": "SpaceMap/0.1 (+dev)" } });
+        const res = await fetch(url, { headers: { 'User-Agent': 'SpaceMap/0.1 (+dev)' } });
         if (!res.ok) throw new Error(`TLE fetch ${url} → ${res.status}`);
         return res.text();
       }),
@@ -27,8 +27,8 @@ export class CelestrakSource implements TleSource {
     const merged: Tle[] = [];
     const seen = new Set<number>();
     for (const r of results) {
-      if (r.status === "rejected") {
-        console.warn("[tle] source failed:", r.reason);
+      if (r.status === 'rejected') {
+        console.warn('[tle] source failed:', r.reason);
         continue;
       }
       for (const tle of parseTleText(r.value)) {
@@ -46,7 +46,7 @@ export class CelestrakSource implements TleSource {
   /** Read whatever's on disk if the network is down at boot. */
   async loadCache(): Promise<Tle[]> {
     try {
-      const text = await readFile(config.cacheFile, "utf8");
+      const text = await readFile(config.cacheFile, 'utf8');
       return parseTleText(text);
     } catch {
       return [];
@@ -56,10 +56,10 @@ export class CelestrakSource implements TleSource {
   private async writeCache(tles: Tle[]): Promise<void> {
     try {
       await mkdir(dirname(config.cacheFile), { recursive: true });
-      const text = tles.map((t) => `${t.name}\n${t.line1}\n${t.line2}`).join("\n") + "\n";
-      await writeFile(config.cacheFile, text, "utf8");
+      const text = tles.map((t) => `${t.name}\n${t.line1}\n${t.line2}`).join('\n') + '\n';
+      await writeFile(config.cacheFile, text, 'utf8');
     } catch (err) {
-      console.warn("[tle] cache write failed:", err);
+      console.warn('[tle] cache write failed:', err);
     }
   }
 }

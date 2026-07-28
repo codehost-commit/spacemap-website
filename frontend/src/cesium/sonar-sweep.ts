@@ -1,6 +1,6 @@
-import * as Cesium from "cesium";
-import * as satellite from "satellite.js";
-import type { Tle } from "@spacemap/shared";
+import * as Cesium from 'cesium';
+import * as satellite from 'satellite.js';
+import type { Tle } from '@spacemap/shared';
 
 /**
  * "Radar sweep" pulse that fires along the selected satellite's orbit every
@@ -14,7 +14,7 @@ import type { Tle } from "@spacemap/shared";
  * exactly with the orbit ribbon.
  */
 
-const CYCLE_MS = 3200;   // full loop: grow → dwell → fade → wait
+const CYCLE_MS = 3200; // full loop: grow → dwell → fade → wait
 const GROW_END_MS = 1600; // pulse reaches the satellite head at this point
 const FADE_END_MS = 2400; // fully invisible after this
 const SAMPLE_COUNT = 90;
@@ -128,7 +128,7 @@ export class SonarSweep {
       const relMs = tailOffsetMs + (headOffsetMs - tailOffsetMs) * u;
       const t = new Date(nowDate.getTime() + relMs);
       const pv = satellite.propagate(this.satrec, t);
-      if (!pv || typeof pv.position === "boolean") continue;
+      if (!pv || typeof pv.position === 'boolean') continue;
       const p = pv.position;
       samples.push(
         new Cesium.Cartesian3(
@@ -144,7 +144,7 @@ export class SonarSweep {
     }
 
     if (!this.material) {
-      this.material = Cesium.Material.fromType("PolylineGlow", {
+      this.material = Cesium.Material.fromType('PolylineGlow', {
         glowPower: 0.35,
         taperPower: 0.55,
         color: SWEEP_COLOR,

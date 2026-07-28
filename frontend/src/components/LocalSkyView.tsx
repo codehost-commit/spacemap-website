@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { useStore } from "../state/store.js";
-import { overheadPasses } from "../state/snapshot-util.js";
+import { useEffect, useState } from 'react';
+import { useStore } from '../state/store.js';
+import { overheadPasses } from '../state/snapshot-util.js';
 
 interface Observer {
   latDeg: number;
@@ -14,7 +14,7 @@ interface Observer {
  * elevation/azimuth for every satellite in the current snapshot.
  */
 export function LocalSkyView() {
-  const open = useStore((s) => s.openOverlays.has("sky"));
+  const open = useStore((s) => s.openOverlays.has('sky'));
   const setOverlay = useStore((s) => s.setOverlay);
   const snapshot = useStore((s) => s.snapshot);
   const names = useStore((s) => s.indexByNorad);
@@ -25,8 +25,8 @@ export function LocalSkyView() {
 
   useEffect(() => {
     if (!open || observer) return;
-    if (!("geolocation" in navigator)) {
-      setGeoError("Geolocation not available");
+    if (!('geolocation' in navigator)) {
+      setGeoError('Geolocation not available');
       return;
     }
     navigator.geolocation.getCurrentPosition(
@@ -35,7 +35,7 @@ export function LocalSkyView() {
           latDeg: pos.coords.latitude,
           lonDeg: pos.coords.longitude,
           altKm: (pos.coords.altitude ?? 0) / 1000,
-          label: "Your location",
+          label: 'Your location',
         });
         setGeoError(null);
       },
@@ -58,11 +58,11 @@ export function LocalSkyView() {
           <div className="font-mono text-sm text-space-text">
             {observer
               ? `${observer.latDeg.toFixed(3)}°, ${observer.lonDeg.toFixed(3)}°`
-              : "Locating…"}
+              : 'Locating…'}
           </div>
         </div>
         <button
-          onClick={() => setOverlay("sky", false)}
+          onClick={() => setOverlay('sky', false)}
           className="text-space-dim hover:text-space-text"
         >
           ×
@@ -83,9 +83,7 @@ export function LocalSkyView() {
         <span className="w-8 text-right text-space-text">{minElev}°</span>
       </div>
 
-      {geoError && (
-        <div className="p-3 text-xs text-space-warn">{geoError}</div>
-      )}
+      {geoError && <div className="p-3 text-xs text-space-warn">{geoError}</div>}
 
       <ul className="flex-1 overflow-auto font-mono text-xs">
         {passes.length === 0 && observer && !geoError && (
@@ -99,7 +97,9 @@ export function LocalSkyView() {
             <button
               onClick={() => {
                 select(p.noradId);
-                (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(p.noradId);
+                (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(
+                  p.noradId,
+                );
               }}
               className="min-w-0 truncate text-left text-space-text hover:text-space-accent"
             >

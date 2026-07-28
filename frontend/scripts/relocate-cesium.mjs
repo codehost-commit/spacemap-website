@@ -13,11 +13,11 @@
  * No-op when the base is `/` (root deploy) or when the nested dir doesn't
  * exist (plugin behaviour may change in a future version).
  */
-import fs from "node:fs";
-import path from "node:path";
+import fs from 'node:fs';
+import path from 'node:path';
 
-const dist = path.resolve(process.argv[2] ?? "dist");
-const base = (process.env.VITE_BASE_URL ?? "/").replace(/^\/|\/$/g, "");
+const dist = path.resolve(process.argv[2] ?? 'dist');
+const base = (process.env.VITE_BASE_URL ?? '/').replace(/^\/|\/$/g, '');
 if (!base) {
   process.exit(0);
 }

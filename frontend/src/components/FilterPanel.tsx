@@ -1,21 +1,21 @@
-import { ORBIT_CLASSES, ORBIT_CLASS_COLOR, type OrbitClass } from "@spacemap/shared";
-import { useStore, type TrailMode } from "../state/store.js";
-import { ImageryPicker } from "./ImageryPicker.js";
+import { ORBIT_CLASSES, ORBIT_CLASS_COLOR, type OrbitClass } from '@spacemap/shared';
+import { useStore, type TrailMode } from '../state/store.js';
+import { ImageryPicker } from './ImageryPicker.js';
 
 const LABELS: Record<OrbitClass, string> = {
-  LEO: "LEO",
-  MEO: "MEO",
-  GEO: "GEO",
-  HEO: "HEO",
-  POLAR: "Polar",
-  SSO: "Sun-sync",
-  UNKNOWN: "Other",
+  LEO: 'LEO',
+  MEO: 'MEO',
+  GEO: 'GEO',
+  HEO: 'HEO',
+  POLAR: 'Polar',
+  SSO: 'Sun-sync',
+  UNKNOWN: 'Other',
 };
 
 const TRAIL_LABEL: Record<TrailMode, string> = {
-  off: "Off",
-  selected: "Selected",
-  visible: "Visible",
+  off: 'Off',
+  selected: 'Selected',
+  visible: 'Visible',
 };
 
 export function FilterPanel() {
@@ -44,12 +44,10 @@ export function FilterPanel() {
         label="Orbit class"
         action={
           <button
-            onClick={() =>
-              setFilter(filter.size === ORBIT_CLASSES.length ? [] : ORBIT_CLASSES)
-            }
+            onClick={() => setFilter(filter.size === ORBIT_CLASSES.length ? [] : ORBIT_CLASSES)}
             className="text-space-dim hover:text-space-text"
           >
-            {filter.size === ORBIT_CLASSES.length ? "None" : "All"}
+            {filter.size === ORBIT_CLASSES.length ? 'None' : 'All'}
           </button>
         }
       />
@@ -60,7 +58,7 @@ export function FilterPanel() {
             <label
               key={cls}
               className={`flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5 ${
-                active ? "text-space-text" : "text-space-dim line-through"
+                active ? 'text-space-text' : 'text-space-dim line-through'
               }`}
             >
               <input
@@ -73,7 +71,7 @@ export function FilterPanel() {
                 className="h-2 w-2 rounded-full"
                 style={{
                   background: ORBIT_CLASS_COLOR[cls],
-                  boxShadow: active ? `0 0 6px ${ORBIT_CLASS_COLOR[cls]}` : "none",
+                  boxShadow: active ? `0 0 6px ${ORBIT_CLASS_COLOR[cls]}` : 'none',
                 }}
               />
               <span>{LABELS[cls]}</span>
@@ -84,14 +82,14 @@ export function FilterPanel() {
 
       <SectionHeader label="Trails" />
       <div className="mb-4 flex gap-1">
-        {(["off", "selected", "visible"] as const).map((mode) => (
+        {(['off', 'selected', 'visible'] as const).map((mode) => (
           <button
             key={mode}
             onClick={() => setTrailMode(mode)}
             className={`flex-1 rounded border px-2 py-1 ${
               trailMode === mode
-                ? "border-space-accent bg-space-accent/10 text-space-accent"
-                : "border-space-border text-space-dim hover:text-space-text"
+                ? 'border-space-accent bg-space-accent/10 text-space-accent'
+                : 'border-space-border text-space-dim hover:text-space-text'
             }`}
           >
             {TRAIL_LABEL[mode]}

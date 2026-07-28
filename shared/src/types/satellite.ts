@@ -1,12 +1,5 @@
 /** Orbital regime used for coloring trails and filtering. */
-export type OrbitClass =
-  | "LEO"
-  | "MEO"
-  | "GEO"
-  | "HEO"
-  | "POLAR"
-  | "SSO"
-  | "UNKNOWN";
+export type OrbitClass = 'LEO' | 'MEO' | 'GEO' | 'HEO' | 'POLAR' | 'SSO' | 'UNKNOWN';
 
 /** Static, slow-changing satellite metadata. */
 export interface SatelliteMeta {

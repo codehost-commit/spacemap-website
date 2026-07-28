@@ -1,21 +1,20 @@
-import { useEffect, useState } from "react";
-import type { SatelliteTelemetry } from "@spacemap/shared";
-import { useStore } from "../state/store.js";
-import { findInSnapshot } from "../state/snapshot-util.js";
-import { computeTelemetry } from "../simulation/client-telemetry.js";
+import { useEffect, useState } from 'react';
+import type { SatelliteTelemetry } from '@spacemap/shared';
+import { useStore } from '../state/store.js';
+import { findInSnapshot } from '../state/snapshot-util.js';
+import { computeTelemetry } from '../simulation/client-telemetry.js';
 
 const ISS_NORAD = 25544;
 // ISS live YouTube embed. Autoplay works only when muted per browser policy;
 // controls are hidden for a clean panel — click through to youtube.com to
 // unmute or interact.
-const ISS_LIVE_EMBED =
-  "https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0";
+const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
 
 // Launch Library 2 — expedition endpoint returns the current ISS crew with
 // start dates, roles, and nationality info. Rate-limited to ~15 req/hr on
 // the public tier, so we cache aggressively (10 min refresh).
 const LL2_EXPEDITION_URL =
-  "https://ll.thespacedevs.com/2.2.0/expedition/?ongoing=true&format=json&limit=3";
+  'https://ll.thespacedevs.com/2.2.0/expedition/?ongoing=true&format=json&limit=3';
 const CREW_REFRESH_MS = 10 * 60 * 1000;
 
 interface CrewMember {
@@ -56,7 +55,7 @@ interface LL2Expedition {
  * browser to work.
  */
 export function IssCamera() {
-  const open = useStore((s) => s.openOverlays.has("iss"));
+  const open = useStore((s) => s.openOverlays.has('iss'));
   const setOverlay = useStore((s) => s.setOverlay);
   const snapshot = useStore((s) => s.snapshot);
   const select = useStore((s) => s.select);
@@ -86,20 +85,20 @@ export function IssCamera() {
         const body = (await res.json()) as { results?: LL2Expedition[] };
         // Prefer expeditions that mention ISS in their spacestation field;
         // fall back to the first ongoing expedition returned.
-        const iss = body.results?.find((e) =>
-          (e.spacestation?.name ?? "").toLowerCase().includes("international"),
-        ) ?? body.results?.[0];
-        if (!iss || !iss.crew) throw new Error("no crew returned");
+        const iss =
+          body.results?.find((e) =>
+            (e.spacestation?.name ?? '').toLowerCase().includes('international'),
+          ) ?? body.results?.[0];
+        if (!iss || !iss.crew) throw new Error('no crew returned');
         const startMs = iss.start ? new Date(iss.start).getTime() : Date.now();
         const now = Date.now();
         const members: CrewMember[] = iss.crew
           .filter((c) => c.astronaut && c.astronaut.name)
           .map((c) => ({
             name: c.astronaut!.name!,
-            role: c.role?.name ?? c.role?.role ?? "Crew",
+            role: c.role?.name ?? c.role?.role ?? 'Crew',
             agencyAbbrev: c.astronaut!.agency?.abbrev,
-            countryCode:
-              c.astronaut!.nationality?.alpha_2_code?.toUpperCase() ?? undefined,
+            countryCode: c.astronaut!.nationality?.alpha_2_code?.toUpperCase() ?? undefined,
             daysOnStation: Math.max(0, Math.floor((now - startMs) / 86_400_000)),
             wikiUrl: c.astronaut!.wiki,
           }));
@@ -137,14 +136,16 @@ export function IssCamera() {
           <button
             onClick={() => {
               select(ISS_NORAD);
-              (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(ISS_NORAD);
+              (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(
+                ISS_NORAD,
+              );
             }}
             className="rounded border border-space-border px-2 py-0.5 text-[10px] text-space-dim hover:border-space-accent hover:text-space-text"
           >
             Focus
           </button>
           <button
-            onClick={() => setOverlay("iss", false)}
+            onClick={() => setOverlay('iss', false)}
             className="text-space-dim hover:text-space-text"
           >
             ×
@@ -163,17 +164,17 @@ export function IssCamera() {
         />
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-1 px-3 py-2 font-mono text-xs">
-        <Cell label="Altitude" value={row ? `${row.altKm.toFixed(1)} km` : "—"} />
-        <Cell label="Speed" value={row ? `${row.speedKmS.toFixed(3)} km/s` : "—"} />
-        <Cell label="Period" value={tel ? `${tel.elements.periodMinutes.toFixed(2)} min` : "—"} />
-        <Cell label="Latitude" value={row ? `${row.latDeg.toFixed(2)}°` : "—"} />
-        <Cell label="Longitude" value={row ? `${row.lonDeg.toFixed(2)}°` : "—"} />
-        <Cell label="Sunlit" value={tel ? (tel.sunlit ? "Yes" : "Shadow") : "—"} />
+        <Cell label="Altitude" value={row ? `${row.altKm.toFixed(1)} km` : '—'} />
+        <Cell label="Speed" value={row ? `${row.speedKmS.toFixed(3)} km/s` : '—'} />
+        <Cell label="Period" value={tel ? `${tel.elements.periodMinutes.toFixed(2)} min` : '—'} />
+        <Cell label="Latitude" value={row ? `${row.latDeg.toFixed(2)}°` : '—'} />
+        <Cell label="Longitude" value={row ? `${row.lonDeg.toFixed(2)}°` : '—'} />
+        <Cell label="Sunlit" value={tel ? (tel.sunlit ? 'Yes' : 'Shadow') : '—'} />
       </div>
 
       <div className="flex-1 overflow-auto border-t border-space-border/60 px-3 py-2 font-mono text-xs">
         <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-widest text-space-dim">
-          <span>Crew {expeditionName ? `· ${expeditionName}` : ""}</span>
+          <span>Crew {expeditionName ? `· ${expeditionName}` : ''}</span>
           {crew && <span>{crew.length} aboard</span>}
         </div>
         {crewError && (
@@ -181,9 +182,7 @@ export function IssCamera() {
             Couldn't reach Launch Library ({crewError}).
           </div>
         )}
-        {!crew && !crewError && (
-          <div className="text-[10px] text-space-dim">Loading crew…</div>
-        )}
+        {!crew && !crewError && <div className="text-[10px] text-space-dim">Loading crew…</div>}
         {crew && crew.length === 0 && !crewError && (
           <div className="text-[10px] text-space-dim">No crew listed by LL2.</div>
         )}
@@ -213,13 +212,11 @@ export function IssCamera() {
                     )}
                     <div className="text-[9px] uppercase tracking-wider text-space-dim">
                       {c.role}
-                      {c.agencyAbbrev ? ` · ${c.agencyAbbrev}` : ""}
+                      {c.agencyAbbrev ? ` · ${c.agencyAbbrev}` : ''}
                     </div>
                   </div>
                 </div>
-                <div className="shrink-0 text-[10px] text-space-dim">
-                  {c.daysOnStation}d
-                </div>
+                <div className="shrink-0 text-[10px] text-space-dim">{c.daysOnStation}d</div>
               </li>
             ))}
           </ul>
@@ -240,12 +237,9 @@ function Cell({ label, value }: { label: string; value: string }) {
 
 /** ISO 3166-1 alpha-2 → flag emoji via regional-indicator code points. */
 function countryFlag(code?: string): string {
-  if (!code || code.length !== 2) return "🏳️";
+  if (!code || code.length !== 2) return '🏳️';
   const A = 0x41;
   const OFFSET = 0x1f1e6 - A;
   const upper = code.toUpperCase();
-  return String.fromCodePoint(
-    upper.charCodeAt(0) + OFFSET,
-    upper.charCodeAt(1) + OFFSET,
-  );
+  return String.fromCodePoint(upper.charCodeAt(0) + OFFSET, upper.charCodeAt(1) + OFFSET);
 }

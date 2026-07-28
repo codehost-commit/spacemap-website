@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState } from "react";
-import { useStore } from "../state/store.js";
-import { getClockControls } from "../simulation/clock-controls.js";
+import { useEffect, useRef, useState } from 'react';
+import { useStore } from '../state/store.js';
+import { getClockControls } from '../simulation/clock-controls.js';
 
 /**
  * Draggable 24-hour timeline running along the very bottom of the screen.
@@ -52,11 +52,11 @@ export function TimelineScrubber() {
     if (!dragging) return;
     const onMove = (e: MouseEvent) => seekTo(e.clientX);
     const onUp = () => setDragging(false);
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
     return () => {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
     };
   }, [dragging]);
 
@@ -83,7 +83,7 @@ export function TimelineScrubber() {
         ⏱ now
       </button>
       <span className="hidden shrink-0 sm:inline">
-        {new Date(startMs).toISOString().slice(0, 16).replace("T", " ")}
+        {new Date(startMs).toISOString().slice(0, 16).replace('T', ' ')}
       </span>
       <div
         ref={trackRef}
@@ -97,7 +97,7 @@ export function TimelineScrubber() {
         {ticks.map((t, i) => (
           <div
             key={i}
-            className={`absolute top-0 bottom-0 w-px ${t.major ? "bg-space-border/80" : "bg-space-border/40"}`}
+            className={`absolute top-0 bottom-0 w-px ${t.major ? 'bg-space-border/80' : 'bg-space-border/40'}`}
             style={{ left: `${t.pct}%` }}
           />
         ))}
@@ -107,7 +107,7 @@ export function TimelineScrubber() {
             <span
               key={`l${i}`}
               className="absolute top-0 text-[8px] leading-tight text-space-dim"
-              style={{ left: `${t.pct}%`, transform: "translate(-50%, -1px)" }}
+              style={{ left: `${t.pct}%`, transform: 'translate(-50%, -1px)' }}
             >
               {t.label}
             </span>
@@ -121,13 +121,13 @@ export function TimelineScrubber() {
         {/* sim time handle */}
         <div
           className={`absolute top-0 bottom-0 w-1.5 rounded-sm bg-space-accent shadow-[0_0_8px] shadow-space-accent transition-colors ${
-            dragging ? "bg-cyan-200" : ""
+            dragging ? 'bg-cyan-200' : ''
           }`}
-          style={{ left: `${simPct}%`, transform: "translateX(-50%)" }}
+          style={{ left: `${simPct}%`, transform: 'translateX(-50%)' }}
         />
       </div>
       <span className="hidden shrink-0 sm:inline">
-        {new Date(startMs + WINDOW_MS).toISOString().slice(0, 16).replace("T", " ")}
+        {new Date(startMs + WINDOW_MS).toISOString().slice(0, 16).replace('T', ' ')}
       </span>
       <span className="ml-2 shrink-0 text-space-accent">
         SIM {new Date(simTimeMs).toISOString().slice(11, 19)}Z

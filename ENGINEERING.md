@@ -8,8 +8,8 @@
 - All major systems require error handling. Never let a fetch failure crash the render loop.
 - Heavy calculations (SGP4 for thousands of satellites, conjunction search) run in workers, not the UI thread.
 - Clean separation of layers:
-  - `shared/`   — types and pure functions used by both sides
-  - `backend/`  — data ingestion, storage, propagation, broadcast
+  - `shared/` — types and pure functions used by both sides
+  - `backend/` — data ingestion, storage, propagation, broadcast
   - `frontend/` — visualization, interaction, thin client of the backend
 - Document every setup step in the root README.
 

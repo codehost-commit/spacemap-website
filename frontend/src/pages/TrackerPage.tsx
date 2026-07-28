@@ -1,26 +1,26 @@
-import { useEffect } from "react";
-import { GlobeCanvas } from "../components/GlobeCanvas.js";
-import { HeaderHUD } from "../components/HeaderHUD.js";
-import { TelemetryPanel } from "../components/TelemetryPanel.js";
-import { FilterPanel } from "../components/FilterPanel.js";
-import { SearchBox } from "../components/SearchBox.js";
-import { TimeControls } from "../components/TimeControls.js";
-import { OverlayToolbar } from "../components/OverlayToolbar.js";
-import { IssCamera } from "../components/IssCamera.js";
-import { LocalSkyView } from "../components/LocalSkyView.js";
-import { SavedList } from "../components/SavedList.js";
-import { CatalogStatusBanner } from "../components/CatalogStatusBanner.js";
-import { ConjunctionLeaderboard } from "../components/ConjunctionLeaderboard.js";
-import { LaunchTracker } from "../components/LaunchTracker.js";
-import { AdminConsole } from "../components/AdminConsole.js";
-import { TimelineScrubber } from "../components/TimelineScrubber.js";
+import { useEffect } from 'react';
+import { GlobeCanvas } from '../components/GlobeCanvas.js';
+import { HeaderHUD } from '../components/HeaderHUD.js';
+import { TelemetryPanel } from '../components/TelemetryPanel.js';
+import { FilterPanel } from '../components/FilterPanel.js';
+import { SearchBox } from '../components/SearchBox.js';
+import { TimeControls } from '../components/TimeControls.js';
+import { OverlayToolbar } from '../components/OverlayToolbar.js';
+import { IssCamera } from '../components/IssCamera.js';
+import { LocalSkyView } from '../components/LocalSkyView.js';
+import { SavedList } from '../components/SavedList.js';
+import { CatalogStatusBanner } from '../components/CatalogStatusBanner.js';
+import { ConjunctionLeaderboard } from '../components/ConjunctionLeaderboard.js';
+import { LaunchTracker } from '../components/LaunchTracker.js';
+import { AdminConsole } from '../components/AdminConsole.js';
+import { TimelineScrubber } from '../components/TimelineScrubber.js';
 
 /** The original SpaceMap tracker app, now mounted at /tracker */
 export function TrackerPage() {
   // Lock body scrolling for the fullscreen tracker
   useEffect(() => {
-    document.body.classList.add("tracker-mode");
-    return () => document.body.classList.remove("tracker-mode");
+    document.body.classList.add('tracker-mode');
+    return () => document.body.classList.remove('tracker-mode');
   }, []);
 
   return (

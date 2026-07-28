@@ -4,7 +4,7 @@ const GRID_W = 360;
 const GRID_H = 180;
 
 interface HeatmapBuildMsg {
-  type: "build";
+  type: 'build';
   requestId: number;
   count: number;
   geodetic: ArrayBuffer;
@@ -12,7 +12,7 @@ interface HeatmapBuildMsg {
 
 self.onmessage = (ev: MessageEvent<HeatmapBuildMsg>) => {
   const msg = ev.data;
-  if (msg.type !== "build") return;
+  if (msg.type !== 'build') return;
 
   const geodetic = new Float32Array(msg.geodetic);
   const counts = new Uint32Array(GRID_W * GRID_H);
@@ -44,7 +44,7 @@ self.onmessage = (ev: MessageEvent<HeatmapBuildMsg>) => {
 
   (self as unknown as Worker).postMessage(
     {
-      type: "built",
+      type: 'built',
       requestId: msg.requestId,
       rgba: rgba.buffer,
     },

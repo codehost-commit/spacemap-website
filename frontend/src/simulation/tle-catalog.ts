@@ -1,4 +1,4 @@
-import type { Tle } from "@spacemap/shared";
+import type { Tle } from '@spacemap/shared';
 
 /**
  * TLE loading strategy for the deployed site (Pages) and local dev:
@@ -15,19 +15,17 @@ import type { Tle } from "@spacemap/shared";
  *      are flaky, but occasionally save the day.
  */
 
-const CELESTRAK_URL =
-  "https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle";
-const CORS_PROXY_URL =
-  "https://corsproxy.io/?url=" + encodeURIComponent(CELESTRAK_URL);
+const CELESTRAK_URL = 'https://celestrak.org/NORAD/elements/gp.php?GROUP=active&FORMAT=tle';
+const CORS_PROXY_URL = 'https://corsproxy.io/?url=' + encodeURIComponent(CELESTRAK_URL);
 const BUNDLED_URL = `${import.meta.env.BASE_URL}data/tles.txt`;
 const IS_DEV = import.meta.env.DEV;
 
 export async function fetchTles(): Promise<Tle[]> {
   const attempts: Array<{ label: string; run: () => Promise<Tle[]> }> = [];
-  if (IS_DEV) attempts.push({ label: "backend /api/tles", run: tryBackend });
-  attempts.push({ label: "bundled snapshot", run: tryBundled });
-  attempts.push({ label: "CelesTrak direct", run: tryCelestrak });
-  attempts.push({ label: "CORS proxy", run: tryProxy });
+  if (IS_DEV) attempts.push({ label: 'backend /api/tles', run: tryBackend });
+  attempts.push({ label: 'bundled snapshot', run: tryBundled });
+  attempts.push({ label: 'CelesTrak direct', run: tryCelestrak });
+  attempts.push({ label: 'CORS proxy', run: tryProxy });
 
   const errors: string[] = [];
   for (const attempt of attempts) {
@@ -44,22 +42,24 @@ export async function fetchTles(): Promise<Tle[]> {
       console.warn(`[tle] ${attempt.label} failed:`, msg);
     }
   }
-  throw new Error(`TLE catalog unavailable — tried ${errors.length} sources:\n  ${errors.join("\n  ")}`);
+  throw new Error(
+    `TLE catalog unavailable — tried ${errors.length} sources:\n  ${errors.join('\n  ')}`,
+  );
 }
 
 async function tryBackend(): Promise<Tle[]> {
-  const res = await fetch("/api/tles", { signal: AbortSignal.timeout(2500) });
+  const res = await fetch('/api/tles', { signal: AbortSignal.timeout(2500) });
   if (!res.ok) throw new Error(`status ${res.status}`);
   const body = (await res.json()) as { count: number; tles: Tle[] };
   return body.tles;
 }
 
 async function tryBundled(): Promise<Tle[]> {
-  const res = await fetch(BUNDLED_URL, { cache: "no-cache" });
+  const res = await fetch(BUNDLED_URL, { cache: 'no-cache' });
   if (!res.ok) throw new Error(`status ${res.status}`);
   const text = await res.text();
   const tles = parseTleText(text);
-  if (tles.length === 0) throw new Error("no TLEs parsed");
+  if (tles.length === 0) throw new Error('no TLEs parsed');
   return tles;
 }
 
@@ -80,14 +80,17 @@ async function tryProxy(): Promise<Tle[]> {
  * Copy of the backend parser so the frontend has no server dependency.
  */
 export function parseTleText(text: string): Tle[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trimEnd()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trimEnd())
+    .filter(Boolean);
   const out: Tle[] = [];
   const seen = new Set<number>();
   for (let i = 0; i + 2 < lines.length; i += 3) {
     const name = lines[i].trim();
     const l1 = lines[i + 1];
     const l2 = lines[i + 2];
-    if (!l1.startsWith("1 ") || !l2.startsWith("2 ")) {
+    if (!l1.startsWith('1 ') || !l2.startsWith('2 ')) {
       i -= 2;
       continue;
     }

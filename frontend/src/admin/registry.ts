@@ -1,7 +1,7 @@
-import type * as Cesium from "cesium";
-import type { SatelliteLayer } from "../cesium/satellite-layer.js";
-import type { Simulation } from "../simulation/simulation.js";
-import type { ClockControls } from "../simulation/clock-controls.js";
+import type * as Cesium from 'cesium';
+import type { SatelliteLayer } from '../cesium/satellite-layer.js';
+import type { Simulation } from '../simulation/simulation.js';
+import type { ClockControls } from '../simulation/clock-controls.js';
 
 /**
  * Shared references so the AdminConsole (and its /selfdiagnose driver) can

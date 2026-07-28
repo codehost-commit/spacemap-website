@@ -1,21 +1,17 @@
-import { create } from "zustand";
-import type {
-  ConjunctionResult,
-  OrbitClass,
-  PropagationSnapshot,
-} from "@spacemap/shared";
-import { ORBIT_CLASSES } from "@spacemap/shared";
+import { create } from 'zustand';
+import type { ConjunctionResult, OrbitClass, PropagationSnapshot } from '@spacemap/shared';
+import { ORBIT_CLASSES } from '@spacemap/shared';
 
-export type CatalogStatus = "idle" | "loading" | "ready" | "error";
-export type TrailMode = "off" | "selected" | "visible";
-export type CameraMode = "orbit" | "follow" | "pov";
+export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type TrailMode = 'off' | 'selected' | 'visible';
+export type CameraMode = 'orbit' | 'follow' | 'pov';
 
 export interface SatelliteIndexEntry {
   noradId: number;
   name: string;
 }
 
-export type OverlayId = "iss" | "sky" | "saved" | "leaderboard" | "launches";
+export type OverlayId = 'iss' | 'sky' | 'saved' | 'leaderboard' | 'launches';
 
 interface StoreState {
   catalogStatus: CatalogStatus;
@@ -92,7 +88,7 @@ interface StoreState {
 const defaultFilter = new Set<OrbitClass>(ORBIT_CLASSES);
 
 export const useStore = create<StoreState>((set) => ({
-  catalogStatus: "idle",
+  catalogStatus: 'idle',
   catalogError: null,
   catalogSize: 0,
   index: [],
@@ -109,9 +105,9 @@ export const useStore = create<StoreState>((set) => ({
   conjunction: null,
   conjunctionLoading: false,
 
-  cameraMode: "orbit",
+  cameraMode: 'orbit',
   filter: new Set(defaultFilter),
-  trailMode: "selected",
+  trailMode: 'selected',
   heatmapOn: false,
   // Cartographic overlays default ON — they read as "professional map" and
   // users can flick them off from the filter panel if they want a clean look.
@@ -120,7 +116,7 @@ export const useStore = create<StoreState>((set) => ({
   countriesOn: true,
   citiesOn: true,
   groundStationsOn: false,
-  imageryId: "arcgis",
+  imageryId: 'arcgis',
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -150,7 +146,7 @@ export const useStore = create<StoreState>((set) => ({
   select: (id) =>
     set((s) => ({
       selectedNoradId: id,
-      cameraMode: id == null ? "orbit" : s.cameraMode,
+      cameraMode: id == null ? 'orbit' : s.cameraMode,
       conjunction: null,
     })),
   setCompare: (id) =>
@@ -161,8 +157,7 @@ export const useStore = create<StoreState>((set) => ({
       conjunctionLoading: false,
     }),
   setPickCompareMode: (v) => set({ pickCompareMode: v }),
-  setConjunction: (r, loading = false) =>
-    set({ conjunction: r, conjunctionLoading: loading }),
+  setConjunction: (r, loading = false) => set({ conjunction: r, conjunctionLoading: loading }),
 
   setCameraMode: (m) => set({ cameraMode: m }),
   toggleOrbitFilter: (cls) =>
@@ -210,7 +205,6 @@ export const useStore = create<StoreState>((set) => ({
       return { openOverlays: new Set([id]) };
     }),
 
-  setClock: (simTimeMs, simMultiplier, simPaused) =>
-    set({ simTimeMs, simMultiplier, simPaused }),
+  setClock: (simTimeMs, simMultiplier, simPaused) => set({ simTimeMs, simMultiplier, simPaused }),
   setAdminOpen: (adminOpen) => set({ adminOpen }),
 }));

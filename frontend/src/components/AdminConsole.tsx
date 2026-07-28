@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
-import { useStore } from "../state/store.js";
-import { adminLog } from "../admin/admin-log.js";
-import { runSelfDiagnose } from "../admin/diagnose.js";
-import { getInstruments } from "../admin/registry.js";
-import { Terminal } from "./Terminal.js";
-import { getContacts } from "../pages/ContactPage.js";
+import { useEffect, useState } from 'react';
+import { useStore } from '../state/store.js';
+import { adminLog } from '../admin/admin-log.js';
+import { runSelfDiagnose } from '../admin/diagnose.js';
+import { getInstruments } from '../admin/registry.js';
+import { Terminal } from './Terminal.js';
+import { getContacts } from '../pages/ContactPage.js';
 
 interface Tab {
   id: string;
@@ -13,132 +13,140 @@ interface Tab {
 }
 
 const HELP_TEXT = [
-  "Available commands:",
-  "  /help              this message",
-  "  /selfdiagnose      run a 3-minute automated benchmark",
-  "  /clear             clear this terminal (Ctrl-L)",
+  'Available commands:',
+  '  /help              this message',
+  '  /selfdiagnose      run a 3-minute automated benchmark',
+  '  /clear             clear this terminal (Ctrl-L)',
   "  /close             close this tab (main can't be closed)",
-  "  /fps               dump the current FPS window",
-  "  /stats             dump catalog + snapshot counters",
-  "  /focus <norad>     select a satellite by NORAD id",
-  "  /pause /resume     toggle simulation clock",
-  "  /speed <n>         set time-warp multiplier",
-  "  /snapshot          save the current view state to JSON",
-  "  /contactread       read all contact form submissions",
+  '  /fps               dump the current FPS window',
+  '  /stats             dump catalog + snapshot counters',
+  '  /focus <norad>     select a satellite by NORAD id',
+  '  /pause /resume     toggle simulation clock',
+  '  /speed <n>         set time-warp multiplier',
+  '  /snapshot          save the current view state to JSON',
+  '  /contactread       read all contact form submissions',
 ];
 
 export function AdminConsole() {
   const open = useStore((s) => s.adminOpen);
   const setOpen = useStore((s) => s.setAdminOpen);
-  const [tabs, setTabs] = useState<Tab[]>([{ id: "main", label: "main", closable: false }]);
-  const [activeId, setActiveId] = useState("main");
+  const [tabs, setTabs] = useState<Tab[]>([{ id: 'main', label: 'main', closable: false }]);
+  const [activeId, setActiveId] = useState('main');
 
   // Deep-link diag tab back to main if diag is torn down externally.
   useEffect(() => {
-    if (!tabs.find((t) => t.id === activeId)) setActiveId("main");
+    if (!tabs.find((t) => t.id === activeId)) setActiveId('main');
   }, [tabs, activeId]);
 
   const handleCommand = async (raw: string) => {
     const cmd = raw.trim();
-    adminLog.push(activeId, { channel: "in", severity: "cmd", text: `$ ${cmd}` });
+    adminLog.push(activeId, { channel: 'in', severity: 'cmd', text: `$ ${cmd}` });
     const [head, ...rest] = cmd.split(/\s+/);
     switch (head) {
-      case "/help": {
+      case '/help': {
         for (const line of HELP_TEXT) {
-          adminLog.push(activeId, { channel: "out", severity: "out", text: line });
+          adminLog.push(activeId, { channel: 'out', severity: 'out', text: line });
         }
         break;
       }
-      case "/clear": {
+      case '/clear': {
         adminLog.clear(activeId);
         break;
       }
-      case "/close": {
-        if (activeId === "main") {
-          adminLog.push(activeId, { channel: "out", severity: "warn", text: "cannot close main" });
+      case '/close': {
+        if (activeId === 'main') {
+          adminLog.push(activeId, { channel: 'out', severity: 'warn', text: 'cannot close main' });
         } else {
           adminLog.remove(activeId);
           setTabs((t) => t.filter((x) => x.id !== activeId));
-          setActiveId("main");
+          setActiveId('main');
         }
         break;
       }
-      case "/selfdiagnose": {
+      case '/selfdiagnose': {
         // Open (or focus) a diag tab and kick off the run.
-        if (!tabs.find((t) => t.id === "diag")) {
-          setTabs((t) => [...t, { id: "diag", label: "diagnose", closable: true }]);
+        if (!tabs.find((t) => t.id === 'diag')) {
+          setTabs((t) => [...t, { id: 'diag', label: 'diagnose', closable: true }]);
         }
-        setActiveId("diag");
-        adminLog.push("diag", {
-          channel: "out",
-          severity: "info",
-          text: "starting self-diagnose (~3 min) — do not touch the app",
+        setActiveId('diag');
+        adminLog.push('diag', {
+          channel: 'out',
+          severity: 'info',
+          text: 'starting self-diagnose (~3 min) — do not touch the app',
         });
         try {
-          await runSelfDiagnose("diag");
+          await runSelfDiagnose('diag');
         } catch (err) {
-          adminLog.push("diag", {
-            channel: "diag",
-            severity: "error",
+          adminLog.push('diag', {
+            channel: 'diag',
+            severity: 'error',
             text: `crashed: ${err instanceof Error ? err.message : String(err)}`,
           });
         }
         break;
       }
-      case "/fps": {
+      case '/fps': {
         const p = performance as unknown as { memory?: { usedJSHeapSize: number } };
         const heap = p.memory ? Math.round(p.memory.usedJSHeapSize / 1024 / 1024) : null;
         adminLog.push(activeId, {
-          channel: "out",
-          severity: "out",
-          text: `heap ${heap ?? "?"}MB • ${useStore.getState().catalogSize.toLocaleString()} cataloged`,
+          channel: 'out',
+          severity: 'out',
+          text: `heap ${heap ?? '?'}MB • ${useStore.getState().catalogSize.toLocaleString()} cataloged`,
         });
         break;
       }
-      case "/stats": {
+      case '/stats': {
         const s = useStore.getState();
         adminLog.push(activeId, {
-          channel: "out",
-          severity: "out",
-          text: `catalog: ${s.catalogSize} • rendered: ${s.snapshot?.count ?? 0} • tick: ${s.snapshotTick} • mult: ${s.simMultiplier}× ${s.simPaused ? "PAUSED" : ""}`,
+          channel: 'out',
+          severity: 'out',
+          text: `catalog: ${s.catalogSize} • rendered: ${s.snapshot?.count ?? 0} • tick: ${s.snapshotTick} • mult: ${s.simMultiplier}× ${s.simPaused ? 'PAUSED' : ''}`,
         });
         break;
       }
-      case "/focus": {
+      case '/focus': {
         const id = Number(rest[0]);
         if (!Number.isFinite(id)) {
-          adminLog.push(activeId, { channel: "out", severity: "error", text: "usage: /focus <norad>" });
+          adminLog.push(activeId, {
+            channel: 'out',
+            severity: 'error',
+            text: 'usage: /focus <norad>',
+          });
           break;
         }
         useStore.getState().select(id);
         const w = window as unknown as { spacemapFocus?: (id: number) => void };
         w.spacemapFocus?.(id);
-        adminLog.push(activeId, { channel: "out", severity: "success", text: `focused NORAD ${id}` });
+        adminLog.push(activeId, {
+          channel: 'out',
+          severity: 'success',
+          text: `focused NORAD ${id}`,
+        });
         break;
       }
-      case "/pause": {
+      case '/pause': {
         const clock = getInstruments()?.clock;
         clock?.setPaused(true);
-        adminLog.push(activeId, { channel: "out", severity: "success", text: "paused" });
+        adminLog.push(activeId, { channel: 'out', severity: 'success', text: 'paused' });
         break;
       }
-      case "/resume": {
+      case '/resume': {
         const clock = getInstruments()?.clock;
         clock?.setPaused(false);
-        adminLog.push(activeId, { channel: "out", severity: "success", text: "resumed" });
+        adminLog.push(activeId, { channel: 'out', severity: 'success', text: 'resumed' });
         break;
       }
-      case "/speed": {
+      case '/speed': {
         const n = Number(rest[0]);
         if (!Number.isFinite(n)) {
-          adminLog.push(activeId, { channel: "out", severity: "error", text: "usage: /speed <n>" });
+          adminLog.push(activeId, { channel: 'out', severity: 'error', text: 'usage: /speed <n>' });
           break;
         }
         getInstruments()?.clock.setMultiplier(n);
-        adminLog.push(activeId, { channel: "out", severity: "success", text: `speed → ${n}×` });
+        adminLog.push(activeId, { channel: 'out', severity: 'success', text: `speed → ${n}×` });
         break;
       }
-      case "/snapshot": {
+      case '/snapshot': {
         const s = useStore.getState();
         const state = {
           selectedNoradId: s.selectedNoradId,
@@ -165,37 +173,61 @@ export function AdminConsole() {
             };
           })(),
         };
-        const blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+        const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
         a.download = `spacemap-snapshot-${Date.now()}.json`;
         a.click();
         setTimeout(() => URL.revokeObjectURL(url), 2000);
-        adminLog.push(activeId, { channel: "out", severity: "success", text: "snapshot saved" });
+        adminLog.push(activeId, { channel: 'out', severity: 'success', text: 'snapshot saved' });
         break;
       }
-      case "/contactread": {
+      case '/contactread': {
         const contacts = getContacts();
         if (contacts.length === 0) {
-          adminLog.push(activeId, { channel: "out", severity: "warn", text: "No contact submissions yet." });
+          adminLog.push(activeId, {
+            channel: 'out',
+            severity: 'warn',
+            text: 'No contact submissions yet.',
+          });
         } else {
-          adminLog.push(activeId, { channel: "out", severity: "success", text: `Contact submissions: ${contacts.length} total` });
-          adminLog.push(activeId, { channel: "out", severity: "out", text: "---" });
+          adminLog.push(activeId, {
+            channel: 'out',
+            severity: 'success',
+            text: `Contact submissions: ${contacts.length} total`,
+          });
+          adminLog.push(activeId, { channel: 'out', severity: 'out', text: '---' });
           contacts.forEach((c, i) => {
-            adminLog.push(activeId, { channel: "out", severity: "out", text: `#${i + 1} | ${c.timestamp}` });
-            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Name:     ${c.name}` });
-            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Email:    ${c.email}` });
-            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Question: ${c.question}` });
-            adminLog.push(activeId, { channel: "out", severity: "out", text: "---" });
+            adminLog.push(activeId, {
+              channel: 'out',
+              severity: 'out',
+              text: `#${i + 1} | ${c.timestamp}`,
+            });
+            adminLog.push(activeId, {
+              channel: 'out',
+              severity: 'out',
+              text: `  Name:     ${c.name}`,
+            });
+            adminLog.push(activeId, {
+              channel: 'out',
+              severity: 'out',
+              text: `  Email:    ${c.email}`,
+            });
+            adminLog.push(activeId, {
+              channel: 'out',
+              severity: 'out',
+              text: `  Question: ${c.question}`,
+            });
+            adminLog.push(activeId, { channel: 'out', severity: 'out', text: '---' });
           });
         }
         break;
       }
       default: {
         adminLog.push(activeId, {
-          channel: "out",
-          severity: "error",
+          channel: 'out',
+          severity: 'error',
           text: `unknown command: ${head} - try /help`,
         });
       }
@@ -232,8 +264,8 @@ export function AdminConsole() {
             onClick={() => setActiveId(t.id)}
             className={`flex items-center gap-1 rounded-t border-t border-l border-r px-3 py-1 ${
               activeId === t.id
-                ? "border-emerald-500/70 bg-black text-emerald-300"
-                : "border-emerald-900/60 bg-black/60 text-emerald-600 hover:text-emerald-400"
+                ? 'border-emerald-500/70 bg-black text-emerald-300'
+                : 'border-emerald-900/60 bg-black/60 text-emerald-600 hover:text-emerald-400'
             }`}
           >
             <span>{t.label}</span>
@@ -243,7 +275,7 @@ export function AdminConsole() {
                   ev.stopPropagation();
                   adminLog.remove(t.id);
                   setTabs((ts) => ts.filter((x) => x.id !== t.id));
-                  if (activeId === t.id) setActiveId("main");
+                  if (activeId === t.id) setActiveId('main');
                 }}
                 className="ml-1 text-emerald-700 hover:text-red-400"
               >

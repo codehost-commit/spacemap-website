@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Country outlines from Natural Earth 1:110m admin_0 GeoJSON, fetched at
@@ -15,14 +15,14 @@ const OUTLINE_LIFT_M = 5000;
 const MAX_VISIBLE_DISTANCE_M = 8_000_000;
 
 interface Feature {
-  type: "Feature";
+  type: 'Feature';
   geometry:
-    | { type: "Polygon"; coordinates: number[][][] }
-    | { type: "MultiPolygon"; coordinates: number[][][][] };
+    | { type: 'Polygon'; coordinates: number[][][] }
+    | { type: 'MultiPolygon'; coordinates: number[][][][] };
   properties?: unknown;
 }
 interface FeatureCollection {
-  type: "FeatureCollection";
+  type: 'FeatureCollection';
   features: Feature[];
 }
 
@@ -47,7 +47,7 @@ export class Countries {
       if (!this.enabled) return;
       this.build(data);
     } catch (err) {
-      console.warn("[countries] failed to load", err);
+      console.warn('[countries] failed to load', err);
     }
   }
 
@@ -70,19 +70,16 @@ export class Countries {
   private build(data: FeatureCollection): void {
     const col = this.scene.primitives.add(new Cesium.PolylineCollection());
     this.collection = col;
-    const material = Cesium.Material.fromType("Color", {
+    const material = Cesium.Material.fromType('Color', {
       color: new Cesium.Color(0.75, 0.85, 1, 0.5),
     });
-    const showCondition = new Cesium.DistanceDisplayCondition(
-      0,
-      MAX_VISIBLE_DISTANCE_M,
-    );
+    const showCondition = new Cesium.DistanceDisplayCondition(0, MAX_VISIBLE_DISTANCE_M);
 
     let ringCount = 0;
     for (const feature of data.features) {
       const geom = feature.geometry;
       if (!geom) continue;
-      if (geom.type === "Polygon") {
+      if (geom.type === 'Polygon') {
         for (const ring of geom.coordinates) {
           const positions = ringPositions(ring);
           if (positions.length < 2) continue;
@@ -94,7 +91,7 @@ export class Countries {
           });
           ringCount++;
         }
-      } else if (geom.type === "MultiPolygon") {
+      } else if (geom.type === 'MultiPolygon') {
         for (const poly of geom.coordinates) {
           for (const ring of poly) {
             const positions = ringPositions(ring);
@@ -111,7 +108,7 @@ export class Countries {
       }
     }
     if (ringCount === 0) {
-      console.warn("[countries] parsed 0 rings from GeoJSON");
+      console.warn('[countries] parsed 0 rings from GeoJSON');
     }
   }
 

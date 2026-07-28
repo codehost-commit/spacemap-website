@@ -1,13 +1,13 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 import {
   ORBIT_CLASSES,
   ORBIT_CLASS_COLOR,
   type OrbitClass,
   type PropagationSnapshot,
-} from "@spacemap/shared";
+} from '@spacemap/shared';
 
-const MAX_SATS = 1200;         // hard cap so trails don't ruin FPS at 30k
-const RING_SIZE = 40;          // samples per trail
+const MAX_SATS = 1200; // hard cap so trails don't ruin FPS at 30k
+const RING_SIZE = 40; // samples per trail
 const SAMPLE_INTERVAL_MS = 1200; // wall-time between new samples
 
 interface Buffer {
@@ -110,7 +110,7 @@ export class HistoryTrails {
         if (!buf.polyline) {
           // Fresh material per polyline — sharing Material across polylines
           // in PolylineCollection triggers "undefined.type" during update.
-          const material = Cesium.Material.fromType("PolylineGlow", {
+          const material = Cesium.Material.fromType('PolylineGlow', {
             glowPower: 0.2,
             taperPower: 0.35,
             color: this.colors[cls],

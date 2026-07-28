@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Boot a Cesium Viewer configured for the SpaceMap aesthetic: dark, no chrome,
@@ -72,14 +72,14 @@ export function createViewer(container: HTMLElement): Cesium.Viewer {
       scene.postProcessStages.add(bloom);
     }
   } catch (err) {
-    console.warn("[globe] bloom stage failed", err);
+    console.warn('[globe] bloom stage failed', err);
   }
 
   return viewer;
 }
 
 function createStarSkyBox(): Cesium.SkyBox {
-  const base = Cesium.buildModuleUrl("Assets/Textures/SkyBox/");
+  const base = Cesium.buildModuleUrl('Assets/Textures/SkyBox/');
   return new Cesium.SkyBox({
     sources: {
       positiveX: `${base}tycho2t3_80_px.jpg`,

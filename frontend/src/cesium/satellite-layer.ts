@@ -1,11 +1,11 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 import {
   ORBIT_CLASSES,
   ORBIT_CLASS_COLOR,
   type OrbitClass,
   type PropagationSnapshot,
-} from "@spacemap/shared";
-import { buildSatelliteIcon } from "./satellite-icon.js";
+} from '@spacemap/shared';
+import { buildSatelliteIcon } from './satellite-icon.js';
 
 /**
  * Renders satellites at two levels of detail:
@@ -140,7 +140,9 @@ export class SatelliteLayer {
 
     // Rolling batch + full-refresh detection.
     const simDt =
-      this.prevSnapSimMs != null ? Math.abs(snap.timeMs - this.prevSnapSimMs) : Number.POSITIVE_INFINITY;
+      this.prevSnapSimMs != null
+        ? Math.abs(snap.timeMs - this.prevSnapSimMs)
+        : Number.POSITIVE_INFINITY;
     this.prevSnapSimMs = snap.timeMs;
     const forceAll = simDt > FULL_REFRESH_JUMP_SIM_MS;
     const rollingCount = forceAll

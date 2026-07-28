@@ -1,6 +1,6 @@
-import * as Cesium from "cesium";
-import type { PropagationSnapshot } from "@spacemap/shared";
-import HeatmapWorker from "../workers/heatmap.worker.ts?worker";
+import * as Cesium from 'cesium';
+import type { PropagationSnapshot } from '@spacemap/shared';
+import HeatmapWorker from '../workers/heatmap.worker.ts?worker';
 
 const GRID_W = 360;
 const GRID_H = 180;
@@ -23,11 +23,11 @@ export class HeatmapLayer {
   private enabled = false;
 
   constructor(private readonly viewer: Cesium.Viewer) {
-    this.canvas = document.createElement("canvas");
+    this.canvas = document.createElement('canvas');
     this.canvas.width = GRID_W;
     this.canvas.height = GRID_H;
-    const ctx = this.canvas.getContext("2d");
-    if (!ctx) throw new Error("2D canvas context unavailable");
+    const ctx = this.canvas.getContext('2d');
+    if (!ctx) throw new Error('2D canvas context unavailable');
     this.ctx = ctx;
     this.imageData = ctx.createImageData(GRID_W, GRID_H);
     this.worker = new HeatmapWorker();
@@ -52,12 +52,15 @@ export class HeatmapLayer {
     const requestId = this.nextRequestId++;
     this.activeRequestId = requestId;
     const geodeticCopy = snap.geodetic.slice(0, snap.count * 3);
-    this.worker.postMessage({
-      type: "build",
-      requestId,
-      count: snap.count,
-      geodetic: geodeticCopy.buffer,
-    }, [geodeticCopy.buffer]);
+    this.worker.postMessage(
+      {
+        type: 'build',
+        requestId,
+        count: snap.count,
+        geodetic: geodeticCopy.buffer,
+      },
+      [geodeticCopy.buffer],
+    );
   }
 
   destroy(): void {
@@ -73,15 +76,15 @@ export class HeatmapLayer {
   }
 
   private async handleWorkerMessage(msg: unknown): Promise<void> {
-    if (!msg || typeof msg !== "object") return;
+    if (!msg || typeof msg !== 'object') return;
     const m = msg as { type?: string; requestId?: number; rgba?: ArrayBuffer };
-    if (m.type !== "built" || m.requestId !== this.activeRequestId || !m.rgba || !this.enabled) {
+    if (m.type !== 'built' || m.requestId !== this.activeRequestId || !m.rgba || !this.enabled) {
       return;
     }
     this.imageData.data.set(new Uint8ClampedArray(m.rgba));
     this.ctx.putImageData(this.imageData, 0, 0);
 
-    const dataUrl = this.canvas.toDataURL("image/png");
+    const dataUrl = this.canvas.toDataURL('image/png');
     const provider = await Cesium.SingleTileImageryProvider.fromUrl(dataUrl, {
       rectangle: Cesium.Rectangle.MAX_VALUE,
     });

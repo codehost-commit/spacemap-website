@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { adminLog, type LogEntry } from "../admin/admin-log.js";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { adminLog, type LogEntry } from '../admin/admin-log.js';
 
 interface Props {
   bufferName: string;
@@ -9,29 +9,29 @@ interface Props {
 }
 
 const SEVERITY_COLORS: Record<string, string> = {
-  info: "text-emerald-300",
-  debug: "text-emerald-700",
-  warn: "text-amber-400",
-  error: "text-red-400",
-  cmd: "text-cyan-300",
-  out: "text-emerald-200",
-  success: "text-emerald-400 font-semibold",
+  info: 'text-emerald-300',
+  debug: 'text-emerald-700',
+  warn: 'text-amber-400',
+  error: 'text-red-400',
+  cmd: 'text-cyan-300',
+  out: 'text-emerald-200',
+  success: 'text-emerald-400 font-semibold',
 };
 
 const CHANNEL_COLORS: Record<string, string> = {
-  sys: "text-slate-400",
-  sat: "text-emerald-500",
-  fps: "text-cyan-400",
-  layer: "text-teal-400",
-  cam: "text-purple-400",
-  ui: "text-fuchsia-400",
-  net: "text-blue-400",
-  diag: "text-amber-300",
-  cmd: "text-cyan-300",
-  in: "text-cyan-400",
-  out: "text-emerald-300",
-  clock: "text-yellow-300",
-  heartbeat: "text-slate-500",
+  sys: 'text-slate-400',
+  sat: 'text-emerald-500',
+  fps: 'text-cyan-400',
+  layer: 'text-teal-400',
+  cam: 'text-purple-400',
+  ui: 'text-fuchsia-400',
+  net: 'text-blue-400',
+  diag: 'text-amber-300',
+  cmd: 'text-cyan-300',
+  in: 'text-cyan-400',
+  out: 'text-emerald-300',
+  clock: 'text-yellow-300',
+  heartbeat: 'text-slate-500',
 };
 
 /**
@@ -41,7 +41,7 @@ const CHANNEL_COLORS: Record<string, string> = {
  */
 export function Terminal({ bufferName, onCommand, autoFocus, onFocus }: Props) {
   const [entries, setEntries] = useState<LogEntry[]>(() => [...adminLog.read(bufferName)]);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([]);
   const [histIdx, setHistIdx] = useState(-1);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -79,36 +79,36 @@ export function Terminal({ bufferName, onCommand, autoFocus, onFocus }: Props) {
     if (!cmd) return;
     setHistory((h) => [cmd, ...h.filter((c) => c !== cmd)].slice(0, 100));
     setHistIdx(-1);
-    setInput("");
+    setInput('');
     onCommand(cmd);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
+    if (e.key === 'Enter') {
       e.preventDefault();
       submit();
-    } else if (e.key === "ArrowUp") {
+    } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const next = Math.min(history.length - 1, histIdx + 1);
       if (next >= 0 && history[next] !== undefined) {
         setHistIdx(next);
         setInput(history[next]);
       }
-    } else if (e.key === "ArrowDown") {
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       const next = histIdx - 1;
       if (next < 0) {
         setHistIdx(-1);
-        setInput("");
+        setInput('');
       } else {
         setHistIdx(next);
         setInput(history[next]);
       }
-    } else if (e.key === "c" && e.ctrlKey) {
+    } else if (e.key === 'c' && e.ctrlKey) {
       e.preventDefault();
-      setInput("");
+      setInput('');
       setHistIdx(-1);
-    } else if (e.key === "l" && e.ctrlKey) {
+    } else if (e.key === 'l' && e.ctrlKey) {
       e.preventDefault();
       adminLog.clear(bufferName);
     }
@@ -126,11 +126,7 @@ export function Terminal({ bufferName, onCommand, autoFocus, onFocus }: Props) {
         onFocus?.();
       }}
     >
-      <div
-        ref={scrollRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-2 py-1"
-      >
+      <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto px-2 py-1">
         {rendered}
       </div>
       <div className="flex items-center gap-1 border-t border-emerald-900/60 bg-black/95 px-2 py-1">
@@ -154,21 +150,17 @@ function renderEntries(entries: LogEntry[]) {
   return entries.map((e) => (
     <div key={e.seq} className="whitespace-pre-wrap">
       <span className="text-emerald-700/80">{formatTs(e.ts)}</span>
-      <span className={`ml-2 ${CHANNEL_COLORS[e.channel] ?? "text-slate-400"}`}>
-        [{e.channel}]
-      </span>
-      <span className={`ml-2 ${SEVERITY_COLORS[e.severity] ?? "text-emerald-200"}`}>
-        {e.text}
-      </span>
+      <span className={`ml-2 ${CHANNEL_COLORS[e.channel] ?? 'text-slate-400'}`}>[{e.channel}]</span>
+      <span className={`ml-2 ${SEVERITY_COLORS[e.severity] ?? 'text-emerald-200'}`}>{e.text}</span>
     </div>
   ));
 }
 
 function formatTs(ts: number): string {
   const d = new Date(ts);
-  const hh = d.getUTCHours().toString().padStart(2, "0");
-  const mm = d.getUTCMinutes().toString().padStart(2, "0");
-  const ss = d.getUTCSeconds().toString().padStart(2, "0");
-  const ms = d.getUTCMilliseconds().toString().padStart(3, "0");
+  const hh = d.getUTCHours().toString().padStart(2, '0');
+  const mm = d.getUTCMinutes().toString().padStart(2, '0');
+  const ss = d.getUTCSeconds().toString().padStart(2, '0');
+  const ms = d.getUTCMilliseconds().toString().padStart(3, '0');
   return `${hh}:${mm}:${ss}.${ms}`;
 }

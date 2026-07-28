@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Naked-eye planets rendered in the celestial frame. Positions come from a
@@ -42,7 +42,7 @@ const EARTH: OrbitalElements = {
 };
 const PLANETS: PlanetDef[] = [
   {
-    name: "Mercury",
+    name: 'Mercury',
     rgb: [0.85, 0.75, 0.6],
     baseSize: 4,
     elements: {
@@ -55,7 +55,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Venus",
+    name: 'Venus',
     rgb: [1.0, 0.95, 0.8],
     baseSize: 6,
     elements: {
@@ -68,7 +68,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Mars",
+    name: 'Mars',
     rgb: [1.0, 0.55, 0.35],
     baseSize: 5,
     elements: {
@@ -81,7 +81,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Jupiter",
+    name: 'Jupiter',
     rgb: [1.0, 0.85, 0.65],
     baseSize: 7,
     elements: {
@@ -94,7 +94,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Saturn",
+    name: 'Saturn',
     rgb: [1.0, 0.9, 0.7],
     baseSize: 6,
     elements: {
@@ -107,7 +107,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Uranus",
+    name: 'Uranus',
     rgb: [0.75, 0.9, 0.95],
     baseSize: 4,
     elements: {
@@ -120,7 +120,7 @@ const PLANETS: PlanetDef[] = [
     },
   },
   {
-    name: "Neptune",
+    name: 'Neptune',
     rgb: [0.6, 0.75, 1.0],
     baseSize: 4,
     elements: {
@@ -168,10 +168,7 @@ export class Planets {
         horizontalOrigin: Cesium.HorizontalOrigin.LEFT,
         verticalOrigin: Cesium.VerticalOrigin.CENTER,
         eyeOffset: new Cesium.Cartesian3(0, 0, -1_000_000),
-        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(
-          0,
-          2e11,
-        ),
+        distanceDisplayCondition: new Cesium.DistanceDisplayCondition(0, 2e11),
       });
     }
 
@@ -195,8 +192,7 @@ export class Planets {
     });
     // Compute once immediately so planets aren't at the placeholder position.
     this.updatePositions(
-      Cesium.JulianDate.toDate(viewer.clock.currentTime).getTime() / 86_400_000 +
-        2440587.5,
+      Cesium.JulianDate.toDate(viewer.clock.currentTime).getTime() / 86_400_000 + 2440587.5,
     );
   }
 
@@ -263,7 +259,10 @@ function elt(e: [number, number], d: number): number {
   return e[0] + e[1] * d;
 }
 
-function helioPosition(el: OrbitalElements, d: number): {
+function helioPosition(
+  el: OrbitalElements,
+  d: number,
+): {
   x: number;
   y: number;
   z: number;

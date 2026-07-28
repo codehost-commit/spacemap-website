@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router-dom";
-import emblemSrc from "../assets/brand-emblem.png";
+import { Link, useNavigate } from 'react-router-dom';
+import emblemSrc from '../assets/brand-emblem.png';
 
 /** Scroll to top then navigate */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -9,7 +9,7 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
       href={to}
       onClick={(e) => {
         e.preventDefault();
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         // Small delay so scroll starts before route change
         setTimeout(() => navigate(to), 50);
       }}
@@ -32,7 +32,8 @@ export function SiteFooter() {
               <span className="text-lg font-semibold text-white font-sans">SpaceMap</span>
             </Link>
             <p className="text-sm text-space-dim leading-relaxed">
-              Real-time orbital intelligence, running entirely in your browser. Track every object above Earth.
+              Real-time orbital intelligence, running entirely in your browser. Track every object
+              above Earth.
             </p>
           </div>
 
@@ -42,8 +43,12 @@ export function SiteFooter() {
               Product
             </h4>
             <ul className="space-y-3">
-              <li><FooterLink to="/tracker">Tracker</FooterLink></li>
-              <li><FooterLink to="/features">Features</FooterLink></li>
+              <li>
+                <FooterLink to="/tracker">Tracker</FooterLink>
+              </li>
+              <li>
+                <FooterLink to="/features">Features</FooterLink>
+              </li>
             </ul>
           </div>
 
@@ -53,8 +58,12 @@ export function SiteFooter() {
               Company
             </h4>
             <ul className="space-y-3">
-              <li><FooterLink to="/about">About</FooterLink></li>
-              <li><FooterLink to="/contact">Contact</FooterLink></li>
+              <li>
+                <FooterLink to="/about">About</FooterLink>
+              </li>
+              <li>
+                <FooterLink to="/contact">Contact</FooterLink>
+              </li>
             </ul>
           </div>
 
@@ -64,8 +73,16 @@ export function SiteFooter() {
               Legal
             </h4>
             <ul className="space-y-3">
-              <li><a href="#" className="text-sm text-space-dim hover:text-white transition-colors">Privacy</a></li>
-              <li><a href="#" className="text-sm text-space-dim hover:text-white transition-colors">Terms</a></li>
+              <li>
+                <a href="#" className="text-sm text-space-dim hover:text-white transition-colors">
+                  Privacy
+                </a>
+              </li>
+              <li>
+                <a href="#" className="text-sm text-space-dim hover:text-white transition-colors">
+                  Terms
+                </a>
+              </li>
             </ul>
           </div>
         </div>
@@ -75,9 +92,7 @@ export function SiteFooter() {
           <p className="text-xs text-space-dim">
             &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
           </p>
-          <p className="text-xs text-space-dim">
-            spacemap.earth
-          </p>
+          <p className="text-xs text-space-dim">spacemap.earth</p>
         </div>
       </div>
     </footer>

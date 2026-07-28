@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useStore } from "../state/store.js";
+import { useMemo, useState } from 'react';
+import { useStore } from '../state/store.js';
 
 const MAX_RESULTS = 12;
 
@@ -11,7 +11,7 @@ const MAX_RESULTS = 12;
 export function SearchBox() {
   const index = useStore((s) => s.index);
   const select = useStore((s) => s.select);
-  const [q, setQ] = useState("");
+  const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
 
   const results = useMemo(() => {

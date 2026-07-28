@@ -1,4 +1,4 @@
-import { useStore } from "../state/store.js";
+import { useStore } from '../state/store.js';
 
 /**
  * Full-screen boot overlay. Stays up until three things are true:
@@ -16,24 +16,24 @@ export function CatalogStatusBanner() {
   const firstSnapshot = useStore((s) => s.firstSnapshotReceived);
   const catalogSize = useStore((s) => s.catalogSize);
 
-  const catalogReady = status === "ready";
-  const isError = status === "error";
+  const catalogReady = status === 'ready';
+  const isError = status === 'error';
   const fullyReady = catalogReady && imageryReady && firstSnapshot;
   if (fullyReady && !isError) return null;
 
   // Progress fractions for the checklist.
   const steps: Array<{ label: string; done: boolean; note?: string }> = [
     {
-      label: "Downloading TLE catalog",
+      label: 'Downloading TLE catalog',
       done: catalogReady || isError,
       note: catalogReady ? `${catalogSize.toLocaleString()} objects` : undefined,
     },
     {
-      label: "Streaming Earth imagery",
+      label: 'Streaming Earth imagery',
       done: imageryReady,
     },
     {
-      label: "Propagating first snapshot",
+      label: 'Propagating first snapshot',
       done: firstSnapshot,
     },
   ];
@@ -47,7 +47,7 @@ export function CatalogStatusBanner() {
           SpaceMap — Orbital Nexus
         </div>
         <div className="mb-4 text-base font-semibold">
-          {isError ? "Couldn't load the catalog" : "Loading the sky…"}
+          {isError ? "Couldn't load the catalog" : 'Loading the sky…'}
         </div>
 
         {!isError && (
@@ -62,25 +62,13 @@ export function CatalogStatusBanner() {
               {steps.map((s) => (
                 <li key={s.label} className="flex items-center gap-2">
                   <span
-                    className={
-                      s.done
-                        ? "text-emerald-400"
-                        : "animate-pulse text-space-accent"
-                    }
+                    className={s.done ? 'text-emerald-400' : 'animate-pulse text-space-accent'}
                     aria-hidden
                   >
-                    {s.done ? "✓" : "•"}
+                    {s.done ? '✓' : '•'}
                   </span>
-                  <span
-                    className={
-                      s.done ? "text-space-dim" : "text-space-text"
-                    }
-                  >
-                    {s.label}
-                  </span>
-                  {s.note && (
-                    <span className="ml-auto text-space-dim">{s.note}</span>
-                  )}
+                  <span className={s.done ? 'text-space-dim' : 'text-space-text'}>{s.label}</span>
+                  {s.note && <span className="ml-auto text-space-dim">{s.note}</span>}
                 </li>
               ))}
             </ul>
@@ -89,12 +77,10 @@ export function CatalogStatusBanner() {
 
         {isError && (
           <>
-            <div className="mb-3 whitespace-pre-line text-xs text-space-bad">
-              {error}
-            </div>
+            <div className="mb-3 whitespace-pre-line text-xs text-space-bad">{error}</div>
             <div className="text-xs text-space-dim">
-              If you deployed via GitHub Actions, check the "Fetch TLE snapshot
-              for bundling" step in the workflow log.
+              If you deployed via GitHub Actions, check the "Fetch TLE snapshot for bundling" step
+              in the workflow log.
             </div>
             <button
               onClick={() => location.reload()}

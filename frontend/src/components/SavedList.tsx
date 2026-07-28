@@ -1,8 +1,8 @@
-import { useStore } from "../state/store.js";
+import { useStore } from '../state/store.js';
 
 /** Bookmarked satellites list. Click to focus, click ✕ to remove. */
 export function SavedList() {
-  const open = useStore((s) => s.openOverlays.has("saved"));
+  const open = useStore((s) => s.openOverlays.has('saved'));
   const setOverlay = useStore((s) => s.setOverlay);
   const savedIds = useStore((s) => s.savedIds);
   const names = useStore((s) => s.indexByNorad);
@@ -23,7 +23,7 @@ export function SavedList() {
           Saved satellites
         </span>
         <button
-          onClick={() => setOverlay("saved", false)}
+          onClick={() => setOverlay('saved', false)}
           className="text-space-dim hover:text-space-text"
         >
           ×
@@ -36,11 +36,16 @@ export function SavedList() {
           </li>
         ) : (
           items.map((it) => (
-            <li key={it.id} className="flex items-center border-b border-space-border/50 last:border-b-0">
+            <li
+              key={it.id}
+              className="flex items-center border-b border-space-border/50 last:border-b-0"
+            >
               <button
                 onClick={() => {
                   select(it.id);
-                  (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(it.id);
+                  (window as unknown as { spacemapFocus?: (id: number) => void }).spacemapFocus?.(
+                    it.id,
+                  );
                 }}
                 className="min-w-0 flex-1 truncate px-3 py-2 text-left text-space-text hover:bg-white/5"
               >

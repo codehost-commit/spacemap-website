@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import type { SatelliteLayer } from "./satellite-layer.js";
+import * as Cesium from 'cesium';
+import type { SatelliteLayer } from './satellite-layer.js';
 
 /**
  * Registers global helpers so components anywhere in the tree can drive the

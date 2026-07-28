@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Togglable lat/lon graticule — 30° meridians + parallels drawn on a shell
@@ -32,13 +32,13 @@ export class Graticule {
     const col = this.scene.primitives.add(new Cesium.PolylineCollection());
     this.collection = col;
 
-    const equatorMaterial = Cesium.Material.fromType("Color", {
+    const equatorMaterial = Cesium.Material.fromType('Color', {
       color: new Cesium.Color(0.4, 0.85, 1, 0.55),
     });
-    const primeMeridianMaterial = Cesium.Material.fromType("Color", {
+    const primeMeridianMaterial = Cesium.Material.fromType('Color', {
       color: new Cesium.Color(0.4, 0.85, 1, 0.55),
     });
-    const majorMaterial = Cesium.Material.fromType("Color", {
+    const majorMaterial = Cesium.Material.fromType('Color', {
       color: new Cesium.Color(0.55, 0.65, 0.8, 0.28),
     });
 

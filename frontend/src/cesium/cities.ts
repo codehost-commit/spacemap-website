@@ -1,5 +1,5 @@
-import * as Cesium from "cesium";
-import { CITIES } from "../data/cities.js";
+import * as Cesium from 'cesium';
+import { CITIES } from '../data/cities.js';
 
 /**
  * City labels overlay. Renders a dot + label per city, gated by camera

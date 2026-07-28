@@ -1,4 +1,4 @@
-import * as Cesium from "cesium";
+import * as Cesium from 'cesium';
 
 /**
  * Small handle exposing Cesium.Clock mutations without dragging the entire

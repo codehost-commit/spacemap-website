@@ -7,7 +7,7 @@ on:
   # Refresh the bundled TLE snapshot every 6 hours so the deployed site
   # always ships with a recent catalog even if nobody's pushing code.
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: '0 */6 * * *'
 
 permissions:
   contents: read
@@ -53,7 +53,7 @@ jobs:
         # box. A polite User-Agent identifies this build to CelesTrak per
         # their usage policy.
         env:
-          UA: "SpaceMap/1.0 (+https://github.com/${{ github.repository }})"
+          UA: 'SpaceMap/1.0 (+https://github.com/${{ github.repository }})'
         run: |
           mkdir -p frontend/dist/data
           set +e

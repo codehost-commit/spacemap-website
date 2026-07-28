@@ -1,5 +1,5 @@
-import { useStore } from "../state/store.js";
-import { ensureNotificationPermission } from "../simulation/notifications.js";
+import { useStore } from '../state/store.js';
+import { ensureNotificationPermission } from '../simulation/notifications.js';
 
 /**
  * Right-hand vertical rail of overlay toggles. Each button is a wide pill
@@ -27,36 +27,36 @@ export function OverlayToolbar() {
         icon="⚠"
         label="Risks"
         title="Top pairs currently closest in orbit"
-        active={openOverlays.has("leaderboard")}
-        onClick={() => toggleOverlay("leaderboard")}
+        active={openOverlays.has('leaderboard')}
+        onClick={() => toggleOverlay('leaderboard')}
       />
       <ToolbarButton
         icon="🚀"
         label="Launches"
         title="Upcoming rocket launches"
-        active={openOverlays.has("launches")}
-        onClick={() => toggleOverlay("launches")}
+        active={openOverlays.has('launches')}
+        onClick={() => toggleOverlay('launches')}
       />
       <ToolbarButton
         icon="📡"
         label="ISS Cam"
         title="Live camera + ISS telemetry"
-        active={openOverlays.has("iss")}
-        onClick={() => toggleOverlay("iss")}
+        active={openOverlays.has('iss')}
+        onClick={() => toggleOverlay('iss')}
       />
       <ToolbarButton
         icon="🌐"
         label="Sky view"
         title="What's overhead from your location"
-        active={openOverlays.has("sky")}
-        onClick={() => toggleOverlay("sky")}
+        active={openOverlays.has('sky')}
+        onClick={() => toggleOverlay('sky')}
       />
       <ToolbarButton
         icon="★"
         label="Saved"
         title="Your saved satellites"
-        active={openOverlays.has("saved")}
-        onClick={() => toggleOverlay("saved")}
+        active={openOverlays.has('saved')}
+        onClick={() => toggleOverlay('saved')}
       />
       <ToolbarButton
         icon="🔔"
@@ -88,8 +88,8 @@ function ToolbarButton({
       title={title}
       className={`flex h-11 w-full items-center gap-2 rounded-2xl border px-3 font-mono text-[11px] shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl transition ${
         active
-          ? "border-space-accent bg-space-accent/15 text-space-accent"
-          : "border-space-border bg-space-panel/85 text-space-text hover:border-space-accent/60 hover:text-space-accent"
+          ? 'border-space-accent bg-space-accent/15 text-space-accent'
+          : 'border-space-border bg-space-panel/85 text-space-text hover:border-space-accent/60 hover:text-space-accent'
       }`}
     >
       <span className="text-sm leading-none">{icon}</span>

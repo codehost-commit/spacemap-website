@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X } from "lucide-react";
-import emblemSrc from "../assets/brand-emblem.png";
+import { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Menu, X } from 'lucide-react';
+import emblemSrc from '../assets/brand-emblem.png';
 
 const NAV_LINKS = [
-  { to: "/", label: "Home" },
-  { to: "/features", label: "Features" },
-  { to: "/about", label: "About" },
-  { to: "/contact", label: "Contact" },
+  { to: '/', label: 'Home' },
+  { to: '/features', label: 'Features' },
+  { to: '/about', label: 'About' },
+  { to: '/contact', label: 'Contact' },
 ];
 
 export function SiteHeader() {
@@ -16,14 +16,14 @@ export function SiteHeader() {
   const [scrolled, setScrolled] = useState(false);
 
   // On the tracker page, use no header (tracker has its own HUD)
-  const isTracker = pathname === "/tracker";
+  const isTracker = pathname === '/tracker';
 
   useEffect(() => {
     if (isTracker) return;
     const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener('scroll', onScroll, { passive: true });
     onScroll();
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
   }, [isTracker]);
 
   if (isTracker) return null;
@@ -31,9 +31,7 @@ export function SiteHeader() {
   return (
     <header
       className={`fixed inset-x-0 top-0 z-50 transition-all duration-300 ${
-        scrolled
-          ? "liquid-glass"
-          : ""
+        scrolled ? 'liquid-glass' : ''
       }`}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -58,8 +56,8 @@ export function SiteHeader() {
               to={link.to}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 pathname === link.to
-                  ? "text-space-accent bg-white/10"
-                  : "text-space-dim hover:text-white hover:bg-white/5"
+                  ? 'text-space-accent bg-white/10'
+                  : 'text-space-dim hover:text-white hover:bg-white/5'
               }`}
             >
               {link.label}
@@ -74,10 +72,7 @@ export function SiteHeader() {
         </nav>
 
         {/* Mobile menu button */}
-        <button
-          className="md:hidden text-white p-2"
-          onClick={() => setMobileOpen(!mobileOpen)}
-        >
+        <button className="md:hidden text-white p-2" onClick={() => setMobileOpen(!mobileOpen)}>
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
@@ -93,8 +88,8 @@ export function SiteHeader() {
                 onClick={() => setMobileOpen(false)}
                 className={`px-4 py-3 rounded-lg text-sm font-medium ${
                   pathname === link.to
-                    ? "text-space-accent bg-white/10"
-                    : "text-space-dim hover:text-white"
+                    ? 'text-space-accent bg-white/10'
+                    : 'text-space-dim hover:text-white'
                 }`}
               >
                 {link.label}

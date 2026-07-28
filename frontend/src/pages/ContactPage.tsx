@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Send, CheckCircle } from "lucide-react";
+import { useState } from 'react';
+import { Send, CheckCircle } from 'lucide-react';
 
 /**
  * Contact form. Submissions are saved to localStorage as JSON.
@@ -17,7 +17,7 @@ interface ContactEntry {
 
 function getContacts(): ContactEntry[] {
   try {
-    return JSON.parse(localStorage.getItem("spacemap-contacts") || "[]");
+    return JSON.parse(localStorage.getItem('spacemap-contacts') || '[]');
   } catch {
     return [];
   }
@@ -26,15 +26,15 @@ function getContacts(): ContactEntry[] {
 function saveContact(entry: ContactEntry) {
   const contacts = getContacts();
   contacts.push(entry);
-  localStorage.setItem("spacemap-contacts", JSON.stringify(contacts));
+  localStorage.setItem('spacemap-contacts', JSON.stringify(contacts));
 }
 
 export { getContacts };
 
 export function ContactPage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [question, setQuestion] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [question, setQuestion] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -49,9 +49,9 @@ export function ContactPage() {
     });
 
     setSubmitted(true);
-    setName("");
-    setEmail("");
-    setQuestion("");
+    setName('');
+    setEmail('');
+    setQuestion('');
 
     // Reset after a few seconds
     setTimeout(() => setSubmitted(false), 4000);
@@ -64,12 +64,10 @@ export function ContactPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-4">
             Get in Touch
           </p>
-          <h1 className="text-4xl font-bold text-white md:text-5xl">
-            Contact Us
-          </h1>
+          <h1 className="text-4xl font-bold text-white md:text-5xl">Contact Us</h1>
           <p className="mt-4 text-space-dim">
-            Have a question, feature request, or just want to say hello?
-            Fill out the form below and we'll get back to you.
+            Have a question, feature request, or just want to say hello? Fill out the form below and
+            we'll get back to you.
           </p>
         </div>
 
@@ -95,7 +93,10 @@ export function ContactPage() {
 
           {/* Email */}
           <div>
-            <label htmlFor="contact-email" className="block text-sm font-medium text-space-dim mb-2">
+            <label
+              htmlFor="contact-email"
+              className="block text-sm font-medium text-space-dim mb-2"
+            >
               Email
             </label>
             <input
@@ -111,7 +112,10 @@ export function ContactPage() {
 
           {/* Question */}
           <div>
-            <label htmlFor="contact-question" className="block text-sm font-medium text-space-dim mb-2">
+            <label
+              htmlFor="contact-question"
+              className="block text-sm font-medium text-space-dim mb-2"
+            >
               Question
             </label>
             <textarea
@@ -131,8 +135,8 @@ export function ContactPage() {
             disabled={submitted}
             className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3 text-sm font-semibold transition-all ${
               submitted
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-                : "bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] text-[#06101a] hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-[1.02]"
+                ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                : 'bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] text-[#06101a] hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-[1.02]'
             }`}
           >
             {submitted ? (
@@ -150,8 +154,11 @@ export function ContactPage() {
         </form>
 
         <p className="mt-6 text-center text-xs text-space-dim">
-          You can also reach us directly at{" "}
-          <a href="mailto:hello@spacemap.earth" className="text-space-accent hover:text-white transition-colors">
+          You can also reach us directly at{' '}
+          <a
+            href="mailto:hello@spacemap.earth"
+            className="text-space-accent hover:text-white transition-colors"
+          >
             hello@spacemap.earth
           </a>
         </p>

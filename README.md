@@ -7,9 +7,9 @@ Live 3D globe · SGP4 propagation for the full public catalog · time controls �
 
 [![Deploy to Pages](https://github.com/YOUR-USERNAME/SpaceMap/actions/workflows/deploy.yml/badge.svg)](https://github.com/YOUR-USERNAME/SpaceMap/actions/workflows/deploy.yml)
 
-### 🌍  [Open the live demo →](https://YOUR-USERNAME.github.io/SpaceMap/)
+### 🌍 [Open the live demo →](https://YOUR-USERNAME.github.io/SpaceMap/)
 
-*(replace `YOUR-USERNAME` with your GitHub username after the first deploy)*
+_(replace `YOUR-USERNAME` with your GitHub username after the first deploy)_
 
 </div>
 
@@ -43,23 +43,23 @@ At runtime the frontend fetches TLEs **directly from CelesTrak** (`gp.php?GROUP=
 
 ## Feature matrix
 
-| Feature | Where |
-| --- | --- |
-| Realistic 3D Earth (day/night, atmosphere, stars, moon, sun-lit) | [`frontend/src/cesium/globe.ts`](frontend/src/cesium/globe.ts) |
-| TLE ingest — CelesTrak direct fetch (Pages) or backend proxy (dev) | [`frontend/src/simulation/tle-catalog.ts`](frontend/src/simulation/tle-catalog.ts) |
-| SGP4 propagation for the full catalog in a Web Worker | [`frontend/src/workers/propagator.worker.ts`](frontend/src/workers/propagator.worker.ts) |
-| Points coloured by orbit class (LEO/MEO/GEO/HEO/POLAR/SSO) | [`frontend/src/cesium/satellite-layer.ts`](frontend/src/cesium/satellite-layer.ts) |
-| Live telemetry panel — computed 100% in the browser | [`frontend/src/simulation/client-telemetry.ts`](frontend/src/simulation/client-telemetry.ts) |
-| Time controls: pause, 1× → 1000×, reverse, jump-to-time | [`frontend/src/components/TimeControls.tsx`](frontend/src/components/TimeControls.tsx) |
-| Search by name / NORAD id → camera fly-to | [`frontend/src/components/SearchBox.tsx`](frontend/src/components/SearchBox.tsx) |
-| Filters by orbit class + trail-mode toggle + density heatmap | [`FilterPanel.tsx`](frontend/src/components/FilterPanel.tsx), [`history-trails.ts`](frontend/src/cesium/history-trails.ts), [`heatmap-layer.ts`](frontend/src/cesium/heatmap-layer.ts) |
-| Follow / POV camera modes | [`follow.ts`](frontend/src/cesium/follow.ts), [`pov-camera.ts`](frontend/src/cesium/pov-camera.ts) |
-| Conjunction analysis — TCA + miss + Pc + severity | [`propagator.worker.ts`](frontend/src/workers/propagator.worker.ts), [`ConjunctionPanel.tsx`](frontend/src/components/ConjunctionPanel.tsx) |
-| Nearest neighbours (top-K by ECI distance) | [`snapshot-util.ts`](frontend/src/state/snapshot-util.ts) |
-| Saved satellites (localStorage) | [`saved.ts`](frontend/src/state/saved.ts), [`SavedList.tsx`](frontend/src/components/SavedList.tsx) |
-| ISS live camera + telemetry | [`IssCamera.tsx`](frontend/src/components/IssCamera.tsx) |
-| Local sky view (geolocation + topocentric passes) | [`LocalSkyView.tsx`](frontend/src/components/LocalSkyView.tsx) |
-| Browser notifications (ISS / saved / conjunction) | [`notifications.ts`](frontend/src/simulation/notifications.ts) |
+| Feature                                                            | Where                                                                                                                                                                                  |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Realistic 3D Earth (day/night, atmosphere, stars, moon, sun-lit)   | [`frontend/src/cesium/globe.ts`](frontend/src/cesium/globe.ts)                                                                                                                         |
+| TLE ingest — CelesTrak direct fetch (Pages) or backend proxy (dev) | [`frontend/src/simulation/tle-catalog.ts`](frontend/src/simulation/tle-catalog.ts)                                                                                                     |
+| SGP4 propagation for the full catalog in a Web Worker              | [`frontend/src/workers/propagator.worker.ts`](frontend/src/workers/propagator.worker.ts)                                                                                               |
+| Points coloured by orbit class (LEO/MEO/GEO/HEO/POLAR/SSO)         | [`frontend/src/cesium/satellite-layer.ts`](frontend/src/cesium/satellite-layer.ts)                                                                                                     |
+| Live telemetry panel — computed 100% in the browser                | [`frontend/src/simulation/client-telemetry.ts`](frontend/src/simulation/client-telemetry.ts)                                                                                           |
+| Time controls: pause, 1× → 1000×, reverse, jump-to-time            | [`frontend/src/components/TimeControls.tsx`](frontend/src/components/TimeControls.tsx)                                                                                                 |
+| Search by name / NORAD id → camera fly-to                          | [`frontend/src/components/SearchBox.tsx`](frontend/src/components/SearchBox.tsx)                                                                                                       |
+| Filters by orbit class + trail-mode toggle + density heatmap       | [`FilterPanel.tsx`](frontend/src/components/FilterPanel.tsx), [`history-trails.ts`](frontend/src/cesium/history-trails.ts), [`heatmap-layer.ts`](frontend/src/cesium/heatmap-layer.ts) |
+| Follow / POV camera modes                                          | [`follow.ts`](frontend/src/cesium/follow.ts), [`pov-camera.ts`](frontend/src/cesium/pov-camera.ts)                                                                                     |
+| Conjunction analysis — TCA + miss + Pc + severity                  | [`propagator.worker.ts`](frontend/src/workers/propagator.worker.ts), [`ConjunctionPanel.tsx`](frontend/src/components/ConjunctionPanel.tsx)                                            |
+| Nearest neighbours (top-K by ECI distance)                         | [`snapshot-util.ts`](frontend/src/state/snapshot-util.ts)                                                                                                                              |
+| Saved satellites (localStorage)                                    | [`saved.ts`](frontend/src/state/saved.ts), [`SavedList.tsx`](frontend/src/components/SavedList.tsx)                                                                                    |
+| ISS live camera + telemetry                                        | [`IssCamera.tsx`](frontend/src/components/IssCamera.tsx)                                                                                                                               |
+| Local sky view (geolocation + topocentric passes)                  | [`LocalSkyView.tsx`](frontend/src/components/LocalSkyView.tsx)                                                                                                                         |
+| Browser notifications (ISS / saved / conjunction)                  | [`notifications.ts`](frontend/src/simulation/notifications.ts)                                                                                                                         |
 
 ## How to use the UI
 

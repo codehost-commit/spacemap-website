@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { useStore } from "../state/store.js";
-import { LocateButton } from "./LocateButton.js";
-import { adminLog } from "../admin/admin-log.js";
-import { BrandMark } from "./BrandMark.js";
+import { useEffect, useState } from 'react';
+import { useStore } from '../state/store.js';
+import { LocateButton } from './LocateButton.js';
+import { adminLog } from '../admin/admin-log.js';
+import { BrandMark } from './BrandMark.js';
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -42,9 +42,7 @@ export function HeaderHUD() {
 
   const drift = simTimeMs - wallNow;
   const driftLabel =
-    Math.abs(drift) < 2000
-      ? "live"
-      : `${drift > 0 ? "+" : "−"}${formatDuration(Math.abs(drift))}`;
+    Math.abs(drift) < 2000 ? 'live' : `${drift > 0 ? '+' : '−'}${formatDuration(Math.abs(drift))}`;
 
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-4 py-3">
@@ -53,7 +51,11 @@ export function HeaderHUD() {
           <BrandMark compact />
           <button
             onClick={() => {
-              adminLog.push("main", { channel: "sys", severity: "info", text: "admin console opened" });
+              adminLog.push('main', {
+                channel: 'sys',
+                severity: 'info',
+                text: 'admin console opened',
+              });
               useStore.getState().setAdminOpen(true);
             }}
             title="Admin console (developer)"
@@ -70,7 +72,7 @@ export function HeaderHUD() {
         <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
         <Stat
           label="Speed"
-          value={`${paused ? "⏸ " : ""}${multiplier >= 0 ? "" : "−"}${Math.abs(multiplier)}×`}
+          value={`${paused ? '⏸ ' : ''}${multiplier >= 0 ? '' : '−'}${Math.abs(multiplier)}×`}
         />
         <Stat label="Sim (UTC)" value={new Date(simTimeMs).toISOString().slice(11, 19)} />
         <Stat label="Δ vs now" value={driftLabel} />
@@ -79,22 +81,15 @@ export function HeaderHUD() {
           value={
             <span
               className={
-                fps >= 55
-                  ? "text-emerald-400"
-                  : fps >= 30
-                    ? "text-space-warn"
-                    : "text-space-bad"
+                fps >= 55 ? 'text-emerald-400' : fps >= 30 ? 'text-space-warn' : 'text-space-bad'
               }
             >
-              {fps || "—"}
+              {fps || '—'}
             </span>
           }
         />
         <div className="flex items-center gap-1.5">
-          <span
-            className={`h-2 w-2 rounded-full ${statusColor(status)}`}
-            title={error ?? status}
-          />
+          <span className={`h-2 w-2 rounded-full ${statusColor(status)}`} title={error ?? status} />
           <span className="text-space-dim">{statusLabel(status)}</span>
         </div>
       </div>
@@ -113,27 +108,27 @@ function Stat({ label, value }: { label: string; value: React.ReactNode }) {
 
 function statusColor(s: string): string {
   switch (s) {
-    case "ready":
-      return "bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400";
-    case "loading":
-      return "bg-space-warn shadow-[0_0_8px] shadow-space-warn";
-    case "error":
-      return "bg-space-bad shadow-[0_0_8px] shadow-space-bad";
+    case 'ready':
+      return 'bg-emerald-400 shadow-[0_0_8px] shadow-emerald-400';
+    case 'loading':
+      return 'bg-space-warn shadow-[0_0_8px] shadow-space-warn';
+    case 'error':
+      return 'bg-space-bad shadow-[0_0_8px] shadow-space-bad';
     default:
-      return "bg-space-dim";
+      return 'bg-space-dim';
   }
 }
 
 function statusLabel(s: string): string {
   switch (s) {
-    case "ready":
-      return "LIVE";
-    case "loading":
-      return "LOADING";
-    case "error":
-      return "ERROR";
+    case 'ready':
+      return 'LIVE';
+    case 'loading':
+      return 'LOADING';
+    case 'error':
+      return 'ERROR';
     default:
-      return "IDLE";
+      return 'IDLE';
   }
 }
 
