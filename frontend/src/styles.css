@@ -7,19 +7,25 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  overflow: hidden;
 }
 
 body {
   font-family: theme("fontFamily.sans");
   background: theme("colors.space.bg");
   color: theme("colors.space.text");
-  overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
-  background-image:
-    radial-gradient(circle at top left, rgba(142, 216, 255, 0.1), transparent 24%),
-    radial-gradient(circle at top right, rgba(216, 179, 106, 0.08), transparent 20%),
-    linear-gradient(180deg, #081420 0%, #06101a 42%, #050c14 100%);
+}
+
+/* Tracker page needs overflow hidden (fullscreen Cesium). Other pages scroll. */
+body.tracker-mode,
+body.tracker-mode #root {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+/* Smooth scroll for site pages */
+html {
+  scroll-behavior: smooth;
 }
 
 .spacemap-brand {

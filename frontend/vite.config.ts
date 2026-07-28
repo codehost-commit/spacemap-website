@@ -19,7 +19,15 @@ const baseUrl = process.env.VITE_BASE_URL ?? "/";
 
 export default defineConfig({
   base: baseUrl,
+  cacheDir: path.resolve(__dirname, ".vite-cache"),
   plugins: [react(), cesium({ cesiumBuildRootPath, cesiumBuildPath })],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
+      // lucide-react's ESM entry is missing; point Vite at the CJS build
+      "lucide-react": path.resolve(__dirname, "../node_modules/lucide-react/dist/cjs/lucide-react.js"),
+    },
+  },
   server: {
     port: 5173,
     proxy: {

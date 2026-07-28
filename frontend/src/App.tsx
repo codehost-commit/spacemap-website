@@ -1,39 +1,19 @@
-import { GlobeCanvas } from "./components/GlobeCanvas.js";
-import { HeaderHUD } from "./components/HeaderHUD.js";
-import { TelemetryPanel } from "./components/TelemetryPanel.js";
-import { FilterPanel } from "./components/FilterPanel.js";
-import { SearchBox } from "./components/SearchBox.js";
-import { TimeControls } from "./components/TimeControls.js";
-import { OverlayToolbar } from "./components/OverlayToolbar.js";
-import { IssCamera } from "./components/IssCamera.js";
-import { LocalSkyView } from "./components/LocalSkyView.js";
-import { SavedList } from "./components/SavedList.js";
-import { CatalogStatusBanner } from "./components/CatalogStatusBanner.js";
-import { ConjunctionLeaderboard } from "./components/ConjunctionLeaderboard.js";
-import { LaunchTracker } from "./components/LaunchTracker.js";
-import { AdminConsole } from "./components/AdminConsole.js";
-import { TimelineScrubber } from "./components/TimelineScrubber.js";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { SiteLayout } from "./components/SiteLayout.js";
+import { HomePage } from "./pages/HomePage.js";
+import { AboutPage } from "./pages/AboutPage.js";
+import { TrackerPage } from "./pages/TrackerPage.js";
 
 export function App() {
   return (
-    <div className="relative h-full w-full">
-      <GlobeCanvas />
-      <HeaderHUD />
-      <SearchBox />
-      <div className="spacemap-right-rail pointer-events-none absolute right-4 top-24 z-20 flex w-[19.25rem] flex-col gap-4">
-        <FilterPanel />
-        <OverlayToolbar />
-      </div>
-      <SavedList />
-      <TelemetryPanel />
-      <LocalSkyView />
-      <IssCamera />
-      <ConjunctionLeaderboard />
-      <LaunchTracker />
-      <TimeControls />
-      <TimelineScrubber />
-      <CatalogStatusBanner />
-      <AdminConsole />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/tracker" element={<TrackerPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }
