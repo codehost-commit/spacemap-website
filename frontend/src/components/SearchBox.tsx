@@ -39,7 +39,7 @@ export function SearchBox() {
   };
 
   return (
-    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-4 z-20 w-[26rem] max-w-[calc(100vw-22rem)] -translate-x-1/2 font-mono text-xs">
+    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-[4.85rem] z-20 w-[26rem] max-w-[calc(100vw-24rem)] -translate-x-1/2 font-mono text-xs">
       <input
         type="text"
         value={q}
@@ -49,10 +49,10 @@ export function SearchBox() {
         }}
         onFocus={() => setOpen(true)}
         placeholder="Search satellite name or NORAD id…"
-        className="w-full rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 text-[13px] text-space-text shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl placeholder:text-space-dim/90 focus:border-space-accent focus:outline-none focus:ring-1 focus:ring-space-accent/30"
+        className="w-full rounded-2xl border border-space-border/90 bg-[#0d1723]/86 px-4 py-3 text-[13px] text-space-text shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl placeholder:text-space-dim/85 focus:border-space-accent/85 focus:bg-[#101d2b]/88 focus:outline-none focus:ring-1 focus:ring-space-accent/25"
       />
       {open && results.length > 0 && (
-        <ul className="mt-2 max-h-80 overflow-auto rounded-2xl border border-space-border bg-space-panel/95 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+        <ul className="mt-2 max-h-80 overflow-auto rounded-2xl border border-space-border/90 bg-[#0d1723]/90 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
           {results.map((r) => (
             <li key={r.noradId}>
               <button

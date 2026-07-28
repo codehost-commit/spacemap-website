@@ -72,7 +72,7 @@ body {
     width: auto !important;
     max-width: none !important;
     transform: none !important;
-    top: 4.35rem !important;
+    top: 4.85rem !important;
   }
   /* Filter panel becomes a slim strip on the left. */
   .spacemap-filter {
@@ -87,7 +87,7 @@ body {
     left: 0.5rem !important;
     width: auto !important;
     max-width: none !important;
-    top: 3.75rem !important;
+    top: 7rem !important;
     max-height: calc(100vh - 9rem) !important;
   }
   /* Overlay panels (ISS, Sky, Leaderboard) shrink. */
