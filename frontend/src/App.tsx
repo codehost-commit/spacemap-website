@@ -20,12 +20,14 @@ export function App() {
       <GlobeCanvas />
       <HeaderHUD />
       <SearchBox />
-      <FilterPanel />
+      <div className="spacemap-right-rail pointer-events-none absolute right-4 top-24 z-20 flex w-[19.25rem] flex-col gap-4">
+        <FilterPanel />
+        <OverlayToolbar />
+      </div>
       <SavedList />
       <TelemetryPanel />
       <LocalSkyView />
       <IssCamera />
-      <OverlayToolbar />
       <ConjunctionLeaderboard />
       <LaunchTracker />
       <TimeControls />
