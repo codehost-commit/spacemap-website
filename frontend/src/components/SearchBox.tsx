@@ -39,20 +39,22 @@ export function SearchBox() {
   };
 
   return (
-    <div className="spacemap-search pointer-events-auto absolute left-1/2 top-[4.85rem] z-20 w-[26rem] max-w-[calc(100vw-24rem)] -translate-x-1/2 font-mono text-xs">
-      <input
-        type="text"
-        value={q}
-        onChange={(e) => {
-          setQ(e.target.value);
-          setOpen(true);
-        }}
-        onFocus={() => setOpen(true)}
-        placeholder="Search satellite name or NORAD id…"
-        className="w-full rounded-2xl border border-space-border/90 bg-[#0d1723]/86 px-4 py-3 text-[13px] text-space-text shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl placeholder:text-space-dim/85 focus:border-space-accent/85 focus:bg-[#101d2b]/88 focus:outline-none focus:ring-1 focus:ring-space-accent/25"
-      />
+    <div className="spacemap-search pointer-events-auto absolute left-4 top-[6.1rem] z-20 w-[25rem] max-w-[calc(100vw-2rem)] font-mono text-xs">
+      <div className="rounded-2xl border border-space-border/90 bg-space-panel/78 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => {
+            setQ(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          placeholder="Click any satellite, or search by name / NORAD id."
+          className="w-full appearance-none rounded-2xl bg-transparent px-4 py-3 text-[13px] text-space-text outline-none placeholder:text-space-dim/85"
+        />
+      </div>
       {open && results.length > 0 && (
-        <ul className="mt-2 max-h-80 overflow-auto rounded-2xl border border-space-border/90 bg-[#0d1723]/90 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
+        <ul className="mt-2 max-h-80 overflow-auto rounded-2xl border border-space-border/90 bg-space-panel/86 shadow-[0_18px_40px_rgba(0,0,0,0.3)] backdrop-blur-xl">
           {results.map((r) => (
             <li key={r.noradId}>
               <button
