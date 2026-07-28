@@ -4,6 +4,7 @@ import { adminLog } from "../admin/admin-log.js";
 import { runSelfDiagnose } from "../admin/diagnose.js";
 import { getInstruments } from "../admin/registry.js";
 import { Terminal } from "./Terminal.js";
+import { getContacts } from "../pages/ContactPage.js";
 
 interface Tab {
   id: string;
@@ -23,6 +24,7 @@ const HELP_TEXT = [
   "  /pause /resume     toggle simulation clock",
   "  /speed <n>         set time-warp multiplier",
   "  /snapshot          save the current view state to JSON",
+  "  /contactread       read all contact form submissions",
 ];
 
 export function AdminConsole() {
@@ -173,11 +175,28 @@ export function AdminConsole() {
         adminLog.push(activeId, { channel: "out", severity: "success", text: "snapshot saved" });
         break;
       }
+      case "/contactread": {
+        const contacts = getContacts();
+        if (contacts.length === 0) {
+          adminLog.push(activeId, { channel: "out", severity: "warn", text: "No contact submissions yet." });
+        } else {
+          adminLog.push(activeId, { channel: "out", severity: "success", text: `Contact submissions: ${contacts.length} total` });
+          adminLog.push(activeId, { channel: "out", severity: "out", text: "---" });
+          contacts.forEach((c, i) => {
+            adminLog.push(activeId, { channel: "out", severity: "out", text: `#${i + 1} | ${c.timestamp}` });
+            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Name:     ${c.name}` });
+            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Email:    ${c.email}` });
+            adminLog.push(activeId, { channel: "out", severity: "out", text: `  Question: ${c.question}` });
+            adminLog.push(activeId, { channel: "out", severity: "out", text: "---" });
+          });
+        }
+        break;
+      }
       default: {
         adminLog.push(activeId, {
           channel: "out",
           severity: "error",
-          text: `unknown command: ${head} — try /help`,
+          text: `unknown command: ${head} - try /help`,
         });
       }
     }
@@ -192,6 +211,8 @@ export function AdminConsole() {
           <span className="text-emerald-400">SPACEMAP</span>
           <span className="text-emerald-700">/</span>
           <span className="text-emerald-300">ADMIN CONSOLE</span>
+          <span className="text-emerald-700">|</span>
+          <span className="text-amber-400">Contact Us Received: ({getContacts().length})</span>
         </div>
         <div className="flex items-center gap-2 text-emerald-500">
           <span className="hidden sm:inline">Ctrl-L clear · ↑↓ history · /help</span>

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { SiteHeader } from "./SiteHeader.js";
 import { SiteFooter } from "./SiteFooter.js";
@@ -6,6 +7,11 @@ import { ShaderBackground } from "./ui/shader-r.js";
 export function SiteLayout() {
   const { pathname } = useLocation();
   const isTracker = pathname === "/tracker";
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [pathname]);
 
   if (isTracker) {
     // Tracker gets its own full-screen layout (the original app)

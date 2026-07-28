@@ -6,14 +6,14 @@ import emblemSrc from "../assets/brand-emblem.png";
 const NAV_LINKS = [
   { to: "/", label: "Home" },
   { to: "/about", label: "About" },
-  { to: "/tracker", label: "Tracker" },
+  { to: "/contact", label: "Contact" },
 ];
 
 export function SiteHeader() {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  // On the tracker page, use a more minimal header
+  // On the tracker page, use no header (tracker has its own HUD)
   const isTracker = pathname === "/tracker";
   if (isTracker) return null;
 

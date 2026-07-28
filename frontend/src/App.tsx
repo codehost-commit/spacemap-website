@@ -3,6 +3,7 @@ import { SiteLayout } from "./components/SiteLayout.js";
 import { HomePage } from "./pages/HomePage.js";
 import { AboutPage } from "./pages/AboutPage.js";
 import { TrackerPage } from "./pages/TrackerPage.js";
+import { ContactPage } from "./pages/ContactPage.js";
 
 export function App() {
   // Vite sets import.meta.env.BASE_URL from the `base` config (e.g. "/spacemap-website/")
@@ -14,6 +15,7 @@ export function App() {
         <Route element={<SiteLayout />}>
           <Route path="/" element={<HomePage />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/tracker" element={<TrackerPage />} />
         </Route>
       </Routes>

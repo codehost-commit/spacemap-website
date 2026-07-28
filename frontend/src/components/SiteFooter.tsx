@@ -1,5 +1,24 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import emblemSrc from "../assets/brand-emblem.png";
+
+/** Scroll to top then navigate */
+function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
+  const navigate = useNavigate();
+  return (
+    <a
+      href={to}
+      onClick={(e) => {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        // Small delay so scroll starts before route change
+        setTimeout(() => navigate(to), 50);
+      }}
+      className="text-sm text-space-dim hover:text-white transition-colors"
+    >
+      {children}
+    </a>
+  );
+}
 
 export function SiteFooter() {
   return (
@@ -23,9 +42,8 @@ export function SiteFooter() {
               Product
             </h4>
             <ul className="space-y-3">
-              <li><Link to="/tracker" className="text-sm text-space-dim hover:text-white transition-colors">Tracker</Link></li>
-              <li><Link to="/#features" className="text-sm text-space-dim hover:text-white transition-colors">Features</Link></li>
-              <li><a href="https://github.com" target="_blank" rel="noopener" className="text-sm text-space-dim hover:text-white transition-colors">GitHub</a></li>
+              <li><FooterLink to="/tracker">Tracker</FooterLink></li>
+              <li><FooterLink to="/#features">Features</FooterLink></li>
             </ul>
           </div>
 
@@ -35,8 +53,8 @@ export function SiteFooter() {
               Company
             </h4>
             <ul className="space-y-3">
-              <li><Link to="/about" className="text-sm text-space-dim hover:text-white transition-colors">About</Link></li>
-              <li><a href="mailto:hello@spacemap.earth" className="text-sm text-space-dim hover:text-white transition-colors">Contact</a></li>
+              <li><FooterLink to="/about">About</FooterLink></li>
+              <li><FooterLink to="/contact">Contact</FooterLink></li>
             </ul>
           </div>
 
