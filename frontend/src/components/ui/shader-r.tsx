@@ -319,8 +319,11 @@ export function ShaderBackground({ className }: { className?: string }) {
     const pendingRelease = pendingContextReleases.get(canvas)
     if (pendingRelease !== undefined) window.clearTimeout(pendingRelease)
     pendingContextReleases.delete(canvas)
-    const gl = canvas.getContext("webgl", { antialias: false })
-    if (!gl) return
+    const glCtx = canvas.getContext("webgl", { antialias: false })
+    if (!glCtx) return
+    // Non-null aliases so TS doesn't complain inside nested closures
+    const gl: WebGLRenderingContext = glCtx
+    const cvs: HTMLCanvasElement = canvas
 
     const compile = (type: number, src: string) => {
       const s = gl.createShader(type)!
@@ -369,7 +372,7 @@ export function ShaderBackground({ className }: { className?: string }) {
     let targetX = 0, targetY = 0, targetPresence = 0
     let mouseX = 0, mouseY = 0, cursorPresence = 0
     let pointerKnown = false, pointerClientX = 0, pointerClientY = 0
-    let bounds = canvas.getBoundingClientRect()
+    let bounds = cvs.getBoundingClientRect()
     let raf = 0, lastNow: number | null = null
     let visible = document.visibilityState === "visible"
     let inView = true, disposed = false
@@ -383,9 +386,9 @@ export function ShaderBackground({ className }: { className?: string }) {
       const pixelScale = Math.min(1, Math.sqrt(2_000_000 / Math.max(1, rawWidth * rawHeight)))
       const width = Math.max(1, Math.round(rawWidth * pixelScale))
       const height = Math.max(1, Math.round(rawHeight * pixelScale))
-      if (canvas.width !== width || canvas.height !== height) {
-        canvas.width = width
-        canvas.height = height
+      if (cvs.width !== width || cvs.height !== height) {
+        cvs.width = width
+        cvs.height = height
         gl.viewport(0, 0, width, height)
       }
     }
@@ -409,10 +412,10 @@ export function ShaderBackground({ className }: { className?: string }) {
     }
     const onPointerMove = (event: PointerEvent) => {
       pointerKnown = true; pointerClientX = event.clientX; pointerClientY = event.clientY
-      bounds = canvas.getBoundingClientRect(); updatePointerTarget()
+      bounds = cvs.getBoundingClientRect(); updatePointerTarget()
     }
     const onPointerLeave = () => { pointerKnown = false; targetPresence = 0; requestRender() }
-    const updateLayout = () => { bounds = canvas.getBoundingClientRect(); resizeCanvas(); updatePointerTarget(); requestRender() }
+    const updateLayout = () => { bounds = cvs.getBoundingClientRect(); resizeCanvas(); updatePointerTarget(); requestRender() }
     window.addEventListener("resize", updateLayout)
     if (UNIFORMS.cursorEnabled) {
       window.addEventListener("pointermove", onPointerMove, { passive: true })
@@ -423,13 +426,13 @@ export function ShaderBackground({ className }: { className?: string }) {
     }
 
     const resizeObserver = new ResizeObserver(updateLayout)
-    resizeObserver.observe(canvas)
+    resizeObserver.observe(cvs)
     const intersectionObserver = new IntersectionObserver(([entry]) => {
       inView = entry?.isIntersecting ?? true
       if (inView) requestRender()
       else if (raf !== 0) { cancelAnimationFrame(raf); raf = 0; lastNow = null }
     })
-    intersectionObserver.observe(canvas)
+    intersectionObserver.observe(cvs)
     const onVisibilityChange = () => {
       visible = document.visibilityState === "visible"
       if (visible) requestRender()
@@ -447,7 +450,7 @@ export function ShaderBackground({ className }: { className?: string }) {
       mouseY += (targetY - mouseY) * follow
       cursorPresence += (targetPresence - cursorPresence) * follow
       resizeCanvas()
-      gl.uniform4f(uni.scene, canvas.width, canvas.height, ((now - start) / 1000) * UNIFORMS.timeScale, UNIFORMS.colorCount)
+      gl.uniform4f(uni.scene, cvs.width, cvs.height, ((now - start) / 1000) * UNIFORMS.timeScale, UNIFORMS.colorCount)
       gl.uniform4f(uni.space, UNIFORMS.offsetX, UNIFORMS.offsetY, mouseX, mouseY)
       gl.uniform4f(uni.cursor, UNIFORMS.cursorEnabled ? cursorPresence : 0, UNIFORMS.cursorEffect, UNIFORMS.cursorStrength, UNIFORMS.cursorRadius)
       gl.drawArrays(gl.TRIANGLES, 0, 3)
@@ -473,12 +476,12 @@ export function ShaderBackground({ className }: { className?: string }) {
       gl.deleteBuffer(buf)
       gl.deleteProgram(program)
       const releaseTimer = window.setTimeout(() => {
-        if (pendingContextReleases.get(canvas) !== releaseTimer) return
-        pendingContextReleases.delete(canvas)
+        if (pendingContextReleases.get(cvs) !== releaseTimer) return
+        pendingContextReleases.delete(cvs)
         gl.getExtension("WEBGL_lose_context")?.loseContext()
-        canvas.width = 1; canvas.height = 1
+        cvs.width = 1; cvs.height = 1
       }, 0)
-      pendingContextReleases.set(canvas, releaseTimer)
+      pendingContextReleases.set(cvs, releaseTimer)
     }
   }, [])
 
