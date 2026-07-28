@@ -16,7 +16,7 @@ function fire(key: string, title: string, body: string): void {
   if (now - prev < COOLDOWN_MS) return;
   lastFiredAt.set(key, now);
   try {
-    new Notification(title, { body, tag: key, icon: "/favicon.ico" });
+    new Notification(title, { body, tag: key, icon: "/brand/favicon-3.png" });
   } catch {
     /* browsers with strict notification policies may throw */
   }

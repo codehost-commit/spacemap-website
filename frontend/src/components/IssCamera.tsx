@@ -40,7 +40,7 @@ export function IssCamera() {
   const row = findInSnapshot(snapshot, ISS_NORAD);
 
   return (
-    <aside className="spacemap-overlay pointer-events-auto absolute bottom-24 right-16 z-10 flex max-h-[calc(100vh-14rem)] w-[400px] flex-col overflow-hidden rounded-md border border-space-border bg-space-panel/95 backdrop-blur">
+    <aside className="spacemap-overlay pointer-events-auto absolute bottom-24 right-16 z-10 flex max-h-[calc(100vh-14rem)] w-[400px] flex-col overflow-hidden rounded-2xl border border-space-border bg-space-panel/92 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <header className="flex items-center justify-between border-b border-space-border px-3 py-2">
         <div>
           <div className="text-[9px] uppercase tracking-widest text-space-dim">Live camera</div>
