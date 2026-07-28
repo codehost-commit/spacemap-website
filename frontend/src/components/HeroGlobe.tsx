@@ -1,268 +1,335 @@
 import { useEffect, useRef } from "react";
-import * as THREE from "three";
 
 /**
- * Animated hero globe with ~3 000 orbiting satellite particles.
- * Mimics the look of the real SpaceMap tracker: color-coded dots
- * (red, pink, white, orange, cyan, green) swarming around Earth
- * in LEO / MEO / GEO-like shells. Fully animated every frame.
+ * Animated hero globe rendered with Canvas 2D.
+ * No Three.js dependency - pure math + canvas drawing.
+ * ~2500 satellite particles orbit a procedural Earth in real time.
  */
+
+interface Sat {
+  radius: number;
+  inclination: number;
+  raan: number;
+  phase: number;
+  speed: number;
+  color: string;
+  size: number;
+}
+
+// Color palette matching the real SpaceMap tracker
+const COLORS = [
+  "#f23545", "#f23545", "#f23545", // red (heavy)
+  "#ff738d", "#ff738d",             // pink
+  "#ffb34d",                        // orange
+  "#ffffff", "#ffffff",              // white
+  "#4dd8ff",                        // cyan
+  "#33cc59",                        // green
+  "#4d4dff",                        // blue
+];
+
+function randomColor() {
+  return COLORS[Math.floor(Math.random() * COLORS.length)];
+}
+
 export function HeroGlobe({ className }: { className?: string }) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    /* ── renderer & scene ─────────────────────────────── */
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
-    camera.position.set(0, 0.4, 3.6);
-    camera.lookAt(0, 0, 0);
-
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setClearColor(0x000000, 0);
-    container.appendChild(renderer.domElement);
-
-    /* ── Earth sphere (procedural ocean + land shader) ── */
-    const earthGeo = new THREE.SphereGeometry(1, 64, 64);
-    const earthMat = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        varying vec3 vPos;
-        void main(){
-          vNormal = normalize(normalMatrix * normal);
-          vPos    = position;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-        }`,
-      fragmentShader: `
-        varying vec3 vNormal;
-        varying vec3 vPos;
-        void main(){
-          float lat = vPos.y;
-          float lon = atan(vPos.x, vPos.z);
-          float n1  = sin(lon*3.0+lat*2.0)*cos(lat*5.0+lon*4.0);
-          float n2  = sin(lon*7.0-lat*3.0)*0.5;
-          float land = smoothstep(0.1, 0.4, n1+n2);
-
-          vec3 ocean = vec3(0.04,0.12,0.22);
-          vec3 green = vec3(0.08,0.18,0.10);
-          vec3 col   = mix(ocean, green, land*0.7);
-
-          float diff = max(dot(vNormal, normalize(vec3(1.0,0.5,1.0))),0.0);
-          col *= 0.35 + diff*0.65;
-
-          float fres = pow(1.0 - abs(dot(vNormal,vec3(0,0,1))), 2.5);
-          col += vec3(0.30,0.59,0.91) * fres * 0.55;
-
-          gl_FragColor = vec4(col,1.0);
-        }`,
-    });
-    const earth = new THREE.Mesh(earthGeo, earthMat);
-    scene.add(earth);
-
-    /* ── atmosphere glow ──────────────────────────────── */
-    const atmosGeo = new THREE.SphereGeometry(1.12, 64, 64);
-    const atmosMat = new THREE.ShaderMaterial({
-      vertexShader: `
-        varying vec3 vNormal;
-        void main(){
-          vNormal = normalize(normalMatrix * normal);
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
-        }`,
-      fragmentShader: `
-        varying vec3 vNormal;
-        void main(){
-          float i = pow(0.62 - dot(vNormal, vec3(0,0,1)), 2.0);
-          gl_FragColor = vec4(0.30,0.59,0.91, i*0.45);
-        }`,
-      transparent: true,
-      side: THREE.BackSide,
-      depthWrite: false,
-    });
-    scene.add(new THREE.Mesh(atmosGeo, atmosMat));
-
-    /* ── satellite particles ──────────────────────────── */
-    const SAT_COUNT = 3000;
-
-    // Colors matching the real tracker
-    const palette = [
-      new THREE.Color(0.95, 0.20, 0.25), // red
-      new THREE.Color(0.95, 0.20, 0.25),
-      new THREE.Color(1.00, 0.45, 0.55), // pink
-      new THREE.Color(1.00, 0.45, 0.55),
-      new THREE.Color(1.00, 0.70, 0.30), // orange
-      new THREE.Color(1.00, 1.00, 1.00), // white
-      new THREE.Color(1.00, 1.00, 1.00),
-      new THREE.Color(0.30, 0.85, 1.00), // cyan
-      new THREE.Color(0.20, 0.80, 0.35), // green
-      new THREE.Color(0.30, 0.30, 1.00), // blue
-    ];
-
-    // Per-satellite orbital parameters
-    const orbitR   = new Float32Array(SAT_COUNT);
-    const incl     = new Float32Array(SAT_COUNT);
-    const raan     = new Float32Array(SAT_COUNT);
-    const phase    = new Float32Array(SAT_COUNT);
-    const spd      = new Float32Array(SAT_COUNT);
-
-    const positions = new Float32Array(SAT_COUNT * 3);
-    const colors    = new Float32Array(SAT_COUNT * 3);
-    const sizes     = new Float32Array(SAT_COUNT);
-
+    // Generate satellites
+    const SAT_COUNT = 2500;
+    const sats: Sat[] = [];
     for (let i = 0; i < SAT_COUNT; i++) {
       const bucket = Math.random();
+      let radius: number;
+      let inclination: number;
+
       if (bucket < 0.70) {
-        orbitR[i] = 1.08 + Math.random() * 0.35;           // LEO
+        radius = 1.08 + Math.random() * 0.35;             // LEO
+        inclination = (20 + Math.random() * 80) * Math.PI / 180;
       } else if (bucket < 0.85) {
-        orbitR[i] = 1.50 + Math.random() * 0.30;           // MEO
+        radius = 1.50 + Math.random() * 0.30;             // MEO
+        inclination = (20 + Math.random() * 70) * Math.PI / 180;
       } else if (bucket < 0.95) {
-        orbitR[i] = 1.85 + Math.random() * 0.08;           // GEO
+        radius = 1.85 + Math.random() * 0.08;             // GEO
+        inclination = Math.random() * 15 * Math.PI / 180; // near equatorial
       } else {
-        orbitR[i] = 1.20 + Math.random() * 0.80;           // HEO
+        radius = 1.20 + Math.random() * 0.80;             // HEO
+        inclination = (30 + Math.random() * 60) * Math.PI / 180;
       }
 
-      // Inclination
-      if (bucket >= 0.85 && bucket < 0.95) {
-        incl[i] = (Math.random() * 15) * Math.PI / 180;    // GEO near-equatorial
-      } else {
-        incl[i] = (20 + Math.random() * 80) * Math.PI / 180;
-      }
-      if (Math.random() > 0.5) incl[i] = Math.PI - incl[i];
+      if (Math.random() > 0.5) inclination = Math.PI - inclination;
 
-      raan[i]  = Math.random() * Math.PI * 2;
-      phase[i] = Math.random() * Math.PI * 2;
-      spd[i]   = (0.15 + Math.random() * 0.15) / Math.pow(orbitR[i], 1.5);
-
-      const c = palette[Math.floor(Math.random() * palette.length)];
-      colors[i * 3]     = c.r;
-      colors[i * 3 + 1] = c.g;
-      colors[i * 3 + 2] = c.b;
-
-      sizes[i] = 2.0 + Math.random() * 2.5;
+      sats.push({
+        radius,
+        inclination,
+        raan: Math.random() * Math.PI * 2,
+        phase: Math.random() * Math.PI * 2,
+        speed: (0.15 + Math.random() * 0.15) / Math.pow(radius, 1.5),
+        color: randomColor(),
+        size: 1 + Math.random() * 1.5,
+      });
     }
 
-    const satGeo = new THREE.BufferGeometry();
-    satGeo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-    satGeo.setAttribute("color",    new THREE.BufferAttribute(colors, 3));
-    satGeo.setAttribute("size",     new THREE.BufferAttribute(sizes, 1));
-
-    const satMat = new THREE.ShaderMaterial({
-      vertexShader: `
-        attribute float size;
-        varying vec3 vColor;
-        void main(){
-          vColor = color;
-          vec4 mv = modelViewMatrix * vec4(position, 1.0);
-          gl_PointSize = size * (300.0 / -mv.z);
-          gl_Position  = projectionMatrix * mv;
-        }`,
-      fragmentShader: `
-        varying vec3 vColor;
-        void main(){
-          float d = length(gl_PointCoord - 0.5) * 2.0;
-          if(d > 1.0) discard;
-          float alpha = 1.0 - smoothstep(0.0, 1.0, d);
-          vec3 col = vColor + vec3(0.3) * (1.0 - d);
-          gl_FragColor = vec4(col, alpha * 0.85);
-        }`,
-      transparent: true,
-      depthWrite: false,
-      vertexColors: true,
-    });
-
-    const satPoints = new THREE.Points(satGeo, satMat);
-    scene.add(satPoints);
-
-    /* ── faint orbit guide rings ──────────────────────── */
-    const makeRing = (r: number, col: number, opacity: number) => {
-      const pts: THREE.Vector3[] = [];
-      for (let a = 0; a <= 128; a++) {
-        const t = (a / 128) * Math.PI * 2;
-        pts.push(new THREE.Vector3(r * Math.cos(t), 0, r * Math.sin(t)));
+    // Grid dots on Earth surface
+    const gridDots: { lat: number; lon: number }[] = [];
+    for (let lat = -80; lat <= 80; lat += 18) {
+      for (let lon = 0; lon < 360; lon += 18) {
+        gridDots.push({ lat: lat * Math.PI / 180, lon: lon * Math.PI / 180 });
       }
-      const g = new THREE.BufferGeometry().setFromPoints(pts);
-      const m = new THREE.LineBasicMaterial({ color: col, transparent: true, opacity });
-      return new THREE.Line(g, m);
-    };
+    }
 
-    const geoRing = makeRing(1.89, 0xccaa33, 0.35);
-    geoRing.rotation.x = Math.PI * 0.08;
-    scene.add(geoRing);
-
-    const leoRing = makeRing(1.30, 0x4d96e8, 0.12);
-    leoRing.rotation.x = Math.PI * 0.45;
-    leoRing.rotation.z = -0.2;
-    scene.add(leoRing);
-
-    /* ── resize ───────────────────────────────────────── */
-    const onResize = () => {
-      const { width, height } = container.getBoundingClientRect();
-      if (width === 0 || height === 0) return;
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-      renderer.setSize(width, height);
-    };
-    const ro = new ResizeObserver(onResize);
-    ro.observe(container);
-    onResize();
-
-    /* ── animation loop ───────────────────────────────── */
     let raf = 0;
-    const _v  = new THREE.Vector3();
-    const _q1 = new THREE.Quaternion();
-    const _q2 = new THREE.Quaternion();
-    const _xA = new THREE.Vector3(1, 0, 0);
-    const _yA = new THREE.Vector3(0, 1, 0);
+    let w = 0;
+    let h = 0;
 
-    const animate = () => {
-      raf = requestAnimationFrame(animate);
+    const resize = () => {
+      const rect = canvas.parentElement?.getBoundingClientRect();
+      if (!rect) return;
+      const dpr = Math.min(window.devicePixelRatio, 2);
+      w = rect.width;
+      h = rect.height;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    const ro = new ResizeObserver(resize);
+    ro.observe(canvas.parentElement!);
+    resize();
+
+    const draw = () => {
+      raf = requestAnimationFrame(draw);
       const t = performance.now() * 0.001;
 
-      earth.rotation.y = t * 0.06;
-      geoRing.rotation.y = t * 0.02;
-      leoRing.rotation.y = t * 0.03;
+      ctx.clearRect(0, 0, w, h);
 
-      // Update satellite positions every frame
-      const pos = satGeo.attributes.position as THREE.BufferAttribute;
-      for (let i = 0; i < SAT_COUNT; i++) {
-        const angle = phase[i] + t * spd[i];
-        const r = orbitR[i];
+      const cx = w / 2;
+      const cy = h / 2;
+      const globeR = Math.min(w, h) * 0.35;
+      const scale = globeR;
 
-        _v.set(r * Math.cos(angle), 0, r * Math.sin(angle));
+      // Camera tilt
+      const camTiltX = 0.3;
+      const earthRotY = t * 0.06;
 
-        _q1.setFromAxisAngle(_xA, incl[i]);
-        _q2.setFromAxisAngle(_yA, raan[i]);
-        _q2.multiply(_q1);
-        _v.applyQuaternion(_q2);
+      // ─── Draw Earth ───────────────────────────────────
+      // Atmosphere glow
+      const glowGrad = ctx.createRadialGradient(cx, cy, globeR * 0.85, cx, cy, globeR * 1.25);
+      glowGrad.addColorStop(0, "rgba(77, 150, 232, 0.15)");
+      glowGrad.addColorStop(0.5, "rgba(77, 150, 232, 0.06)");
+      glowGrad.addColorStop(1, "rgba(77, 150, 232, 0)");
+      ctx.fillStyle = glowGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, globeR * 1.25, 0, Math.PI * 2);
+      ctx.fill();
 
-        pos.array[i * 3]     = _v.x;
-        pos.array[i * 3 + 1] = _v.y;
-        pos.array[i * 3 + 2] = _v.z;
+      // Earth sphere with gradient
+      const earthGrad = ctx.createRadialGradient(
+        cx - globeR * 0.25, cy - globeR * 0.25, globeR * 0.05,
+        cx, cy, globeR
+      );
+      earthGrad.addColorStop(0, "#1a3a5c");
+      earthGrad.addColorStop(0.4, "#0e2540");
+      earthGrad.addColorStop(0.8, "#0a1c30");
+      earthGrad.addColorStop(1, "#06101a");
+      ctx.fillStyle = earthGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, globeR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Fresnel rim
+      const rimGrad = ctx.createRadialGradient(cx, cy, globeR * 0.75, cx, cy, globeR);
+      rimGrad.addColorStop(0, "rgba(77, 150, 232, 0)");
+      rimGrad.addColorStop(0.85, "rgba(77, 150, 232, 0)");
+      rimGrad.addColorStop(0.95, "rgba(77, 150, 232, 0.25)");
+      rimGrad.addColorStop(1, "rgba(142, 216, 255, 0.4)");
+      ctx.fillStyle = rimGrad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, globeR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Grid dots on surface (only front-facing)
+      ctx.fillStyle = "rgba(142, 216, 255, 0.25)";
+      for (const dot of gridDots) {
+        const phi = Math.PI / 2 - dot.lat;
+        let px = Math.sin(phi) * Math.cos(dot.lon + earthRotY);
+        let py = Math.cos(phi);
+        let pz = Math.sin(phi) * Math.sin(dot.lon + earthRotY);
+
+        // Camera tilt
+        const r = rotX(px, py, pz, camTiltX);
+        px = r.x; py = r.y; pz = r.z;
+
+        if (pz > -0.1) { // front-facing
+          const p = project(px, py, pz, cx, cy, scale);
+          ctx.beginPath();
+          ctx.arc(p.sx, p.sy, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
-      pos.needsUpdate = true;
 
-      renderer.render(scene, camera);
+      // ─── Collect all satellites with depth for sorting ──
+      type DrawItem = { sx: number; sy: number; depth: number; color: string; size: number; behind: boolean };
+      const items: DrawItem[] = [];
+
+      for (const sat of sats) {
+        const angle = sat.phase + t * sat.speed;
+        const r = sat.radius;
+
+        // Position in orbital plane
+        let px = r * Math.cos(angle);
+        let py = 0;
+        let pz = r * Math.sin(angle);
+
+        // Rotate by inclination (around X)
+        const r1 = rotX(px, py, pz, sat.inclination);
+        px = r1.x; py = r1.y; pz = r1.z;
+
+        // Rotate by RAAN (around Y)
+        const r2 = rotY(px, py, pz, sat.raan);
+        px = r2.x; py = r2.y; pz = r2.z;
+
+        // Camera tilt
+        const r3 = rotX(px, py, pz, camTiltX);
+        px = r3.x; py = r3.y; pz = r3.z;
+
+        const p = project(px, py, pz, cx, cy, scale);
+
+        // Check if satellite is behind the Earth
+        const distFromCenter = Math.sqrt(px * px + py * py);
+        const behind = pz < 0 && distFromCenter < 1.0;
+
+        items.push({
+          sx: p.sx,
+          sy: p.sy,
+          depth: pz,
+          color: sat.color,
+          size: sat.size * (0.7 + 0.3 * p.depth), // perspective size
+          behind,
+        });
+      }
+
+      // Sort by depth (back to front)
+      items.sort((a, b) => a.depth - b.depth);
+
+      // Draw behind-earth satellites (dimmed)
+      for (const item of items) {
+        if (!item.behind) continue;
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(item.sx, item.sy, item.size * 0.7, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Draw front satellites with glow
+      for (const item of items) {
+        if (item.behind) continue;
+
+        // Glow
+        ctx.globalAlpha = 0.3;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(item.sx, item.sy, item.size * 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Core dot
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.arc(item.sx, item.sy, item.size, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // ─── Faint orbit ring guides ──────────────────────
+      ctx.strokeStyle = "rgba(204, 170, 51, 0.2)";
+      ctx.lineWidth = 0.8;
+      drawOrbitEllipse(ctx, cx, cy, scale, 1.89, 0.08, 0, camTiltX);
+
+      ctx.strokeStyle = "rgba(77, 150, 232, 0.1)";
+      ctx.lineWidth = 0.5;
+      drawOrbitEllipse(ctx, cx, cy, scale, 1.30, 0.9, -0.2, camTiltX);
     };
-    animate();
 
-    /* ── cleanup ──────────────────────────────────────── */
+    draw();
+
     return () => {
       cancelAnimationFrame(raf);
       ro.disconnect();
-      renderer.dispose();
-      if (renderer.domElement.parentNode) {
-        container.removeChild(renderer.domElement);
-      }
-      earthGeo.dispose();
-      earthMat.dispose();
-      atmosGeo.dispose();
-      atmosMat.dispose();
-      satGeo.dispose();
-      satMat.dispose();
     };
   }, []);
 
-  return <div ref={containerRef} className={className} />;
+  return (
+    <div className={className} style={{ position: "relative" }}>
+      <canvas
+        ref={canvasRef}
+        style={{ width: "100%", height: "100%", display: "block" }}
+      />
+    </div>
+  );
+}
+
+/** Draw an orbit ring as a projected ellipse */
+function drawOrbitEllipse(
+  ctx: CanvasRenderingContext2D,
+  cx: number, cy: number, scale: number,
+  radius: number, tiltX: number, tiltZ: number, camTiltX: number
+) {
+  ctx.beginPath();
+  const steps = 120;
+  for (let i = 0; i <= steps; i++) {
+    const a = (i / steps) * Math.PI * 2;
+    let px = radius * Math.cos(a);
+    let py = 0;
+    let pz = radius * Math.sin(a);
+
+    // Ring tilt
+    const r1 = rotX(px, py, pz, tiltX);
+    px = r1.x; py = r1.y; pz = r1.z;
+
+    // Z rotation
+    if (tiltZ !== 0) {
+      const c = Math.cos(tiltZ), s = Math.sin(tiltZ);
+      const nx = px * c - py * s;
+      const ny = px * s + py * c;
+      px = nx; py = ny;
+    }
+
+    // Camera tilt
+    const r2 = rotX(px, py, pz, camTiltX);
+    px = r2.x; py = r2.y; pz = r2.z;
+
+    const p = project(px, py, pz, cx, cy, scale);
+    if (i === 0) ctx.moveTo(p.sx, p.sy);
+    else ctx.lineTo(p.sx, p.sy);
+  }
+  ctx.stroke();
+}
+
+function rotX(x: number, y: number, z: number, a: number) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x, y: y * c - z * s, z: y * s + z * c };
+}
+
+function rotY(x: number, y: number, z: number, a: number) {
+  const c = Math.cos(a), s = Math.sin(a);
+  return { x: x * c + z * s, y, z: -x * s + z * c };
+}
+
+function project(
+  x: number, y: number, z: number,
+  cx: number, cy: number, scale: number
+): { sx: number; sy: number; depth: number } {
+  const fov = 3.6;
+  const d = fov / (fov + z);
+  return { sx: cx + x * scale * d, sy: cy - y * scale * d, depth: z };
 }
