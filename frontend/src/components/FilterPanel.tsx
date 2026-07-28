@@ -38,7 +38,7 @@ export function FilterPanel() {
   const setGroundStations = useStore((s) => s.setGroundStations);
 
   return (
-    <aside className="spacemap-filter pointer-events-auto absolute left-4 top-32 z-20 max-h-[calc(100vh-9rem)] w-56 overflow-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+    <aside className="spacemap-filter pointer-events-auto absolute right-4 top-28 z-20 max-h-[45vh] w-[19.25rem] overflow-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <ImageryPicker />
       <SectionHeader
         label="Orbit class"

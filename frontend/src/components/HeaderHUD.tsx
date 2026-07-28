@@ -47,7 +47,7 @@ export function HeaderHUD() {
       : `${drift > 0 ? "+" : "−"}${formatDuration(Math.abs(drift))}`;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-4 py-3">
       <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19.25rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 shadow-[0_24px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <BrandMark compact />
