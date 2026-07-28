@@ -34,6 +34,8 @@ export function FilterPanel() {
   const setCountries = useStore((s) => s.setCountries);
   const citiesOn = useStore((s) => s.citiesOn);
   const setCities = useStore((s) => s.setCities);
+  const groundStationsOn = useStore((s) => s.groundStationsOn);
+  const setGroundStations = useStore((s) => s.setGroundStations);
 
   return (
     <aside className="spacemap-filter pointer-events-auto absolute left-4 top-32 z-20 max-h-[calc(100vh-9rem)] w-56 overflow-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
@@ -142,6 +144,15 @@ export function FilterPanel() {
           className="h-3 w-3 accent-space-accent"
         />
         <span>Major cities</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={groundStationsOn}
+          onChange={(e) => setGroundStations(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Ground stations</span>
       </label>
     </aside>
   );

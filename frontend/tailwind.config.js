@@ -5,14 +5,14 @@ export default {
     extend: {
       colors: {
         space: {
-          bg: "#08111d",
-          panel: "#0e1826",
-          border: "#22344a",
-          text: "#edf3fb",
-          dim: "#8ea4be",
-          accent: "#7fd8ff",
-          warn: "#f6c56b",
-          bad: "#ff6a7a",
+          bg: "#06101a",
+          panel: "#0d1723",
+          border: "#24384a",
+          text: "#f2f4f8",
+          dim: "#8a99ad",
+          accent: "#8ed8ff",
+          warn: "#d8b36a",
+          bad: "#f26d7d",
         },
       },
       fontFamily: {

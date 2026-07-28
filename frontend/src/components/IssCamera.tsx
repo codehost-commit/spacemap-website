@@ -11,6 +11,44 @@ const ISS_NORAD = 25544;
 const ISS_LIVE_EMBED =
   "https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0";
 
+// Launch Library 2 — expedition endpoint returns the current ISS crew with
+// start dates, roles, and nationality info. Rate-limited to ~15 req/hr on
+// the public tier, so we cache aggressively (10 min refresh).
+const LL2_EXPEDITION_URL =
+  "https://ll.thespacedevs.com/2.2.0/expedition/?ongoing=true&format=json&limit=3";
+const CREW_REFRESH_MS = 10 * 60 * 1000;
+
+interface CrewMember {
+  name: string;
+  role: string;
+  agencyAbbrev?: string;
+  countryCode?: string;
+  daysOnStation: number;
+  wikiUrl?: string;
+}
+
+interface LL2Astronaut {
+  name?: string;
+  nationality?: {
+    name?: string;
+    alpha_2_code?: string;
+    alpha_3_code?: string;
+  };
+  agency?: { abbrev?: string; name?: string };
+  wiki?: string;
+}
+interface LL2Crew {
+  role?: { name?: string; role?: string };
+  astronaut?: LL2Astronaut;
+}
+interface LL2Expedition {
+  name?: string;
+  start?: string;
+  end?: string | null;
+  spacestation?: { name?: string };
+  crew?: LL2Crew[];
+}
+
 /**
  * Floating ISS live-stream + telemetry panel. Uses the propagator snapshot
  * for real-time position and the backend's telemetry endpoint for orbital
@@ -23,6 +61,9 @@ export function IssCamera() {
   const snapshot = useStore((s) => s.snapshot);
   const select = useStore((s) => s.select);
   const [tel, setTel] = useState<SatelliteTelemetry | null>(null);
+  const [crew, setCrew] = useState<CrewMember[] | null>(null);
+  const [crewError, setCrewError] = useState<string | null>(null);
+  const [expeditionName, setExpeditionName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -33,6 +74,52 @@ export function IssCamera() {
     refresh();
     const id = setInterval(refresh, 5000);
     return () => clearInterval(id);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    const loadCrew = async () => {
+      try {
+        const res = await fetch(LL2_EXPEDITION_URL);
+        if (!res.ok) throw new Error(`LL2 ${res.status}`);
+        const body = (await res.json()) as { results?: LL2Expedition[] };
+        // Prefer expeditions that mention ISS in their spacestation field;
+        // fall back to the first ongoing expedition returned.
+        const iss = body.results?.find((e) =>
+          (e.spacestation?.name ?? "").toLowerCase().includes("international"),
+        ) ?? body.results?.[0];
+        if (!iss || !iss.crew) throw new Error("no crew returned");
+        const startMs = iss.start ? new Date(iss.start).getTime() : Date.now();
+        const now = Date.now();
+        const members: CrewMember[] = iss.crew
+          .filter((c) => c.astronaut && c.astronaut.name)
+          .map((c) => ({
+            name: c.astronaut!.name!,
+            role: c.role?.name ?? c.role?.role ?? "Crew",
+            agencyAbbrev: c.astronaut!.agency?.abbrev,
+            countryCode:
+              c.astronaut!.nationality?.alpha_2_code?.toUpperCase() ?? undefined,
+            daysOnStation: Math.max(0, Math.floor((now - startMs) / 86_400_000)),
+            wikiUrl: c.astronaut!.wiki,
+          }));
+        if (!cancelled) {
+          setCrew(members);
+          setExpeditionName(iss.name ?? null);
+          setCrewError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setCrewError(err instanceof Error ? err.message : String(err));
+        }
+      }
+    };
+    void loadCrew();
+    const id = setInterval(loadCrew, CREW_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
   }, [open]);
 
   if (!open) return null;
@@ -83,6 +170,61 @@ export function IssCamera() {
         <Cell label="Longitude" value={row ? `${row.lonDeg.toFixed(2)}°` : "—"} />
         <Cell label="Sunlit" value={tel ? (tel.sunlit ? "Yes" : "Shadow") : "—"} />
       </div>
+
+      <div className="flex-1 overflow-auto border-t border-space-border/60 px-3 py-2 font-mono text-xs">
+        <div className="mb-1 flex items-center justify-between text-[9px] uppercase tracking-widest text-space-dim">
+          <span>Crew {expeditionName ? `· ${expeditionName}` : ""}</span>
+          {crew && <span>{crew.length} aboard</span>}
+        </div>
+        {crewError && (
+          <div className="text-[10px] text-space-warn">
+            Couldn't reach Launch Library ({crewError}).
+          </div>
+        )}
+        {!crew && !crewError && (
+          <div className="text-[10px] text-space-dim">Loading crew…</div>
+        )}
+        {crew && crew.length === 0 && !crewError && (
+          <div className="text-[10px] text-space-dim">No crew listed by LL2.</div>
+        )}
+        {crew && crew.length > 0 && (
+          <ul className="space-y-1">
+            {crew.map((c) => (
+              <li
+                key={c.name}
+                className="flex items-center justify-between gap-2 rounded px-1 py-1 hover:bg-white/5"
+              >
+                <div className="flex min-w-0 items-center gap-2">
+                  <span className="text-base leading-none" aria-hidden>
+                    {countryFlag(c.countryCode)}
+                  </span>
+                  <div className="min-w-0 leading-tight">
+                    {c.wikiUrl ? (
+                      <a
+                        href={c.wikiUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block truncate text-space-text hover:text-space-accent"
+                      >
+                        {c.name}
+                      </a>
+                    ) : (
+                      <div className="truncate text-space-text">{c.name}</div>
+                    )}
+                    <div className="text-[9px] uppercase tracking-wider text-space-dim">
+                      {c.role}
+                      {c.agencyAbbrev ? ` · ${c.agencyAbbrev}` : ""}
+                    </div>
+                  </div>
+                </div>
+                <div className="shrink-0 text-[10px] text-space-dim">
+                  {c.daysOnStation}d
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </aside>
   );
 }
@@ -93,5 +235,17 @@ function Cell({ label, value }: { label: string; value: string }) {
       <span className="text-[9px] uppercase tracking-widest text-space-dim">{label}</span>
       <span className="text-space-text">{value}</span>
     </div>
+  );
+}
+
+/** ISO 3166-1 alpha-2 → flag emoji via regional-indicator code points. */
+function countryFlag(code?: string): string {
+  if (!code || code.length !== 2) return "🏳️";
+  const A = 0x41;
+  const OFFSET = 0x1f1e6 - A;
+  const upper = code.toUpperCase();
+  return String.fromCodePoint(
+    upper.charCodeAt(0) + OFFSET,
+    upper.charCodeAt(1) + OFFSET,
   );
 }

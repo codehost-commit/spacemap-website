@@ -44,6 +44,7 @@ interface StoreState {
   graticuleOn: boolean;
   countriesOn: boolean;
   citiesOn: boolean;
+  groundStationsOn: boolean;
   imageryId: string;
 
   savedIds: Set<number>;
@@ -75,6 +76,7 @@ interface StoreState {
   setGraticule: (v: boolean) => void;
   setCountries: (v: boolean) => void;
   setCities: (v: boolean) => void;
+  setGroundStations: (v: boolean) => void;
   setImagery: (id: string) => void;
 
   toggleSaved: (id: number) => void;
@@ -117,6 +119,7 @@ export const useStore = create<StoreState>((set) => ({
   graticuleOn: true,
   countriesOn: true,
   citiesOn: true,
+  groundStationsOn: false,
   imageryId: "arcgis",
 
   savedIds: new Set(),
@@ -176,6 +179,7 @@ export const useStore = create<StoreState>((set) => ({
   setGraticule: (graticuleOn) => set({ graticuleOn }),
   setCountries: (countriesOn) => set({ countriesOn }),
   setCities: (citiesOn) => set({ citiesOn }),
+  setGroundStations: (groundStationsOn) => set({ groundStationsOn }),
   setImagery: (imageryId) => set({ imageryId }),
 
   toggleSaved: (id) =>

@@ -16,6 +16,7 @@ import { StarCatalog } from "../cesium/star-catalog.js";
 import { Planets } from "../cesium/planets.js";
 import { Countries } from "../cesium/countries.js";
 import { Cities } from "../cesium/cities.js";
+import { GroundStations } from "../cesium/ground-stations.js";
 import { Simulation, installSimulation } from "../simulation/simulation.js";
 import { useStore } from "../state/store.js";
 import { installFocusApi } from "../cesium/focus.js";
@@ -50,6 +51,7 @@ export function GlobeCanvas() {
     const planets = new Planets(viewer);
     const countries = new Countries(viewer.scene);
     const cities = new Cities(viewer.scene);
+    const groundStations = new GroundStations(viewer.scene);
     const sim = new Simulation(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
@@ -201,6 +203,7 @@ export function GlobeCanvas() {
     let lastGraticule = false;
     let lastCountries = false;
     let lastCities = false;
+    let lastGroundStations = false;
     let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef) {
@@ -249,6 +252,10 @@ export function GlobeCanvas() {
         lastCities = s.citiesOn;
         cities.setEnabled(s.citiesOn);
       }
+      if (s.groundStationsOn !== lastGroundStations) {
+        lastGroundStations = s.groundStationsOn;
+        groundStations.setEnabled(s.groundStationsOn);
+      }
       if (s.imageryId !== lastImagery) {
         lastImagery = s.imageryId;
         void imagery.apply(s.imageryId);
@@ -283,6 +290,7 @@ export function GlobeCanvas() {
       graticule.destroy();
       countries.destroy();
       cities.destroy();
+      groundStations.destroy();
       stars.destroy();
       planets.destroy();
       imagery.destroy();

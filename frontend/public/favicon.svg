@@ -1,20 +1,33 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <defs>
-    <linearGradient id="sweep" x1="10" y1="10" x2="52" y2="55" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#58d4ff" />
-      <stop offset="100%" stop-color="#1b84ff" />
+    <linearGradient id="orbit" x1="14" y1="12" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#a7e2ff" />
+      <stop offset="100%" stop-color="#4d96e8" />
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="16" fill="#08111d" />
-  <path
-    d="M52 12C44 7 34 5 23 5C12 5 5 13 5 23C5 34 14 39 26 42C38 45 46 48 46 56C46 65 38 72 25 72C16 72 8 68 2 62"
+  <rect width="64" height="64" rx="16" fill="#07111b" />
+  <circle cx="32" cy="32" r="10" fill="#d8b36a" />
+  <ellipse
+    cx="32"
+    cy="32"
+    rx="23"
+    ry="9"
+    transform="rotate(-36 32 32)"
     fill="none"
-    stroke="url(#sweep)"
-    stroke-width="7.5"
+    stroke="url(#orbit)"
+    stroke-width="5"
     stroke-linecap="round"
-    stroke-linejoin="round"
   />
-  <path d="M10 46C20 32 29 23 49 11" fill="none" stroke="#dff7ff" stroke-width="3.5" stroke-linecap="round" opacity="0.95" />
-  <circle cx="31" cy="31" r="7.5" fill="#f3bd61" />
-  <circle cx="31" cy="31" r="11.5" fill="none" stroke="#f3bd61" stroke-width="1.1" opacity="0.35" />
+  <ellipse
+    cx="32"
+    cy="32"
+    rx="14"
+    ry="5"
+    transform="rotate(-36 32 32)"
+    fill="none"
+    stroke="#eef7ff"
+    stroke-width="2.2"
+    stroke-linecap="round"
+    opacity="0.96"
+  />
 </svg>
