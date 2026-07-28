@@ -5,51 +5,44 @@ type BrandMarkProps = {
 export function BrandMark({ compact = false }: BrandMarkProps) {
   return (
     <div className={`spacemap-brand ${compact ? "spacemap-brand-compact" : ""}`}>
-      <BrandEmblem />
-      <div className="spacemap-wordmark" aria-label="SpaceMap">
-        <span className="spacemap-wordmark-space">pace</span>
-        <span className="spacemap-wordmark-map">Map</span>
-      </div>
+      <svg
+        className="spacemap-brand-lockup"
+        viewBox="0 0 420 80"
+        role="img"
+        aria-label="SpaceMap"
+      >
+        <defs>
+          <linearGradient id="spacemap-sweep" x1="18" y1="12" x2="64" y2="66" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#f6c56b" />
+            <stop offset="100%" stopColor="#6dd6ff" />
+          </linearGradient>
+        </defs>
+        <g transform="translate(4 5)">
+          <path
+            d="M58 11C52 5 43 2 33 2C20 2 10 10 10 21C10 33 19 38 33 41C44 43 50 46 50 53C50 61 43 67 31 67C21 67 13 63 6 56"
+            fill="none"
+            stroke="url(#spacemap-sweep)"
+            strokeWidth="8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M58 11C48 18 41 26 36 35"
+            fill="none"
+            stroke="#edf3fb"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            opacity="0.9"
+          />
+          <circle cx="39" cy="29" r="4.5" fill="#f6c56b" />
+        </g>
+        <text x="80" y="50" className="spacemap-wordmark-text spacemap-wordmark-space">
+          pace
+        </text>
+        <text x="211" y="50" className="spacemap-wordmark-text spacemap-wordmark-map">
+          Map
+        </text>
+      </svg>
     </div>
-  );
-}
-
-export function BrandEmblem() {
-  return (
-    <svg
-      className="spacemap-brand-emblem"
-      viewBox="0 0 120 120"
-      role="img"
-      aria-label="SpaceMap emblem"
-    >
-      <defs>
-        <linearGradient id="spacemap-orbit" x1="18" y1="18" x2="102" y2="102" gradientUnits="userSpaceOnUse">
-          <stop offset="0%" stopColor="#6ae7ff" />
-          <stop offset="100%" stopColor="#25a8ff" />
-        </linearGradient>
-      </defs>
-      <path
-        d="M93 18C68 19 43 31 31 49C23 62 25 74 38 80C47 84 58 85 72 84C60 88 48 89 37 86C18 81 11 63 20 46C32 24 60 10 93 18Z"
-        fill="url(#spacemap-orbit)"
-      />
-      <path
-        d="M26 102C53 101 79 89 91 72C98 61 97 47 84 41C74 36 61 36 48 38C60 33 73 31 85 34C103 39 110 57 101 74C89 96 60 111 26 102Z"
-        fill="url(#spacemap-orbit)"
-      />
-      <ellipse
-        cx="59"
-        cy="60"
-        rx="40"
-        ry="10"
-        transform="rotate(-38 59 60)"
-        fill="none"
-        stroke="#d9f6ff"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
-      <circle cx="60" cy="59" r="10" fill="#ffd36b" />
-      <path d="M97 15l2.5 6.5 6.5 2.5-6.5 2.5-2.5 6.5-2.5-6.5-6.5-2.5 6.5-2.5Z" fill="#ffd36b" />
-      <path d="M15 87l2 5 5 2-5 2-2 5-2-5-5-2 5-2Z" fill="#33cfff" />
-    </svg>
   );
 }

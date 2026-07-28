@@ -47,8 +47,8 @@ export function HeaderHUD() {
       : `${drift > 0 ? "+" : "−"}${formatDuration(Math.abs(drift))}`;
 
   return (
-    <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-center justify-between px-4 py-3">
-      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19rem] flex-col gap-2 rounded-md border border-space-border bg-space-panel/85 px-3 py-2 backdrop-blur">
+    <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-center justify-between px-4 py-3">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[20rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/92 px-4 py-3 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-xl">
         <div className="flex items-center justify-between">
           <BrandMark compact />
           <button
@@ -57,7 +57,7 @@ export function HeaderHUD() {
               useStore.getState().setAdminOpen(true);
             }}
             title="Admin console (developer)"
-            className="rounded border border-emerald-800 px-1.5 py-0.5 font-mono text-[10px] text-emerald-400 hover:border-emerald-500 hover:text-emerald-300"
+            className="rounded-full border border-[#294457] bg-[#0d1a28] px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[#8fe2ff] transition hover:border-[#4e708d] hover:text-[#ccefff]"
           >
             ADMIN
           </button>

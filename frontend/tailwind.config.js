@@ -5,19 +5,19 @@ export default {
     extend: {
       colors: {
         space: {
-          bg: "#05070d",
-          panel: "#0b0f1a",
-          border: "#1a2130",
-          text: "#c9d4e5",
-          dim: "#6a7a90",
-          accent: "#4fd1ff",
-          warn: "#ffb020",
-          bad: "#ff4757",
+          bg: "#08111d",
+          panel: "#0e1826",
+          border: "#22344a",
+          text: "#edf3fb",
+          dim: "#8ea4be",
+          accent: "#7fd8ff",
+          warn: "#f6c56b",
+          bad: "#ff6a7a",
         },
       },
       fontFamily: {
         mono: ["JetBrains Mono", "SFMono-Regular", "Menlo", "monospace"],
-        sans: ["Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
+        sans: ["Space Grotesk", "Inter", "system-ui", "-apple-system", "Segoe UI", "sans-serif"],
       },
     },
   },

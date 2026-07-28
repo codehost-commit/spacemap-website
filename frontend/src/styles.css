@@ -16,49 +16,41 @@ body {
   color: theme("colors.space.text");
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;
+  background-image:
+    radial-gradient(circle at top left, rgba(127, 216, 255, 0.08), transparent 28%),
+    radial-gradient(circle at top right, rgba(246, 197, 107, 0.06), transparent 22%);
 }
 
 .spacemap-brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.7rem;
   min-width: 0;
 }
 
-.spacemap-brand-compact {
-  gap: 0.55rem;
+.spacemap-brand-lockup {
+  width: 11.75rem;
+  height: auto;
+  overflow: visible;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.18));
 }
 
-.spacemap-brand-emblem {
-  width: 2.2rem;
-  height: 2.2rem;
-  flex: none;
-  filter: drop-shadow(0 0 16px rgba(79, 209, 255, 0.18));
+.spacemap-brand-compact .spacemap-brand-lockup {
+  width: 10.8rem;
 }
 
-.spacemap-brand-compact .spacemap-brand-emblem {
-  width: 2rem;
-  height: 2rem;
-}
-
-.spacemap-wordmark {
-  display: inline-flex;
-  align-items: baseline;
-  min-width: 0;
+.spacemap-wordmark-text {
+  font-family: theme("fontFamily.sans");
+  font-size: 44px;
   font-weight: 600;
-  font-size: 1.15rem;
-  line-height: 1;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  white-space: nowrap;
+  letter-spacing: 0.06em;
 }
 
 .spacemap-wordmark-space {
-  color: #eff7ff;
+  fill: #edf3fb;
 }
 
 .spacemap-wordmark-map {
-  color: theme("colors.space.accent");
+  fill: theme("colors.space.accent");
 }
 
 .cesium-container {
@@ -127,13 +119,8 @@ body {
     width: auto !important;
     max-width: calc(100vw - 1rem);
   }
-  .spacemap-wordmark {
-    font-size: 0.92rem;
-    letter-spacing: 0.07em;
-  }
-  .spacemap-brand-emblem {
-    width: 1.8rem;
-    height: 1.8rem;
+  .spacemap-brand-lockup {
+    width: 9.4rem;
   }
   /* Time controls wrap onto multiple rows if needed. */
   .spacemap-timecontrols {
