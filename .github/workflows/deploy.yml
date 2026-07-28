@@ -30,19 +30,20 @@ jobs:
           cache: npm
 
       - name: Install
+        run: npm install --no-audit --no-fund
+
+      - name: Derive base URL from repo name
+        id: base
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci --no-audit --no-fund
-          else
-            npm install --no-audit --no-fund
-          fi
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          echo "base=/${REPO_NAME}/" >> "$GITHUB_OUTPUT"
 
       - name: Typecheck
         run: npm run typecheck
 
       - name: Build frontend
         env:
-          VITE_BASE_URL: /
+          VITE_BASE_URL: ${{ steps.base.outputs.base }}
         run: npm run build -w frontend
 
       - name: Fetch TLE snapshot for bundling
