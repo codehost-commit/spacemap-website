@@ -7,40 +7,45 @@ export function BrandMark({ compact = false }: BrandMarkProps) {
     <div className={`spacemap-brand ${compact ? "spacemap-brand-compact" : ""}`}>
       <svg
         className="spacemap-brand-lockup"
-        viewBox="0 0 420 80"
+        viewBox="0 0 520 96"
         role="img"
         aria-label="SpaceMap"
       >
         <defs>
-          <linearGradient id="spacemap-sweep" x1="18" y1="12" x2="64" y2="66" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stopColor="#f6c56b" />
-            <stop offset="100%" stopColor="#6dd6ff" />
+          <linearGradient id="spacemap-s" x1="18" y1="10" x2="86" y2="86" gradientUnits="userSpaceOnUse">
+            <stop offset="0%" stopColor="#9fe8ff" />
+            <stop offset="100%" stopColor="#4da3ff" />
           </linearGradient>
         </defs>
-        <g transform="translate(4 5)">
+        <g transform="translate(6 8)">
+          <circle cx="42" cy="41" r="34" fill="none" stroke="#1a2a3e" strokeWidth="1.5" opacity="0.65" />
           <path
-            d="M58 11C52 5 43 2 33 2C20 2 10 10 10 21C10 33 19 38 33 41C44 43 50 46 50 53C50 61 43 67 31 67C21 67 13 63 6 56"
+            d="M63 16C56 10 47 7 36 7C21 7 11 16 11 28C11 42 23 47 38 50C51 53 59 56 59 66C59 77 49 85 34 85C23 85 14 81 8 74"
             fill="none"
-            stroke="url(#spacemap-sweep)"
-            strokeWidth="8"
+            stroke="url(#spacemap-s)"
+            strokeWidth="9"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
           <path
-            d="M58 11C48 18 41 26 36 35"
+            d="M58 20C68 26 74 35 74 45C74 57 65 66 51 70"
             fill="none"
-            stroke="#edf3fb"
+            stroke="#f0b85b"
             strokeWidth="2.5"
             strokeLinecap="round"
             opacity="0.9"
           />
-          <circle cx="39" cy="29" r="4.5" fill="#f6c56b" />
+          <circle cx="73" cy="45" r="4" fill="#f0b85b" />
+          <circle cx="74" cy="45" r="10" fill="none" stroke="#f0b85b" strokeWidth="1.4" opacity="0.45" />
         </g>
-        <text x="80" y="50" className="spacemap-wordmark-text spacemap-wordmark-space">
-          pace
+        <text x="106" y="60" className="spacemap-wordmark-text spacemap-wordmark-main">
+          Space
         </text>
-        <text x="211" y="50" className="spacemap-wordmark-text spacemap-wordmark-map">
+        <text x="310" y="60" className="spacemap-wordmark-text spacemap-wordmark-map">
           Map
+        </text>
+        <text x="107" y="80" className="spacemap-wordmark-subtext">
+          LIVE ORBITAL INTELLIGENCE
         </text>
       </svg>
     </div>

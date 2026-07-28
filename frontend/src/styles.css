@@ -28,29 +28,36 @@ body {
 }
 
 .spacemap-brand-lockup {
-  width: 11.75rem;
+  width: 14.25rem;
   height: auto;
   overflow: visible;
   filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.18));
 }
 
 .spacemap-brand-compact .spacemap-brand-lockup {
-  width: 10.8rem;
+  width: 13rem;
 }
 
 .spacemap-wordmark-text {
   font-family: theme("fontFamily.sans");
   font-size: 44px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.03em;
 }
 
-.spacemap-wordmark-space {
+.spacemap-wordmark-main {
   fill: #edf3fb;
 }
 
 .spacemap-wordmark-map {
   fill: theme("colors.space.accent");
+}
+
+.spacemap-wordmark-subtext {
+  fill: #7890aa;
+  font-family: theme("fontFamily.mono");
+  font-size: 10px;
+  letter-spacing: 0.32em;
 }
 
 .cesium-container {
@@ -120,7 +127,7 @@ body {
     max-width: calc(100vw - 1rem);
   }
   .spacemap-brand-lockup {
-    width: 9.4rem;
+    width: 11rem;
   }
   /* Time controls wrap onto multiple rows if needed. */
   .spacemap-timecontrols {
