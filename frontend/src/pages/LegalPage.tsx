@@ -405,7 +405,7 @@ export function LegalPage() {
               </p>
               <p>
                 If you want to continue exploring the product, you can return to the{' '}
-                <Link to="/tracker" className="text-space-accent transition-colors hover:text-white">
+                <Link to="/tracker/" className="text-space-accent transition-colors hover:text-white">
                   tracker
                 </Link>{' '}
                 or read more{' '}

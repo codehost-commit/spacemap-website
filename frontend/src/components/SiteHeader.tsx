@@ -14,9 +14,10 @@ export function SiteHeader() {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const normalizedPath = pathname !== '/' ? pathname.replace(/\/+$/u, '') || '/' : pathname;
 
   // On the tracker page, use no header (tracker has its own HUD)
-  const isTracker = pathname === '/tracker';
+  const isTracker = normalizedPath === '/tracker';
 
   useEffect(() => {
     if (isTracker) return;
@@ -55,7 +56,7 @@ export function SiteHeader() {
               key={link.to}
               to={link.to}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                pathname === link.to
+                normalizedPath === link.to
                   ? 'text-space-accent bg-white/10'
                   : 'text-space-dim hover:text-white hover:bg-white/5'
               }`}
@@ -64,7 +65,7 @@ export function SiteHeader() {
             </Link>
           ))}
           <Link
-            to="/tracker"
+            to="/tracker/"
             className="ml-3 rounded-lg bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-5 py-2 text-sm font-semibold text-[#06101a] transition-all hover:shadow-lg hover:shadow-[#4d96e8]/25 hover:scale-105"
           >
             Launch Tracker
@@ -87,7 +88,7 @@ export function SiteHeader() {
                 to={link.to}
                 onClick={() => setMobileOpen(false)}
                 className={`px-4 py-3 rounded-lg text-sm font-medium ${
-                  pathname === link.to
+                  normalizedPath === link.to
                     ? 'text-space-accent bg-white/10'
                     : 'text-space-dim hover:text-white'
                 }`}
@@ -96,7 +97,7 @@ export function SiteHeader() {
               </Link>
             ))}
             <Link
-              to="/tracker"
+              to="/tracker/"
               onClick={() => setMobileOpen(false)}
               className="mt-2 rounded-lg bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-5 py-3 text-sm font-semibold text-[#06101a] text-center"
             >

@@ -55,7 +55,7 @@ export function SiteFooter() {
 
             <div className="flex flex-wrap gap-3 lg:justify-end">
               <Link
-                to="/tracker"
+                to="/tracker/"
                 className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-[#4d96e8]/30"
               >
                 <Globe size={16} />
@@ -118,7 +118,7 @@ export function SiteFooter() {
             </h4>
             <ul className="space-y-3">
               <li>
-                <FooterLink to="/tracker">Tracker</FooterLink>
+                <FooterLink to="/tracker/">Tracker</FooterLink>
               </li>
               <li>
                 <FooterLink to="/features">Features</FooterLink>
@@ -167,7 +167,7 @@ export function SiteFooter() {
             &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
           </p>
           <Link
-            to="/tracker"
+            to="/tracker/"
             className="inline-flex items-center gap-2 text-xs text-space-dim transition-colors hover:text-white"
           >
             Enter live orbit

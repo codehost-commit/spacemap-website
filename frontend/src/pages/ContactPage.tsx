@@ -120,7 +120,7 @@ export function ContactPage() {
                   Want to see the product before writing?
                 </div>
                 <Link
-                  to="/tracker"
+                  to="/tracker/"
                   className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-all hover:border-space-accent/30 hover:bg-white/10"
                 >
                   <Radio size={16} />

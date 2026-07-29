@@ -101,7 +101,7 @@ export function HomePage() {
             </p>
             <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row lg:justify-start sm:justify-center">
               <Link
-                to="/tracker"
+                to="/tracker/"
                 className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-8 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
               >
                 <Zap size={18} />
@@ -372,7 +372,7 @@ export function HomePage() {
               No account needed. No downloads. Just open the tracker and start exploring.
             </p>
             <Link
-              to="/tracker"
+              to="/tracker/"
               className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
             >
               <Globe size={18} />

@@ -15,6 +15,34 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
+    <script>
+      (function () {
+        const slashRoutes = new Set(['/tracker', '/features', '/about', '/contact', '/legal']);
+        if (slashRoutes.has(location.pathname)) {
+          location.replace(location.pathname + '/' + location.search + location.hash);
+          return;
+        }
+        const resetKey = 'spacemap.cache-reset.v1';
+        try {
+          if (localStorage.getItem(resetKey) === '1') return;
+          localStorage.setItem(resetKey, '1');
+        } catch {}
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker
+            .getRegistrations()
+            .then((regs) => Promise.all(regs.map((reg) => reg.unregister())))
+            .catch(() => {});
+        }
+        if ('caches' in window) {
+          caches
+            .keys()
+            .then((keys) =>
+              Promise.all(keys.filter((key) => key.startsWith('spacemap-')).map((key) => caches.delete(key))),
+            )
+            .catch(() => {});
+        }
+      })();
+    </script>
   </head>
   <body class="bg-space-bg text-space-text">
     <div id="root"></div>

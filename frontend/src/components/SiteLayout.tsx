@@ -15,7 +15,8 @@ const PAGE_TITLES: Record<string, string> = {
 
 export function SiteLayout() {
   const { pathname, hash } = useLocation();
-  const isTracker = pathname === '/tracker';
+  const normalizedPath = pathname !== '/' ? pathname.replace(/\/+$/u, '') || '/' : pathname;
+  const isTracker = normalizedPath === '/tracker';
 
   // Scroll to top on route change
   useEffect(() => {
@@ -36,8 +37,8 @@ export function SiteLayout() {
   }, [pathname, hash]);
 
   useEffect(() => {
-    document.title = `SpaceMap | ${PAGE_TITLES[pathname] ?? 'Home'}`;
-  }, [pathname]);
+    document.title = `SpaceMap | ${PAGE_TITLES[normalizedPath] ?? 'Home'}`;
+  }, [normalizedPath]);
 
   if (isTracker) {
     // Tracker gets its own full-screen layout (the original app)

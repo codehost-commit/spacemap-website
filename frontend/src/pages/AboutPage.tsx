@@ -267,7 +267,7 @@ export function AboutPage() {
           <h2 className="text-3xl font-bold text-white">Start tracking now</h2>
           <p className="mt-4 text-space-dim">No sign-up. No install. Just open the tracker.</p>
           <Link
-            to="/tracker"
+            to="/tracker/"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
           >
             <Globe size={18} />

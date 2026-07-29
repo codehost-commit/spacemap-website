@@ -351,7 +351,7 @@ export function FeaturesPage() {
             the tracker is still where the full mission-control view opens up.
           </p>
           <Link
-            to="/tracker"
+            to="/tracker/"
             className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#4d96e8]/30"
           >
             <Zap size={18} />
