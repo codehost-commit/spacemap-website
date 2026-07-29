@@ -172,7 +172,7 @@ html {
   top: 5rem;
   width: 22rem;
   max-width: calc(100vw - 22.25rem);
-  max-height: calc(100vh - 6rem);
+  max-height: calc(100vh - 5rem - env(safe-area-inset-bottom, 0px) - clamp(6.75rem, 14vh, 8.5rem));
 }
 
 .spacemap-right-rail {
@@ -225,8 +225,10 @@ html {
   .spacemap-overlay {
     left: 0.5rem !important;
     right: 3.5rem !important;
+    top: 8.5rem !important;
     width: auto !important;
     max-width: none !important;
+    max-height: calc(100vh - 8.5rem - env(safe-area-inset-bottom, 0px) - 8.75rem) !important;
   }
   /* Header HUD wraps. */
   .spacemap-hud {

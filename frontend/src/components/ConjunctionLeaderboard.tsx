@@ -1,9 +1,18 @@
 import { useEffect, useState } from 'react';
+import type { ConjunctionResult } from '@spacemap/shared';
 import { useStore } from '../state/store.js';
-import { closestPairs, type ClosestPair } from '../state/snapshot-util.js';
+import { closestPairs } from '../state/snapshot-util.js';
+import { getSimulation } from '../simulation/simulation.js';
 import { ORBIT_CLASS_COLOR } from '@spacemap/shared';
 
-const REFRESH_MS = 3000;
+const REFRESH_MS = 6000;
+
+interface RankedConjunctionRow extends ConjunctionResult {
+  aName: string;
+  bName: string;
+  aClass: string;
+  bClass: string;
+}
 
 /**
  * Live "top closest pairs" leaderboard. Recomputes every ~3 s while the panel
@@ -18,34 +27,61 @@ export function ConjunctionLeaderboard() {
   const names = useStore((s) => s.indexByNorad);
   const select = useStore((s) => s.select);
   const setCompare = useStore((s) => s.setCompare);
-  const [pairs, setPairs] = useState<ClosestPair[]>([]);
+  const [pairs, setPairs] = useState<RankedConjunctionRow[]>([]);
   const [computing, setComputing] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
-    const run = () => {
+    let running = false;
+    const run = async () => {
+      if (running) return;
       const snap = useStore.getState().snapshot;
-      if (!snap) return;
+      const sim = getSimulation();
+      if (!snap || !sim) return;
+      running = true;
       setComputing(true);
-      // Push heavy pass off the render frame with a 0-ms defer.
-      setTimeout(() => {
+
+      try {
+        const result = closestPairs(snap, 10, 40, 0.4);
+        const nextRows: RankedConjunctionRow[] = [];
+
+        for (const pair of result) {
+          try {
+            const conjunction = await sim.runConjunction(pair.aId, pair.bId, {
+              hours: 24,
+              coarseStepSec: 90,
+            });
+            if (cancelled) return;
+            nextRows.push({
+              ...conjunction,
+              aName: names.get(pair.aId) ?? `#${pair.aId}`,
+              bName: names.get(pair.bId) ?? `#${pair.bId}`,
+              aClass: pair.aClass,
+              bClass: pair.bClass,
+            });
+          } catch {
+            // Skip pairs that fail refinement so the panel still renders.
+          }
+        }
+
         if (cancelled) return;
-        const t0 = performance.now();
-        const result = closestPairs(snap, 10);
-        const dt = performance.now() - t0;
-        if (dt > 300) console.debug(`[leaderboard] scan took ${dt.toFixed(0)}ms`);
-        setPairs(result);
-        setComputing(false);
-      }, 0);
+        nextRows.sort((a, b) => b.probabilityOfCollision - a.probabilityOfCollision);
+        setPairs(nextRows);
+      } finally {
+        running = false;
+        if (!cancelled) {
+          setComputing(false);
+        }
+      }
     };
-    run();
-    const id = setInterval(run, REFRESH_MS);
+    void run();
+    const id = setInterval(() => void run(), REFRESH_MS);
     return () => {
       cancelled = true;
       clearInterval(id);
     };
-  }, [open]);
+  }, [open, names]);
 
   if (!open) return null;
 
@@ -54,7 +90,7 @@ export function ConjunctionLeaderboard() {
       <header className="flex items-center justify-between border-b border-space-border px-3 py-2">
         <div>
           <div className="text-[9px] uppercase tracking-widest text-space-dim">
-            Global closest pairs
+            Global collision watch
           </div>
           <div className="font-mono text-sm text-space-text">
             Top 10 · updated every {REFRESH_MS / 1000}s
@@ -69,12 +105,20 @@ export function ConjunctionLeaderboard() {
       </header>
 
       <div className="border-b border-space-border px-3 py-2 text-[10px] leading-snug text-space-dim">
-        Live pairs currently closest in 3-D space with relative speed &gt; 0.4 km/s (co-orbital
-        cluster-mates filtered out). Click a row to load the full 24-hour conjunction analysis in
-        the telemetry panel.
+        Pairs are ranked by actual collision probability over the next 24 hours, with miss distance
+        and relative speed kept beside the percentage. Click any row to load the full conjunction
+        analysis in the telemetry panel.
       </div>
 
-      <ul className="overflow-auto font-mono text-xs">
+      <div className="grid grid-cols-[auto_minmax(9rem,1fr)_6.5rem_4.75rem_5.5rem] gap-2 border-b border-space-border/40 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-space-dim">
+        <span>#</span>
+        <span>Pair</span>
+        <span className="text-right">Pc</span>
+        <span className="text-right">Miss</span>
+        <span className="text-right">Speed</span>
+      </div>
+
+      <ul className="flex-1 overflow-auto font-mono text-xs">
         {computing && pairs.length === 0 && <li className="p-3 text-space-dim">Scanning…</li>}
         {pairs.length === 0 && !computing && (
           <li className="p-3 text-space-dim">No qualifying pairs found in the current snapshot.</li>
@@ -89,31 +133,24 @@ export function ConjunctionLeaderboard() {
                   p.aId,
                 );
               }}
-              className="grid w-full grid-cols-[auto_1fr_auto_auto] items-center gap-2 px-3 py-2 text-left hover:bg-white/5"
+              className="grid w-full grid-cols-[auto_minmax(9rem,1fr)_6.5rem_4.75rem_5.5rem] items-center gap-2 px-3 py-2 text-left hover:bg-white/5"
             >
               <span className="w-4 text-space-dim">{idx + 1}</span>
               <div className="min-w-0">
                 <div className="flex items-center gap-1.5 truncate text-space-text">
                   <ClassDot cls={p.aClass} />
-                  <span className="truncate">{names.get(p.aId) ?? `#${p.aId}`}</span>
+                  <span className="truncate">{p.aName}</span>
                 </div>
                 <div className="flex items-center gap-1.5 truncate text-space-dim">
                   <ClassDot cls={p.bClass} />
-                  <span className="truncate">{names.get(p.bId) ?? `#${p.bId}`}</span>
+                  <span className="truncate">{p.bName}</span>
                 </div>
               </div>
-              <span
-                className={
-                  p.distanceKm < 5
-                    ? 'text-space-bad'
-                    : p.distanceKm < 15
-                      ? 'text-space-warn'
-                      : 'text-space-text'
-                }
-              >
-                {p.distanceKm.toFixed(2)} km
+              <span className={`text-right ${getConjunctionTone(p.severity, p.probabilityOfCollision)}`}>
+                {formatProbabilityPercent(p.probabilityOfCollision)}
               </span>
-              <span className="text-space-dim">{p.relSpeedKmS.toFixed(2)} km/s</span>
+              <span className="text-right text-space-warn">{p.missKm.toFixed(2)} km</span>
+              <span className="text-right text-space-dim">{p.relSpeedKmS.toFixed(2)} km/s</span>
             </button>
           </li>
         ))}
@@ -130,4 +167,23 @@ function ClassDot({ cls }: { cls: string }) {
       style={{ background: color }}
     />
   );
+}
+
+function getConjunctionTone(severity: number, pc: number): string {
+  if (severity >= 70 || pc >= 1e-4) return 'text-[#ff6b6b]';
+  if (severity >= 40 || pc >= 1e-6) return 'text-[#ffd166]';
+  return 'text-[#8ed8ff]';
+}
+
+function formatProbabilityPercent(pc: number): string {
+  const percent = pc * 100;
+  if (percent === 0) return '0%';
+  if (percent < 0.000001) return '<0.000001%';
+  if (percent < 0.0001) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
+  if (percent < 0.01) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
+  return `${trimTrailingZeroes(percent.toFixed(4))}%`;
+}
+
+function trimTrailingZeroes(value: string): string {
+  return value.replace(/(\.\d*?[1-9])0+$/u, '$1').replace(/\.0+$/u, '');
 }

@@ -13,9 +13,14 @@ const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mut
 // Launch Library 2 — expedition endpoint returns the current ISS crew with
 // start dates, roles, and nationality info. Rate-limited to ~15 req/hr on
 // the public tier, so we cache aggressively (10 min refresh).
-const LL2_EXPEDITION_URL =
-  'https://ll.thespacedevs.com/2.2.0/expedition/?ongoing=true&format=json&limit=3';
+const LL2_ISS_STATION_URL =
+  'https://ll.thespacedevs.com/2.2.0/spacestation/4/?format=json';
+const BUNDLED_ISS_CREW_URL = `${import.meta.env.BASE_URL}data/iss-crew.json`;
 const CREW_REFRESH_MS = 10 * 60 * 1000;
+const CREW_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CREW_RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+const CREW_CACHE_KEY = 'spacemap.tracker.iss-crew.v1';
+const CREW_COOLDOWN_KEY = 'spacemap.tracker.iss-crew.cooldown.v1';
 
 interface CrewMember {
   name: string;
@@ -46,7 +51,20 @@ interface LL2Expedition {
   end?: string | null;
   spacestation?: { name?: string };
   crew?: LL2Crew[];
+  url?: string;
 }
+
+interface LL2SpaceStation {
+  active_expeditions?: LL2Expedition[];
+}
+
+interface CrewSnapshot {
+  fetchedAt: number;
+  expeditionName: string | null;
+  crew: CrewMember[];
+}
+
+let crewRequest: Promise<CrewSnapshot> | null = null;
 
 /**
  * Floating ISS live-stream + telemetry panel. Uses the propagator snapshot
@@ -79,37 +97,28 @@ export function IssCamera() {
     if (!open) return;
     let cancelled = false;
     const loadCrew = async () => {
+      const cached = readCrewCache();
+      if (cached) {
+        setCrew(cached.crew);
+        setExpeditionName(cached.expeditionName);
+        setCrewError(null);
+      }
+
+      if (cached && Date.now() - cached.fetchedAt < CREW_CACHE_TTL_MS) return;
+      if (cached && isCrewRetryCoolingDown()) return;
+
       try {
-        const res = await fetch(LL2_EXPEDITION_URL);
-        if (!res.ok) throw new Error(`LL2 ${res.status}`);
-        const body = (await res.json()) as { results?: LL2Expedition[] };
-        // Prefer expeditions that mention ISS in their spacestation field;
-        // fall back to the first ongoing expedition returned.
-        const iss =
-          body.results?.find((e) =>
-            (e.spacestation?.name ?? '').toLowerCase().includes('international'),
-          ) ?? body.results?.[0];
-        if (!iss || !iss.crew) throw new Error('no crew returned');
-        const startMs = iss.start ? new Date(iss.start).getTime() : Date.now();
-        const now = Date.now();
-        const members: CrewMember[] = iss.crew
-          .filter((c) => c.astronaut && c.astronaut.name)
-          .map((c) => ({
-            name: c.astronaut!.name!,
-            role: c.role?.name ?? c.role?.role ?? 'Crew',
-            agencyAbbrev: c.astronaut!.agency?.abbrev,
-            countryCode: c.astronaut!.nationality?.alpha_2_code?.toUpperCase() ?? undefined,
-            daysOnStation: Math.max(0, Math.floor((now - startMs) / 86_400_000)),
-            wikiUrl: c.astronaut!.wiki,
-          }));
+        const snapshot = await loadIssCrewSnapshot();
         if (!cancelled) {
-          setCrew(members);
-          setExpeditionName(iss.name ?? null);
+          setCrew(snapshot.crew);
+          setExpeditionName(snapshot.expeditionName);
           setCrewError(null);
         }
-      } catch (err) {
+      } catch {
         if (!cancelled) {
-          setCrewError(err instanceof Error ? err.message : String(err));
+          setCrew(cached?.crew ?? []);
+          setExpeditionName(cached?.expeditionName ?? null);
+          setCrewError(null);
         }
       }
     };
@@ -179,12 +188,12 @@ export function IssCamera() {
         </div>
         {crewError && (
           <div className="text-[10px] text-space-warn">
-            Couldn't reach Launch Library ({crewError}).
+            {crewError}
           </div>
         )}
         {!crew && !crewError && <div className="text-[10px] text-space-dim">Loading crew…</div>}
         {crew && crew.length === 0 && !crewError && (
-          <div className="text-[10px] text-space-dim">No crew listed by LL2.</div>
+          <div className="text-[10px] text-space-dim">Crew manifest is retrying quietly.</div>
         )}
         {crew && crew.length > 0 && (
           <ul className="space-y-1">
@@ -224,6 +233,137 @@ export function IssCamera() {
       </div>
     </aside>
   );
+}
+
+async function loadIssCrewSnapshot(): Promise<CrewSnapshot> {
+  if (crewRequest) return crewRequest;
+  crewRequest = (async () => {
+    const sources = import.meta.env.PROD ? [tryBundledCrew, tryLiveCrew] : [tryLiveCrew];
+    let firstError: unknown = null;
+
+    try {
+      for (const source of sources) {
+        try {
+          const snapshot = await source();
+          writeCrewCache(snapshot);
+          clearCrewRetryCooldown();
+          return snapshot;
+        } catch (sourceError) {
+          firstError ??= sourceError;
+        }
+      }
+
+      setCrewRetryCooldown();
+      const cached = readCrewCache();
+      if (cached) return cached;
+      if (firstError instanceof Error) {
+        throw firstError;
+      }
+      throw new Error(String(firstError ?? 'ISS crew unavailable'));
+    } finally {
+      crewRequest = null;
+    }
+  })();
+  return crewRequest;
+}
+
+async function tryLiveCrew(): Promise<CrewSnapshot> {
+  const stationRes = await fetch(LL2_ISS_STATION_URL);
+  if (!stationRes.ok) throw new Error(`LL2 ${stationRes.status}`);
+  const station = (await stationRes.json()) as LL2SpaceStation;
+  const activeExpedition = station.active_expeditions?.[0];
+  if (!activeExpedition?.url) throw new Error('no active ISS expedition');
+
+  const expeditionRes = await fetch(activeExpedition.url);
+  if (!expeditionRes.ok) throw new Error(`LL2 ${expeditionRes.status}`);
+  const expedition = (await expeditionRes.json()) as LL2Expedition;
+  return parseCrewSnapshot(expedition);
+}
+
+async function tryBundledCrew(): Promise<CrewSnapshot> {
+  const res = await fetch(BUNDLED_ISS_CREW_URL, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`bundled ISS crew ${res.status}`);
+  const body = (await res.json()) as CrewSnapshot | LL2Expedition;
+  if ('crew' in body && Array.isArray(body.crew) && body.crew.every((member) => 'name' in member)) {
+    return {
+      fetchedAt: Number('fetchedAt' in body ? body.fetchedAt : Date.now()),
+      expeditionName: 'expeditionName' in body ? body.expeditionName : body.name ?? null,
+      crew: (body.crew as Array<Partial<CrewMember>>).map((member) => ({
+        name: member.name ?? 'Crew',
+        role: member.role ?? 'Crew',
+        agencyAbbrev: member.agencyAbbrev,
+        countryCode: member.countryCode,
+        daysOnStation: member.daysOnStation ?? 0,
+        wikiUrl: member.wikiUrl,
+      })),
+    };
+  }
+  return parseCrewSnapshot(body as LL2Expedition);
+}
+
+function parseCrewSnapshot(expedition: LL2Expedition): CrewSnapshot {
+  const startMs = expedition.start ? new Date(expedition.start).getTime() : Date.now();
+  const now = Date.now();
+  return {
+    fetchedAt: Date.now(),
+    expeditionName: expedition.name ?? null,
+    crew:
+      expedition.crew
+        ?.filter((member) => member.astronaut?.name)
+        .map((member) => ({
+          name: member.astronaut!.name!,
+          role: member.role?.name ?? member.role?.role ?? 'Crew',
+          agencyAbbrev: member.astronaut?.agency?.abbrev,
+          countryCode: member.astronaut?.nationality?.alpha_2_code?.toUpperCase() ?? undefined,
+          daysOnStation: Math.max(0, Math.floor((now - startMs) / 86_400_000)),
+          wikiUrl: member.astronaut?.wiki,
+        })) ?? [],
+  };
+}
+
+function readCrewCache(): CrewSnapshot | null {
+  try {
+    const raw = localStorage.getItem(CREW_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CrewSnapshot;
+    if (!Array.isArray(parsed.crew)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCrewCache(snapshot: CrewSnapshot): void {
+  try {
+    localStorage.setItem(CREW_CACHE_KEY, JSON.stringify({ ...snapshot, fetchedAt: Date.now() }));
+  } catch {
+    /* localStorage can be disabled in private browsing */
+  }
+}
+
+function isCrewRetryCoolingDown(): boolean {
+  try {
+    const retryAt = Number(sessionStorage.getItem(CREW_COOLDOWN_KEY) ?? 0);
+    return Number.isFinite(retryAt) && Date.now() < retryAt;
+  } catch {
+    return false;
+  }
+}
+
+function setCrewRetryCooldown(): void {
+  try {
+    sessionStorage.setItem(CREW_COOLDOWN_KEY, String(Date.now() + CREW_RETRY_COOLDOWN_MS));
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
+}
+
+function clearCrewRetryCooldown(): void {
+  try {
+    sessionStorage.removeItem(CREW_COOLDOWN_KEY);
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
 }
 
 function Cell({ label, value }: { label: string; value: string }) {

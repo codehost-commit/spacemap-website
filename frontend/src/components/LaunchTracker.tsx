@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   formatLaunchCountdown,
+  getLaunchTone,
   useUpcomingLaunches,
 } from '../hooks/useUpcomingLaunches.js';
 import { useStore } from '../state/store.js';
@@ -76,7 +77,7 @@ export function LaunchTracker() {
         </div>
       )}
 
-      <div className="overflow-auto">
+      <div className="flex-1 overflow-auto">
         {error && (
           <div className="p-3 text-xs text-space-warn">
             {error}
@@ -92,13 +93,19 @@ export function LaunchTracker() {
           {launches?.map((l) => {
             const netMs = new Date(l.net).getTime();
             const dt = netMs - nowMs;
+            const tone = getLaunchTone(dt);
             const status = l.status?.name ?? '';
             const streamUrl = l.vidURLs?.find((v) => v.url)?.url;
             return (
               <li key={l.id} className="border-b border-space-border/40 px-3 py-2 last:border-b-0">
-                <div className="flex items-baseline justify-between gap-2">
+                <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1 truncate text-space-text">{l.name}</div>
-                  <div className="shrink-0 text-space-accent">{formatLaunchCountdown(dt)}</div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${tone.dotClass}`}>
+                      {tone.label}
+                    </span>
+                    <div className={`font-semibold ${tone.textClass}`}>{formatLaunchCountdown(dt)}</div>
+                  </div>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between text-[10px] text-space-dim">
                   <span className="truncate">
