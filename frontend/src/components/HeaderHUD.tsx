@@ -44,26 +44,21 @@ export function HeaderHUD() {
   const driftLabel =
     Math.abs(drift) < 2000 ? 'live' : `${drift > 0 ? '+' : '−'}${formatDuration(Math.abs(drift))}`;
 
+  function openAdminConsole() {
+    adminLog.push('main', {
+      channel: 'sys',
+      severity: 'info',
+      text: 'admin console opened',
+    });
+    useStore.getState().setAdminOpen(true);
+  }
+
   return (
     <div className="pointer-events-none absolute inset-x-0 top-0 z-30 flex items-start justify-between px-4 py-3">
-      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19.25rem] flex-col gap-2 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 shadow-[0_24px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
-        <div className="flex items-center justify-between">
+      <div className="spacemap-hud spacemap-hud-brand pointer-events-auto flex w-[19.25rem] flex-col items-center gap-2 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 shadow-[0_24px_56px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+        <a href="/" className="flex w-full items-center justify-center" aria-label="Go to SpaceMap home">
           <BrandMark compact />
-          <button
-            onClick={() => {
-              adminLog.push('main', {
-                channel: 'sys',
-                severity: 'info',
-                text: 'admin console opened',
-              });
-              useStore.getState().setAdminOpen(true);
-            }}
-            title="Admin console (developer)"
-            className="rounded-full border border-[#345066] bg-[#101d2a] px-2.5 py-1 font-mono text-[10px] tracking-[0.18em] text-[#a7e2ff] transition hover:border-[#55748f] hover:text-[#eef7ff]"
-          >
-            ADMIN
-          </button>
-        </div>
+        </a>
         <LocateButton />
       </div>
 
@@ -89,7 +84,17 @@ export function HeaderHUD() {
           }
         />
         <div className="flex items-center gap-1.5">
-          <span className={`h-2 w-2 rounded-full ${statusColor(status)}`} title={error ?? status} />
+          <button
+            onClick={openAdminConsole}
+            title="Open admin console"
+            aria-label="Open admin console"
+            className="rounded-full p-1 transition-transform hover:scale-110 focus:outline-none"
+          >
+            <span
+              className={`block h-2 w-2 rounded-full ${statusColor(status)}`}
+              title={error ?? status}
+            />
+          </button>
           <span className="text-space-dim">{statusLabel(status)}</span>
         </div>
       </div>
