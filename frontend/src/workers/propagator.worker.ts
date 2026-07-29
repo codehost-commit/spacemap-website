@@ -2,6 +2,7 @@
 import * as satellite from 'satellite.js';
 import type { ConjunctionResult, Tle } from '@spacemap/shared';
 import { ORBIT_CLASS_INDEX, classifyOrbit } from '@spacemap/shared';
+import { catalogObjectToSatRec } from '../simulation/catalog-satrec.js';
 
 /**
  * SGP4 propagator running off the main thread. Handles three requests:
@@ -12,7 +13,7 @@ import { ORBIT_CLASS_INDEX, classifyOrbit } from '@spacemap/shared';
  *                      search between two satellites over a time window.
  */
 
-type LoadMsg = { type: 'load'; tles: Tle[] };
+type LoadMsg = { type: 'load'; tles: Tle[]; mode?: 'replace' | 'append' };
 type PropagateMsg = { type: 'propagate'; timeMs: number };
 type PingMsg = { type: 'ping'; nonce: number };
 type ConjunctionMsg = {
@@ -42,7 +43,7 @@ const byId = new Map<number, satellite.SatRec>();
 
 self.onmessage = (ev: MessageEvent<InMsg>) => {
   const msg = ev.data;
-  if (msg.type === 'load') load(msg.tles);
+  if (msg.type === 'load') load(msg.tles, msg.mode ?? 'replace');
   else if (msg.type === 'propagate') propagate(msg.timeMs);
   else if (msg.type === 'conjunction') conjunction(msg);
   else if (msg.type === 'ping') {
@@ -54,14 +55,17 @@ self.onmessage = (ev: MessageEvent<InMsg>) => {
   }
 };
 
-function load(tles: Tle[]): void {
-  records.length = 0;
-  byId.clear();
+function load(tles: Tle[], mode: 'replace' | 'append'): void {
+  if (mode === 'replace') {
+    records.length = 0;
+    byId.clear();
+  }
   let bad = 0;
   for (const t of tles) {
+    if (byId.has(t.noradId)) continue;
     try {
-      const sr = satellite.twoline2satrec(t.line1, t.line2);
-      if (sr.error) {
+      const sr = catalogObjectToSatRec(t);
+      if (!sr) {
         bad++;
         continue;
       }

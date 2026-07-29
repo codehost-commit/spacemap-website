@@ -201,7 +201,14 @@ export function GlobeCanvas() {
     const unsubSnapshot = useStore.subscribe((s) => {
       if (s.snapshot && s.snapshotTick !== lastTick) {
         lastTick = s.snapshotTick;
-        layer.update(s.snapshot, s.filter, s.selectedNoradId, viewer.scene.camera);
+        layer.update(
+          s.snapshot,
+          s.filter,
+          s.objectFilter,
+          s.objectTypeByNorad,
+          s.selectedNoradId,
+          viewer.scene.camera,
+        );
         trails.ingest(s.snapshot, s.filter);
         void heatmap.ingest(s.snapshot);
       }
@@ -209,6 +216,7 @@ export function GlobeCanvas() {
 
     // UI state → derived overlays.
     let lastFilterRef: Set<unknown> | null = null;
+    let lastObjectFilterRef: Set<unknown> | null = null;
     let lastSelection: number | null = null;
     let lastCameraMode = 'orbit';
     let lastTrailMode = '';
@@ -220,10 +228,18 @@ export function GlobeCanvas() {
     let lastGroundStations = false;
     let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
-      if (s.filter !== lastFilterRef) {
+      if (s.filter !== lastFilterRef || s.objectFilter !== lastObjectFilterRef) {
         lastFilterRef = s.filter;
+        lastObjectFilterRef = s.objectFilter;
         if (s.snapshot) {
-          layer.update(s.snapshot, s.filter, s.selectedNoradId, viewer.scene.camera);
+          layer.update(
+            s.snapshot,
+            s.filter,
+            s.objectFilter,
+            s.objectTypeByNorad,
+            s.selectedNoradId,
+            viewer.scene.camera,
+          );
           trails.ingest(s.snapshot, s.filter, { force: true });
         }
       }

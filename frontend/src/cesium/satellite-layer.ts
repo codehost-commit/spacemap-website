@@ -1,7 +1,9 @@
 import * as Cesium from 'cesium';
 import {
+  CATALOG_OBJECT_TYPES,
   ORBIT_CLASSES,
   ORBIT_CLASS_COLOR,
+  type CatalogObjectType,
   type OrbitClass,
   type PropagationSnapshot,
 } from '@spacemap/shared';
@@ -89,6 +91,7 @@ export class SatelliteLayer {
   private readonly iconUrl: string;
   private readonly scratch = new Cesium.Cartesian3();
   private readonly filterMask = new Uint8Array(ORBIT_CLASSES.length);
+  private readonly objectFilterMask = new Uint8Array(CATALOG_OBJECT_TYPES.length);
   private readonly seenGeneration = new Map<number, number>();
   private readonly pointClassById = new Map<number, number>();
   private readonly billboardClassById = new Map<number, number>();
@@ -123,6 +126,8 @@ export class SatelliteLayer {
   update(
     snap: PropagationSnapshot,
     filter: Set<OrbitClass>,
+    objectFilter: Set<CatalogObjectType>,
+    objectTypeByNorad: Map<number, CatalogObjectType>,
     highlightId: number | null,
     camera: Cesium.Camera | null,
   ): void {
@@ -134,6 +139,9 @@ export class SatelliteLayer {
     }
     for (let i = 0; i < ORBIT_CLASSES.length; i++) {
       this.filterMask[i] = filter.has(ORBIT_CLASSES[i]) ? 1 : 0;
+    }
+    for (let i = 0; i < CATALOG_OBJECT_TYPES.length; i++) {
+      this.objectFilterMask[i] = objectFilter.has(CATALOG_OBJECT_TYPES[i]) ? 1 : 0;
     }
 
     const { count, ids, ecefPos, orbitClass } = snap;
@@ -198,8 +206,14 @@ export class SatelliteLayer {
 
     for (let n = 0; n < count; n++) {
       const cls = orbitClass[n];
-      if (!this.filterMask[cls]) continue;
       const id = ids[n];
+      const objectType = objectTypeByNorad.get(id) ?? 'unknown';
+      const objectTypeIndex = CATALOG_OBJECT_TYPES.indexOf(objectType);
+      const objectVisible =
+        objectTypeIndex >= 0 ? this.objectFilterMask[objectTypeIndex] === 1 : true;
+      const classVisible = this.filterMask[cls] === 1;
+      const alwaysUpdate = id === this.selectedId || id === this.hoveredId;
+      if ((!classVisible || !objectVisible) && !alwaysUpdate) continue;
       const sx = ecefPos[n * 3];
       const sy = ecefPos[n * 3 + 1];
       const sz = ecefPos[n * 3 + 2];
@@ -221,7 +235,6 @@ export class SatelliteLayer {
         : catchupWraps
           ? n >= this.catchupCursor || n < catchupLo2
           : n >= this.catchupCursor && n < catchupHi;
-      const alwaysUpdate = id === this.selectedId || id === this.hoveredId;
 
       // Camera-distance² for band decisions (cheap: 3 subs + 3 muls + 2 adds).
       let camDistSq = 0;

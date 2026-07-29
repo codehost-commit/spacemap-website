@@ -29,6 +29,10 @@ export class Propagator {
     const next = new Map<number, Record>();
     let bad = 0;
     for (const tle of tles) {
+      if (!tle.line1 || !tle.line2) {
+        bad++;
+        continue;
+      }
       try {
         const satrec = satellite.twoline2satrec(tle.line1, tle.line2);
         if (satrec.error && satrec.error !== 0) {

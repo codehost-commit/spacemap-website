@@ -1,5 +1,6 @@
 /** Orbital regime used for coloring trails and filtering. */
 export type OrbitClass = 'LEO' | 'MEO' | 'GEO' | 'HEO' | 'POLAR' | 'SSO' | 'UNKNOWN';
+export type CatalogObjectType = 'payload' | 'rocket-body' | 'debris' | 'unknown';
 
 /** Static, slow-changing satellite metadata. */
 export interface SatelliteMeta {
@@ -11,16 +12,58 @@ export interface SatelliteMeta {
   operator?: string;
   missionType?: string;
   constellation?: string;
+  objectType?: CatalogObjectType;
+  opsStatusCode?: string;
+  decayDate?: string;
 }
 
-/** Raw two-line element set. */
+/** Public catalog object backed by GP JSON or a legacy TLE fallback. */
 export interface Tle {
   noradId: number;
   name: string;
-  line1: string;
-  line2: string;
-  /** Epoch of the TLE in ISO 8601. */
+  /** Epoch of the element set in ISO 8601. */
   epoch: string;
+  /** Legacy TLE lines when available. Optional for GP/OMM-first records. */
+  line1?: string;
+  line2?: string;
+  intlDesignator?: string;
+  objectType?: CatalogObjectType;
+  opsStatusCode?: string;
+  owner?: string;
+  launchDate?: string;
+  decayDate?: string;
+  sourceGroups?: string[];
+  classificationType?: string;
+  /** GP/OMM orbital fields. */
+  meanMotion?: number;
+  eccentricity?: number;
+  inclinationDeg?: number;
+  raanDeg?: number;
+  argPerigeeDeg?: number;
+  meanAnomalyDeg?: number;
+  bstar?: number;
+  meanMotionDot?: number;
+  meanMotionDDot?: number;
+  ephemerisType?: number;
+  revAtEpoch?: number;
+}
+
+export interface CatalogChunkFile {
+  id: string;
+  label: string;
+  count: number;
+  objects: Tle[];
+}
+
+export interface CatalogChunkManifest {
+  fetchedAt: number;
+  totalCount: number;
+  chunks: Array<{
+    id: string;
+    label: string;
+    count: number;
+    path: string;
+  }>;
 }
 
 /** Instantaneous propagated state of one satellite. */

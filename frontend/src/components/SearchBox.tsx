@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { CATALOG_OBJECT_TYPE_LABEL } from '@spacemap/shared';
 import { useStore } from '../state/store.js';
 
 const MAX_RESULTS = 12;
@@ -18,7 +19,7 @@ export function SearchBox() {
     if (!q.trim()) return [];
     const needle = q.trim().toLowerCase();
     const asNum = Number(needle);
-    const out: { noradId: number; name: string }[] = [];
+    const out: { noradId: number; name: string; objectType: string }[] = [];
     for (const e of index) {
       const nameMatch = e.name.toLowerCase().includes(needle);
       const idMatch = Number.isFinite(asNum) && e.noradId === asNum;
@@ -61,7 +62,13 @@ export function SearchBox() {
                 onClick={() => focus(r.noradId, r.name)}
                 className="flex w-full items-center justify-between px-4 py-2 text-left hover:bg-white/5"
               >
-                <span className="truncate text-space-text">{r.name}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-space-text">{r.name}</div>
+                  <div className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-space-dim">
+                    {CATALOG_OBJECT_TYPE_LABEL[r.objectType as keyof typeof CATALOG_OBJECT_TYPE_LABEL] ??
+                      'Unknown'}
+                  </div>
+                </div>
                 <span className="ml-2 shrink-0 text-space-dim">#{r.noradId}</span>
               </button>
             </li>

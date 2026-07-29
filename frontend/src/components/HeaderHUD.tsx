@@ -9,6 +9,8 @@ export function HeaderHUD() {
   const status = useStore((s) => s.catalogStatus);
   const error = useStore((s) => s.catalogError);
   const catalogSize = useStore((s) => s.catalogSize);
+  const catalogTargetCount = useStore((s) => s.catalogTargetCount);
+  const catalogHydrating = useStore((s) => s.catalogHydrating);
   const snapshotCount = useStore((s) => s.snapshot?.count ?? 0);
   const simTimeMs = useStore((s) => s.simTimeMs);
   const multiplier = useStore((s) => s.simMultiplier);
@@ -63,7 +65,14 @@ export function HeaderHUD() {
       </div>
 
       <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <Stat label="Catalog" value={catalogSize.toLocaleString()} />
+        <Stat
+          label="Catalog"
+          value={
+            catalogHydrating && catalogTargetCount > catalogSize
+              ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()}`
+              : catalogSize.toLocaleString()
+          }
+        />
         <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
         <Stat
           label="Speed"
@@ -96,6 +105,11 @@ export function HeaderHUD() {
             />
           </button>
           <span className="text-space-dim">{statusLabel(status)}</span>
+          {catalogHydrating && status === 'ready' && (
+            <span className="text-[10px] uppercase tracking-[0.18em] text-space-accent/80">
+              Syncing
+            </span>
+          )}
         </div>
       </div>
     </div>

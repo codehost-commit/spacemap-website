@@ -1,6 +1,7 @@
 import * as Cesium from 'cesium';
 import * as satellite from 'satellite.js';
 import { ORBIT_CLASS_COLOR, classifyOrbit, type OrbitClass, type Tle } from '@spacemap/shared';
+import { catalogObjectToSatRec } from '../simulation/catalog-satrec.js';
 
 /**
  * Selected-satellite orbit ribbon. Rendered as a clean ellipse in the CURRENT
@@ -64,13 +65,8 @@ export class OrbitTrail {
   private rebuild(): void {
     if (!this.tle) return;
     const tle = this.tle;
-    let satrec: satellite.SatRec;
-    try {
-      satrec = satellite.twoline2satrec(tle.line1, tle.line2);
-    } catch {
-      return;
-    }
-    if (satrec.error) return;
+    const satrec = catalogObjectToSatRec(tle);
+    if (!satrec) return;
 
     const meanMotionRevPerDay = (satrec.no * 60 * 24) / (2 * Math.PI);
     if (!Number.isFinite(meanMotionRevPerDay) || meanMotionRevPerDay <= 0) return;

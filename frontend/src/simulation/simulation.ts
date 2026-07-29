@@ -1,7 +1,7 @@
 import * as Cesium from 'cesium';
 import type { ConjunctionResult, PropagationSnapshot, Tle } from '@spacemap/shared';
 import PropagatorWorker from '../workers/propagator.worker.ts?worker';
-import { fetchTles } from './tle-catalog.js';
+import { loadCatalogProgressively } from './tle-catalog.js';
 import { setLocalCatalog } from './catalog-store.js';
 import { useStore } from '../state/store.js';
 
@@ -27,14 +27,29 @@ export class Simulation {
     const store = useStore.getState();
     store.setCatalogStatus('loading');
     try {
-      const tles = await fetchTles();
-      this.worker.postMessage({ type: 'load', tles });
-      setLocalCatalog(tles);
-      store.setIndex(tles.map((t: Tle) => ({ noradId: t.noradId, name: t.name })));
-      store.setCatalogStatus('ready');
-      // Fire an immediate propagation now that the worker has data — don't
-      // wait for the next Cesium tick.
-      this.requestPropagation(Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime());
+      let coreReady = false;
+      await loadCatalogProgressively({
+        onChunk: async ({ objects, mode, loadedCount, totalCount, hydrating }) => {
+          this.worker.postMessage({ type: 'load', tles: objects, mode });
+          setLocalCatalog(objects, mode);
+          const indexEntries = objects.map((t: Tle) => ({
+            noradId: t.noradId,
+            name: t.name,
+            objectType: t.objectType ?? 'unknown',
+            owner: t.owner,
+          }));
+          if (mode === 'replace') store.setIndex(indexEntries);
+          else store.appendIndex(indexEntries);
+          store.setCatalogProgress(loadedCount, totalCount, hydrating);
+          if (!coreReady) {
+            coreReady = true;
+            store.setCatalogStatus('ready');
+            // Fire an immediate propagation now that the worker has data — don't
+            // wait for the next Cesium tick.
+            this.requestPropagation(Cesium.JulianDate.toDate(this.viewer.clock.currentTime).getTime());
+          }
+        },
+      });
     } catch (err) {
       store.setCatalogStatus('error', err instanceof Error ? err.message : String(err));
       throw err;

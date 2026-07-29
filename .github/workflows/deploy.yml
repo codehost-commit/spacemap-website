@@ -103,38 +103,30 @@ jobs:
           NODE
 
       - name: Fetch TLE snapshot for bundling
-        # CelesTrak now returns 403 to browser-origin fetches, so we grab the
-        # catalog server-side here and ship it as a static asset. Multiple
-        # groups are merged so users see LEO + GEO + weather birds out of the
-        # box. A polite User-Agent identifies this build to CelesTrak per
-        # their usage policy.
+        # Build a chunked public catalog from CelesTrak GP JSON + SATCAT
+        # metadata. The tracker opens on the startup chunk first, then streams
+        # the wider public catalog in the background.
+        env:
+          UA: 'SpaceMap/1.0 (+https://github.com/${{ github.repository }})'
+        run: |
+          node frontend/scripts/build-public-catalog.mjs frontend/dist/data
+
+      - name: Fetch legacy TLE fallback
+        # Keep a compact legacy TLE bundle around as a fallback path for local
+        # dev / edge cases where the chunk manifest is unavailable.
         env:
           UA: 'SpaceMap/1.0 (+https://github.com/${{ github.repository }})'
         run: |
           mkdir -p frontend/dist/data
           set +e
-          FAIL=0
           fetch_group() {
             local group="$1"
             local out="$2"
-            echo "Fetching group=$group"
             curl -fsSL -A "$UA" \
               "https://celestrak.org/NORAD/elements/gp.php?GROUP=${group}&FORMAT=tle" \
               >> "$out"
-            local rc=$?
-            if [ $rc -ne 0 ]; then
-              echo "  → group $group failed (rc=$rc)"
-              FAIL=$((FAIL+1))
-            fi
           }
           fetch_group active frontend/dist/data/tles.txt
-          # Best-effort auxiliary groups: don't fail the build if these 429/timeout.
-          fetch_group visual   frontend/dist/data/tles.txt || true
-          fetch_group weather  frontend/dist/data/tles.txt || true
-          fetch_group stations frontend/dist/data/tles.txt || true
-          # Science group brings in Hubble, JWST, and other named spacecraft
-          # so their 3-D models actually correspond to selectable satellites.
-          fetch_group science  frontend/dist/data/tles.txt || true
           if [ ! -s frontend/dist/data/tles.txt ]; then
             echo "::error::TLE fetch failed — no data bundled."
             exit 1

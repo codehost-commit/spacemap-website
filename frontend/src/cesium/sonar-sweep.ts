@@ -1,6 +1,7 @@
 import * as Cesium from 'cesium';
 import * as satellite from 'satellite.js';
 import type { Tle } from '@spacemap/shared';
+import { catalogObjectToSatRec } from '../simulation/catalog-satrec.js';
 
 /**
  * "Radar sweep" pulse that fires along the selected satellite's orbit every
@@ -41,23 +42,19 @@ export class SonarSweep {
       this.satrec = null;
       return;
     }
-    try {
-      const sr = satellite.twoline2satrec(tle.line1, tle.line2);
-      if (sr.error) {
-        this.satrec = null;
-        return;
-      }
-      this.satrec = sr;
-      const meanMotionRevPerDay = (sr.no * 60 * 24) / (2 * Math.PI);
-      if (meanMotionRevPerDay > 0) {
-        this.periodMs = (1440 / meanMotionRevPerDay) * 60_000;
-      } else {
-        this.periodMs = 90 * 60_000;
-      }
-      this.cyclePhaseMs = 0; // start a fresh cycle on selection change
-    } catch {
+    const sr = catalogObjectToSatRec(tle);
+    if (!sr) {
       this.satrec = null;
+      return;
     }
+    this.satrec = sr;
+    const meanMotionRevPerDay = (sr.no * 60 * 24) / (2 * Math.PI);
+    if (meanMotionRevPerDay > 0) {
+      this.periodMs = (1440 / meanMotionRevPerDay) * 60_000;
+    } else {
+      this.periodMs = 90 * 60_000;
+    }
+    this.cyclePhaseMs = 0; // start a fresh cycle on selection change
   }
 
   destroy(): void {

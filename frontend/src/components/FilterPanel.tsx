@@ -1,4 +1,12 @@
-import { ORBIT_CLASSES, ORBIT_CLASS_COLOR, type OrbitClass } from '@spacemap/shared';
+import {
+  CATALOG_OBJECT_TYPES,
+  CATALOG_OBJECT_TYPE_COLOR,
+  CATALOG_OBJECT_TYPE_LABEL,
+  ORBIT_CLASSES,
+  ORBIT_CLASS_COLOR,
+  type CatalogObjectType,
+  type OrbitClass,
+} from '@spacemap/shared';
 import { useStore, type TrailMode } from '../state/store.js';
 import { ImageryPicker } from './ImageryPicker.js';
 
@@ -22,6 +30,9 @@ export function FilterPanel() {
   const filter = useStore((s) => s.filter);
   const toggle = useStore((s) => s.toggleOrbitFilter);
   const setFilter = useStore((s) => s.setFilter);
+  const objectFilter = useStore((s) => s.objectFilter);
+  const toggleObjectFilter = useStore((s) => s.toggleObjectFilter);
+  const setObjectFilter = useStore((s) => s.setObjectFilter);
   const trailMode = useStore((s) => s.trailMode);
   const setTrailMode = useStore((s) => s.setTrailMode);
   const heatmapOn = useStore((s) => s.heatmapOn);
@@ -40,6 +51,52 @@ export function FilterPanel() {
   return (
     <aside className="spacemap-filter pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <ImageryPicker />
+      <SectionHeader
+        label="Object type"
+        action={
+          <button
+            onClick={() =>
+              setObjectFilter(
+                objectFilter.size === CATALOG_OBJECT_TYPES.length
+                  ? ['payload', 'rocket-body', 'unknown']
+                  : CATALOG_OBJECT_TYPES,
+              )
+            }
+            className="text-space-dim hover:text-space-text"
+          >
+            {objectFilter.size === CATALOG_OBJECT_TYPES.length ? 'Default' : 'All'}
+          </button>
+        }
+      />
+      <div className="mb-4 space-y-1">
+        {CATALOG_OBJECT_TYPES.map((kind) => {
+          const active = objectFilter.has(kind);
+          return (
+            <label
+              key={kind}
+              className={`flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5 ${
+                active ? 'text-space-text' : 'text-space-dim line-through'
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={active}
+                onChange={() => toggleObjectFilter(kind)}
+                className="h-3 w-3 accent-space-accent"
+              />
+              <span
+                className="h-2 w-2 rounded-full"
+                style={{
+                  background: CATALOG_OBJECT_TYPE_COLOR[kind],
+                  boxShadow: active ? `0 0 6px ${CATALOG_OBJECT_TYPE_COLOR[kind]}` : 'none',
+                }}
+              />
+              <span>{CATALOG_OBJECT_TYPE_LABEL[kind]}</span>
+            </label>
+          );
+        })}
+      </div>
+
       <SectionHeader
         label="Orbit class"
         action={

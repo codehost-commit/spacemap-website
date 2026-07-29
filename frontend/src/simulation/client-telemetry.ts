@@ -40,7 +40,16 @@ export function computeTelemetry(noradId: number, at: Date): SatelliteTelemetry 
 
   const elements = extractElements(satrec, state);
   return {
-    meta: { noradId, name: tle.name },
+    meta: {
+      noradId,
+      name: tle.name,
+      intlDesignator: tle.intlDesignator,
+      country: tle.owner,
+      launchDate: tle.launchDate,
+      objectType: tle.objectType,
+      opsStatusCode: tle.opsStatusCode,
+      decayDate: tle.decayDate,
+    },
     state,
     elements,
     relativisticOffsetSec: relativisticOffset(state, at),

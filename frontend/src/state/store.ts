@@ -1,6 +1,11 @@
 import { create } from 'zustand';
-import type { ConjunctionResult, OrbitClass, PropagationSnapshot } from '@spacemap/shared';
-import { ORBIT_CLASSES } from '@spacemap/shared';
+import type {
+  CatalogObjectType,
+  ConjunctionResult,
+  OrbitClass,
+  PropagationSnapshot,
+} from '@spacemap/shared';
+import { CATALOG_OBJECT_TYPES, ORBIT_CLASSES } from '@spacemap/shared';
 
 export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type TrailMode = 'off' | 'selected' | 'visible';
@@ -9,6 +14,9 @@ export type CameraMode = 'orbit' | 'follow' | 'pov';
 export interface SatelliteIndexEntry {
   noradId: number;
   name: string;
+  objectType: CatalogObjectType;
+  orbitClass?: OrbitClass;
+  owner?: string;
 }
 
 export type OverlayId = 'iss' | 'sky' | 'saved' | 'leaderboard' | 'launches';
@@ -17,8 +25,11 @@ interface StoreState {
   catalogStatus: CatalogStatus;
   catalogError: string | null;
   catalogSize: number;
+  catalogTargetCount: number;
+  catalogHydrating: boolean;
   index: SatelliteIndexEntry[];
   indexByNorad: Map<number, string>;
+  objectTypeByNorad: Map<number, CatalogObjectType>;
 
   snapshot: PropagationSnapshot | null;
   snapshotTick: number;
@@ -34,6 +45,7 @@ interface StoreState {
 
   cameraMode: CameraMode;
   filter: Set<OrbitClass>;
+  objectFilter: Set<CatalogObjectType>;
   trailMode: TrailMode;
   heatmapOn: boolean;
   terminatorOn: boolean;
@@ -55,6 +67,8 @@ interface StoreState {
 
   setCatalogStatus: (s: CatalogStatus, err?: string | null) => void;
   setIndex: (index: SatelliteIndexEntry[]) => void;
+  appendIndex: (index: SatelliteIndexEntry[]) => void;
+  setCatalogProgress: (loaded: number, total: number, hydrating: boolean) => void;
   setSnapshot: (snap: PropagationSnapshot) => void;
   setImageryReady: (v: boolean) => void;
 
@@ -66,6 +80,8 @@ interface StoreState {
   setCameraMode: (m: CameraMode) => void;
   toggleOrbitFilter: (cls: OrbitClass) => void;
   setFilter: (classes: Iterable<OrbitClass>) => void;
+  toggleObjectFilter: (kind: CatalogObjectType) => void;
+  setObjectFilter: (kinds: Iterable<CatalogObjectType>) => void;
   setTrailMode: (mode: TrailMode) => void;
   setHeatmap: (v: boolean) => void;
   setTerminator: (v: boolean) => void;
@@ -86,13 +102,19 @@ interface StoreState {
 }
 
 const defaultFilter = new Set<OrbitClass>(ORBIT_CLASSES);
+const defaultObjectFilter = new Set<CatalogObjectType>(
+  CATALOG_OBJECT_TYPES.filter((kind) => kind !== 'debris'),
+);
 
 export const useStore = create<StoreState>((set) => ({
   catalogStatus: 'idle',
   catalogError: null,
   catalogSize: 0,
+  catalogTargetCount: 0,
+  catalogHydrating: false,
   index: [],
   indexByNorad: new Map(),
+  objectTypeByNorad: new Map(),
 
   snapshot: null,
   snapshotTick: 0,
@@ -107,6 +129,7 @@ export const useStore = create<StoreState>((set) => ({
 
   cameraMode: 'orbit',
   filter: new Set(defaultFilter),
+  objectFilter: new Set(defaultObjectFilter),
   trailMode: 'selected',
   heatmapOn: false,
   // Cartographic overlays default ON — they read as "professional map" and
@@ -134,7 +157,31 @@ export const useStore = create<StoreState>((set) => ({
       index,
       catalogSize: index.length,
       indexByNorad: new Map(index.map((e) => [e.noradId, e.name])),
+      objectTypeByNorad: new Map(index.map((e) => [e.noradId, e.objectType])),
     }),
+  appendIndex: (incoming) =>
+    set((s) => {
+      if (incoming.length === 0) return {};
+      const index = [...s.index];
+      const indexByNorad = new Map(s.indexByNorad);
+      const objectTypeByNorad = new Map(s.objectTypeByNorad);
+      const seen = new Set(index.map((entry) => entry.noradId));
+      for (const entry of incoming) {
+        if (seen.has(entry.noradId)) continue;
+        seen.add(entry.noradId);
+        index.push(entry);
+        indexByNorad.set(entry.noradId, entry.name);
+        objectTypeByNorad.set(entry.noradId, entry.objectType);
+      }
+      return {
+        index,
+        catalogSize: index.length,
+        indexByNorad,
+        objectTypeByNorad,
+      };
+    }),
+  setCatalogProgress: (catalogSize, catalogTargetCount, catalogHydrating) =>
+    set({ catalogSize, catalogTargetCount, catalogHydrating }),
   setSnapshot: (snap) =>
     set((s) => ({
       snapshot: snap,
@@ -168,6 +215,14 @@ export const useStore = create<StoreState>((set) => ({
       return { filter: next };
     }),
   setFilter: (classes) => set({ filter: new Set(classes) }),
+  toggleObjectFilter: (kind) =>
+    set((s) => {
+      const next = new Set(s.objectFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return { objectFilter: next };
+    }),
+  setObjectFilter: (kinds) => set({ objectFilter: new Set(kinds) }),
   setTrailMode: (trailMode) => set({ trailMode }),
   setHeatmap: (heatmapOn) => set({ heatmapOn }),
   setTerminator: (terminatorOn) => set({ terminatorOn }),

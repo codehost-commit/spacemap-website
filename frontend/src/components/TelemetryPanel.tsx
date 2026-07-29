@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CATALOG_OBJECT_TYPE_LABEL } from '@spacemap/shared';
 import type { SatelliteTelemetry } from '@spacemap/shared';
 import { useStore, type CameraMode } from '../state/store.js';
 import { findInSnapshot } from '../state/snapshot-util.js';
@@ -21,6 +22,7 @@ export function TelemetryPanel() {
   const savedIds = useStore((s) => s.savedIds);
   const toggleSaved = useStore((s) => s.toggleSaved);
   const simTimeMs = useStore((s) => s.simTimeMs);
+  const objectType = useStore((s) => (selected != null ? s.objectTypeByNorad.get(selected) : undefined));
   // Suppress the panel while overlays own the right edge.
   const skyOpen = useStore((s) => s.openOverlays.has('sky'));
   const [telemetry, setTelemetry] = useState<SatelliteTelemetry | null>(null);
@@ -70,11 +72,10 @@ export function TelemetryPanel() {
           <div className="truncate font-mono text-sm font-semibold text-space-text">
             {name ?? telemetry?.meta.name ?? 'Loading…'}
           </div>
-          {live && (
-            <div className="mt-0.5 text-[10px] uppercase tracking-wider text-space-accent">
-              {live.orbitClass}
-            </div>
-          )}
+          <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-wider">
+            {live && <span className="text-space-accent">{live.orbitClass}</span>}
+            {objectType && <span className="text-space-dim">{CATALOG_OBJECT_TYPE_LABEL[objectType]}</span>}
+          </div>
         </div>
         <button
           onClick={() => select(null)}
@@ -119,6 +120,11 @@ export function TelemetryPanel() {
               <Field label="Perigee" value={fmt(telemetry.elements.perigeeKm, 1, ' km')} />
               <Field label="RAAN" value={fmt(telemetry.elements.raanDeg, 2, '°')} />
               <Field label="Arg. perigee" value={fmt(telemetry.elements.argPerigeeDeg, 2, '°')} />
+              <Field
+                label="Object type"
+                value={CATALOG_OBJECT_TYPE_LABEL[telemetry.meta.objectType ?? 'unknown']}
+              />
+              <Field label="Owner" value={telemetry.meta.country ?? '—'} />
               <Field label="Sunlit" value={telemetry.sunlit ? 'Yes' : 'In shadow'} />
               <Field
                 label="Δt (rel.)"

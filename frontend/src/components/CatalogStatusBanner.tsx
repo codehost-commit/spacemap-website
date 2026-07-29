@@ -17,6 +17,8 @@ export function CatalogStatusBanner() {
   const imageryReady = useStore((s) => s.imageryReady);
   const firstSnapshot = useStore((s) => s.firstSnapshotReceived);
   const catalogSize = useStore((s) => s.catalogSize);
+  const catalogTargetCount = useStore((s) => s.catalogTargetCount);
+  const catalogHydrating = useStore((s) => s.catalogHydrating);
   const [displayedStepCount, setDisplayedStepCount] = useState(0);
   const [allowDismiss, setAllowDismiss] = useState(false);
 
@@ -54,9 +56,14 @@ export function CatalogStatusBanner() {
 
   const steps: Array<{ label: string; done: boolean; note?: string }> = [
     {
-      label: 'Loading orbital catalog',
+      label: 'Loading startup catalog',
       done: displayedStepCount >= 1,
-      note: catalogReady ? `${catalogSize.toLocaleString()} objects` : undefined,
+      note:
+        catalogReady && catalogTargetCount > 0
+          ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()}`
+          : catalogReady
+            ? `${catalogSize.toLocaleString()} objects`
+            : undefined,
     },
     {
       label: 'Rendering Earth imagery',
@@ -116,6 +123,13 @@ export function CatalogStatusBanner() {
                 </li>
               ))}
             </ul>
+            {catalogHydrating && (
+              <div className="mt-4 rounded-lg border border-space-accent/20 bg-space-accent/8 px-3 py-2 text-[11px] text-space-dim">
+                The tracker opens on the startup set first, then streams in the wider public
+                catalog in the background so search, risk, and telemetry keep expanding without a
+                cold start.
+              </div>
+            )}
           </>
         )}
 

@@ -1,5 +1,6 @@
 import * as satellite from 'satellite.js';
 import type { Tle } from '@spacemap/shared';
+import { catalogObjectToSatRec } from './catalog-satrec.js';
 
 /**
  * Module-level cache of TLEs + parsed SGP4 records, kept OUT of the React
@@ -10,17 +11,16 @@ import type { Tle } from '@spacemap/shared';
 const tles = new Map<number, Tle>();
 const satrecs = new Map<number, satellite.SatRec>();
 
-export function setLocalCatalog(items: Tle[]): void {
-  tles.clear();
-  satrecs.clear();
+export function setLocalCatalog(items: Tle[], mode: 'replace' | 'append' = 'replace'): void {
+  if (mode === 'replace') {
+    tles.clear();
+    satrecs.clear();
+  }
   for (const t of items) {
+    if (tles.has(t.noradId)) continue;
     tles.set(t.noradId, t);
-    try {
-      const sr = satellite.twoline2satrec(t.line1, t.line2);
-      if (!sr.error) satrecs.set(t.noradId, sr);
-    } catch {
-      /* skip unparseable TLE — the worker skips the same one */
-    }
+    const sr = catalogObjectToSatRec(t);
+    if (sr) satrecs.set(t.noradId, sr);
   }
 }
 
