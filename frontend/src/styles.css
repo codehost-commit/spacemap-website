@@ -167,6 +167,11 @@ html {
   max-height: calc(100vh - 6rem - env(safe-area-inset-bottom, 0px) - clamp(6.75rem, 14vh, 8.5rem));
 }
 
+.spacemap-telemetry {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(6.75rem, 14vh, 8.5rem));
+  max-height: calc(100vh - 8.75rem - env(safe-area-inset-bottom, 0px) - clamp(6.75rem, 14vh, 8.5rem));
+}
+
 /* Mobile-responsive tweaks. Panels shrink and reflow below `md` (768 px). */
 @media (max-width: 768px) {
   .spacemap-right-rail {
@@ -200,7 +205,8 @@ html {
     width: auto !important;
     max-width: none !important;
     top: 8.5rem !important;
-    max-height: calc(100vh - 9rem) !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8.75rem) !important;
+    max-height: calc(100vh - 8.5rem - env(safe-area-inset-bottom, 0px) - 8.75rem) !important;
   }
   /* Overlay panels (ISS, Sky, Leaderboard) shrink. */
   .spacemap-overlay {

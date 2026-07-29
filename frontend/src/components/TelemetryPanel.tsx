@@ -50,7 +50,7 @@ export function TelemetryPanel() {
   }
 
   return (
-    <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-[8.75rem] z-10 flex max-h-[calc(100vh-9.75rem)] w-[19.25rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-space-border bg-space-panel/92 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+    <aside className="spacemap-telemetry pointer-events-auto absolute left-4 top-[8.75rem] z-10 flex w-[19.25rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-space-border bg-space-panel/92 shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
       <header className="flex items-start justify-between gap-2 border-b border-space-border px-4 py-3">
         <div className="min-w-0">
           <div className="flex items-center gap-2">
