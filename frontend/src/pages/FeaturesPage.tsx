@@ -18,6 +18,7 @@ import {
   getLaunchTone,
   useUpcomingLaunches,
 } from '../hooks/useUpcomingLaunches.js';
+import { SystemPill } from '../components/SystemPill.js';
 
 const BASE_HERO_METRICS = [
   { value: 'Live', label: 'ISS video embedded in-page', valueClass: 'text-white' },
@@ -108,16 +109,16 @@ export function FeaturesPage() {
               conjunction risk, nearby-object leaderboards, launch countdowns, and alerts that feel
               connected to the tracker instead of bolted on beside it.
             </p>
-            <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium text-space-dim">
-              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:text-white">
+            <div className="mt-8 flex flex-wrap gap-3">
+              <SystemPill tone="neutral" icon={Layers}>
                 Same data lanes as the tracker
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:text-white">
+              </SystemPill>
+              <SystemPill tone="accent" icon={Activity}>
                 Live collision probability
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:text-white">
+              </SystemPill>
+              <SystemPill tone="neutral" icon={MapPin}>
                 Location-aware and launch-aware
-              </span>
+              </SystemPill>
             </div>
           </div>
 

@@ -1,22 +1,24 @@
 import { Link } from 'react-router-dom';
 import {
-  Globe,
+  Activity,
+  Camera,
+  Clock,
   Cpu,
-  ShieldCheck,
+  Crosshair,
+  Globe,
+  Eye,
+  Layers,
+  Orbit,
+  Radio,
+  Rocket,
   Satellite,
   Search,
-  Activity,
-  Clock,
-  Eye,
+  ShieldCheck,
   AlertTriangle,
-  Radio,
-  Orbit,
-  Crosshair,
   BarChart3,
-  Layers,
-  Rocket,
 } from 'lucide-react';
 import emblemSrc from '../assets/brand-emblem.png';
+import { SystemPill } from '../components/SystemPill.js';
 
 const founderImg = (import.meta.env.BASE_URL || '/') + 'brand/founder.jpeg';
 
@@ -60,22 +62,75 @@ export function AboutPage() {
   return (
     <div className="relative pt-24">
       {/* Header */}
-      <section
-        className="mx-auto max-w-4xl px-6 py-16 text-center"
-        style={{ perspective: '1200px' }}
-      >
-        <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-4">
-          About SpaceMap
-        </p>
-        <h1
-          className="text-4xl font-bold leading-tight text-white md:text-6xl"
-          style={{ transform: 'translateZ(40px)' }}
-        >
-          Built so tracking orbit{' '}
-          <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
-            never requires a clearance.
-          </span>
-        </h1>
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)] lg:items-center">
+          <div>
+            <div className="flex flex-wrap gap-3">
+              <SystemPill tone="accent" icon={Globe}>
+                About SpaceMap
+              </SystemPill>
+              <SystemPill tone="live" icon={Radio} pulse>
+                Live orbital surface
+              </SystemPill>
+            </div>
+            <h1 className="mt-6 text-4xl font-bold leading-tight text-white md:text-6xl">
+              Built so tracking orbit{' '}
+              <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
+                never requires a clearance.
+              </span>
+            </h1>
+            <p className="mt-5 max-w-2xl text-base leading-relaxed text-space-dim md:text-lg">
+              SpaceMap turns raw orbital data into something readable, visual, and immediate:
+              real-time tracking, conjunction analysis, live video, local sky ranking, and launch
+              awareness, all inside one browser tab.
+            </p>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(8,15,25,0.96)_58%,rgba(77,150,232,0.15))] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur-xl">
+            <div className="absolute right-[-3rem] top-[-2rem] h-28 w-28 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
+            <div className="absolute bottom-[-3rem] left-[-2rem] h-32 w-32 rounded-full bg-[#ff6b6b]/8 blur-3xl" />
+
+            <div className="relative">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
+                    Open Signal
+                  </div>
+                  <div className="mt-3 text-2xl font-semibold text-white">What the product is built around</div>
+                </div>
+                <img src={emblemSrc} alt="SpaceMap" className="h-12 w-12" draggable={false} />
+              </div>
+
+              <div className="mt-7 grid gap-3 sm:grid-cols-2">
+                {[
+                  { icon: Activity, label: 'Collision watch' },
+                  { icon: Camera, label: 'ISS live feed' },
+                  { icon: Crosshair, label: 'Closest to you' },
+                  { icon: Rocket, label: 'Launch countdowns' },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-space-accent">
+                      <item.icon size={18} />
+                    </div>
+                    <div className="mt-4 text-sm font-semibold text-white">{item.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <SystemPill tone="neutral" icon={Cpu}>
+                  Client-side propagation
+                </SystemPill>
+                <SystemPill tone="neutral" icon={Layers}>
+                  Layered 3D globe
+                </SystemPill>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Founder */}
@@ -183,16 +238,17 @@ export function AboutPage() {
             </p>
             <div className="relative flex flex-wrap gap-3">
               {CAPABILITIES.map((cap, i) => (
-                <span
+                <SystemPill
                   key={cap.label}
-                  className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-space-dim transition-all duration-300 hover:bg-white/15 hover:border-space-accent/30 hover:text-white hover:scale-105"
+                  tone="neutral"
+                  icon={cap.icon}
+                  className="transition-all duration-300 hover:scale-105 hover:border-space-accent/30 hover:bg-white/15 hover:text-white"
                   style={{
                     transform: `translateZ(${5 + (i % 3) * 5}px)`,
                   }}
                 >
-                  <cap.icon size={14} className="text-space-accent" />
                   {cap.label}
-                </span>
+                </SystemPill>
               ))}
             </div>
           </div>

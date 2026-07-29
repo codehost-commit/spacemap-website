@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HeroGlobe } from '../components/HeroGlobe.js';
+import { SystemPill } from '../components/SystemPill.js';
 import {
   Activity,
   ArrowRight,
@@ -20,6 +21,8 @@ import {
   getLaunchTone,
   useUpcomingLaunches,
 } from '../hooks/useUpcomingLaunches.js';
+
+const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
 
 const FEATURE_SUPPORT = [
   {
@@ -126,6 +129,71 @@ export function HomePage() {
         </div>
       </section>
 
+      <section className="relative z-10 -mt-10 pb-10">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(8,15,25,0.96)_58%,rgba(77,150,232,0.16))] shadow-[0_26px_75px_rgba(0,0,0,0.32)] backdrop-blur-xl">
+            <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
+              <div className="relative p-7 md:p-8">
+                <div className="absolute right-[-3rem] top-[-2rem] h-28 w-28 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
+                <div className="relative">
+                  <div className="flex flex-wrap gap-3">
+                    <SystemPill tone="live" icon={Radio} pulse>
+                      ISS live
+                    </SystemPill>
+                    <SystemPill tone="accent" icon={Camera}>
+                      In tracker now
+                    </SystemPill>
+                  </div>
+                  <h2 className="mt-5 max-w-2xl text-2xl font-semibold leading-tight text-white md:text-3xl">
+                    Watch the ISS feed without leaving the SpaceMap surface.
+                  </h2>
+                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-space-dim md:text-base">
+                    One of the best proof points in the product is already live. The station feed
+                    is embedded directly in the tracker and stays connected to the rest of the
+                    orbital view instead of living on some separate page.
+                  </p>
+
+                  <div className="mt-6 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
+                        Feed
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-white">External HD camera</div>
+                    </div>
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
+                        Status
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-white">Live in the tracker</div>
+                    </div>
+                    <div className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
+                        Use
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-white">Orbit plus live video</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 lg:border-l lg:border-t-0">
+                <div className="aspect-video w-full bg-black">
+                  <iframe
+                    title="ISS live preview"
+                    src={ISS_LIVE_EMBED}
+                    className="h-full w-full"
+                    frameBorder={0}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                    referrerPolicy="strict-origin-when-cross-origin"
+                    allowFullScreen
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats bar */}
       <section className="relative z-10 border-y border-white/10 bg-white/5 backdrop-blur-sm">
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 md:grid-cols-4">
@@ -163,9 +231,9 @@ export function HomePage() {
               <div className="relative">
                 <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-                      Mission Surface
-                    </p>
+                    <SystemPill tone="accent" icon={Activity}>
+                      Mission surface
+                    </SystemPill>
                     <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight text-white md:text-3xl">
                       The strongest product moments are visible here before you ever open the full
                       feature stack.
@@ -180,9 +248,9 @@ export function HomePage() {
                     <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/10 bg-white/10 text-space-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
                       <Activity size={24} />
                     </div>
-                    <div className="flex h-16 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-center text-[10px] font-semibold uppercase leading-[1.45] tracking-[0.22em] text-space-dim shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
-                      <span>Live tracker preview</span>
-                    </div>
+                    <SystemPill tone="neutral" className="h-16 justify-center px-5 text-center leading-[1.45]">
+                      Live tracker preview
+                    </SystemPill>
                   </div>
                 </div>
 
