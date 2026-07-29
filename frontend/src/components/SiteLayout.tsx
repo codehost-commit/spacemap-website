@@ -10,16 +10,30 @@ const PAGE_TITLES: Record<string, string> = {
   '/about': 'About',
   '/features': 'Features',
   '/contact': 'Contact',
+  '/legal': 'Privacy & Terms',
 };
 
 export function SiteLayout() {
-  const { pathname } = useLocation();
+  const { pathname, hash } = useLocation();
   const isTracker = pathname === '/tracker';
 
   // Scroll to top on route change
   useEffect(() => {
-    window.scrollTo({ top: 0 });
-  }, [pathname]);
+    if (!hash) {
+      window.scrollTo({ top: 0 });
+      return;
+    }
+    const targetId = hash.slice(1);
+    const timeout = window.setTimeout(() => {
+      const el = document.getElementById(targetId);
+      if (el) {
+        el.scrollIntoView({ block: 'start' });
+      } else {
+        window.scrollTo({ top: 0 });
+      }
+    }, 60);
+    return () => window.clearTimeout(timeout);
+  }, [pathname, hash]);
 
   useEffect(() => {
     document.title = `SpaceMap | ${PAGE_TITLES[pathname] ?? 'Home'}`;

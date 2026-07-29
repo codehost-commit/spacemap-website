@@ -9,6 +9,10 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
       href={to}
       onClick={(e) => {
         e.preventDefault();
+        if (to.includes('#')) {
+          navigate(to);
+          return;
+        }
         window.scrollTo({ top: 0, behavior: 'smooth' });
         // Small delay so scroll starts before route change
         setTimeout(() => navigate(to), 50);
@@ -74,14 +78,14 @@ export function SiteFooter() {
             </h4>
             <ul className="space-y-3">
               <li>
-                <a href="#" className="text-sm text-space-dim hover:text-white transition-colors">
+                <FooterLink to="/legal#privacy">
                   Privacy
-                </a>
+                </FooterLink>
               </li>
               <li>
-                <a href="#" className="text-sm text-space-dim hover:text-white transition-colors">
+                <FooterLink to="/legal#terms">
                   Terms
-                </a>
+                </FooterLink>
               </li>
             </ul>
           </div>
