@@ -1,13 +1,20 @@
 // SpaceMap service worker — network-first for the app shell, cache-first for
 // heavy static assets (Cesium chunks, GLB models, bundled TLE snapshot).
 // Bumping the CACHE_VERSION invalidates all previous caches on next load.
-const CACHE_VERSION = 'spacemap-v2';
+const CACHE_VERSION = 'spacemap-v3';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const PRECACHE_URL_SUFFIXES = [
   '/models/iss.glb',
   '/models/hubble.glb',
   '/models/voyager.glb',
+  '/data/catalog-manifest.json',
+  '/data/catalog-core.json',
+  '/data/catalog-constellations.json',
+  '/data/catalog-navigation.json',
+  '/data/catalog-special.json',
+  '/data/catalog-payloads.json',
+  '/data/catalog-debris.json',
   '/data/tles.txt',
 ];
 
@@ -50,7 +57,9 @@ self.addEventListener('fetch', (event) => {
     url.pathname.endsWith('.glb') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.includes('/cesium/') ||
-    url.pathname.includes('/data/tles.txt');
+    url.pathname.includes('/data/tles.txt') ||
+    url.pathname.includes('/data/catalog-') ||
+    url.pathname.endsWith('/data/catalog-manifest.json');
 
   if (durable) {
     event.respondWith(

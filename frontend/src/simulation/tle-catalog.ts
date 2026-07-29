@@ -6,6 +6,11 @@ const IS_DEV = import.meta.env.DEV;
 const MANIFEST_URL = `${BASE_URL}data/catalog-manifest.json`;
 const BUNDLED_TLE_URL = `${BASE_URL}data/tles.txt`;
 const JSON_PROXY_PREFIX = 'https://corsproxy.io/?url=';
+const ACTIVE_TLE_FALLBACKS = [
+  BUNDLED_TLE_URL,
+  'https://spacemap.earth/data/tles.txt',
+  'https://codehost-commit.github.io/spacemap-website/data/tles.txt',
+];
 
 type ChunkMode = 'replace' | 'append';
 
@@ -245,8 +250,13 @@ async function fetchLiveChunk(definition: CatalogChunkDefinition): Promise<Tle[]
         if (!gpById.has(noradId)) gpById.set(noradId, record);
       }
     } catch {
-      const tleText = await fetchTextSource(
-        `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(group)}&FORMAT=tle`,
+      const tleText = await fetchTextSourceCandidates(
+        group === 'active'
+          ? [
+              `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(group)}&FORMAT=tle`,
+              ...ACTIVE_TLE_FALLBACKS,
+            ]
+          : [`https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(group)}&FORMAT=tle`],
       );
       for (const record of parseTleText(tleText)) {
         if (!tleById.has(record.noradId)) {
@@ -255,13 +265,17 @@ async function fetchLiveChunk(definition: CatalogChunkDefinition): Promise<Tle[]
       }
     }
 
-    const satcatRecords = await fetchJsonSource<SatcatRecord[]>(
-      `https://celestrak.org/satcat/records.php?GROUP=${encodeURIComponent(group)}&FORMAT=JSON`,
-    );
-    for (const record of satcatRecords ?? []) {
-      const noradId = Number(record.NORAD_CAT_ID);
-      if (!Number.isFinite(noradId)) continue;
-      if (!metaById.has(noradId)) metaById.set(noradId, record);
+    try {
+      const satcatRecords = await fetchJsonSource<SatcatRecord[]>(
+        `https://celestrak.org/satcat/records.php?GROUP=${encodeURIComponent(group)}&FORMAT=JSON`,
+      );
+      for (const record of satcatRecords ?? []) {
+        const noradId = Number(record.NORAD_CAT_ID);
+        if (!Number.isFinite(noradId)) continue;
+        if (!metaById.has(noradId)) metaById.set(noradId, record);
+      }
+    } catch {
+      // Metadata gaps should not prevent real orbital objects from loading.
     }
   }
 
@@ -292,14 +306,20 @@ async function fetchJsonSource<T>(url: string): Promise<T> {
 }
 
 async function fetchTextSource(url: string): Promise<string> {
+  return fetchTextSourceCandidates([url]);
+}
+
+async function fetchTextSourceCandidates(urls: string[]): Promise<string> {
   let firstError: unknown = null;
-  for (const candidate of [url, `${JSON_PROXY_PREFIX}${encodeURIComponent(url)}`]) {
-    try {
-      const res = await fetch(candidate, { cache: 'no-cache' });
-      if (!res.ok) throw new Error(`status ${res.status}`);
-      return await res.text();
-    } catch (err) {
-      if (firstError == null) firstError = err;
+  for (const url of urls) {
+    for (const candidate of [url, `${JSON_PROXY_PREFIX}${encodeURIComponent(url)}`]) {
+      try {
+        const res = await fetch(candidate, { cache: 'no-cache' });
+        if (!res.ok) throw new Error(`status ${res.status}`);
+        return await res.text();
+      } catch (err) {
+        if (firstError == null) firstError = err;
+      }
     }
   }
   throw firstError instanceof Error ? firstError : new Error(String(firstError));

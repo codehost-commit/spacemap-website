@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build && node scripts/relocate-cesium.mjs dist",
+    "build": "tsc --noEmit && vite build && node scripts/relocate-cesium.mjs dist && node scripts/write-route-shims.mjs dist",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit"
   },

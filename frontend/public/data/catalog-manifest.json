@@ -1,0 +1,42 @@
+{
+  "fetchedAt": 1785365955935,
+  "totalCount": 19545,
+  "chunks": [
+    {
+      "id": "core",
+      "label": "Startup catalog",
+      "count": 1278,
+      "path": "data/catalog-core.json"
+    },
+    {
+      "id": "constellations",
+      "label": "Live constellations",
+      "count": 1549,
+      "path": "data/catalog-constellations.json"
+    },
+    {
+      "id": "navigation",
+      "label": "Navigation and comms",
+      "count": 808,
+      "path": "data/catalog-navigation.json"
+    },
+    {
+      "id": "special",
+      "label": "Special access catalog",
+      "count": 623,
+      "path": "data/catalog-special.json"
+    },
+    {
+      "id": "payloads",
+      "label": "General on-orbit catalog",
+      "count": 12657,
+      "path": "data/catalog-payloads.json"
+    },
+    {
+      "id": "debris",
+      "label": "Tracked debris",
+      "count": 2630,
+      "path": "data/catalog-debris.json"
+    }
+  ]
+}

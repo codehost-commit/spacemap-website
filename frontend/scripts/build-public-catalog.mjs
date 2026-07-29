@@ -79,6 +79,13 @@ const CHUNKS = [
   },
 ];
 
+const TLE_FALLBACKS = {
+  active: [
+    'https://spacemap.earth/data/tles.txt',
+    'https://codehost-commit.github.io/spacemap-website/data/tles.txt',
+  ],
+};
+
 function normalizeCatalogObjectType(raw = '') {
   const value = String(raw).trim().toUpperCase();
   if (value === 'PAY' || value === 'PAYLOAD') return 'payload';
@@ -98,6 +105,18 @@ async function fetchJson(url, headers) {
 
 async function fetchText(url, headers) {
   return fetchWithCurl(url, headers);
+}
+
+async function tryFetchText(urls, headers) {
+  let lastError;
+  for (const url of urls) {
+    try {
+      return await fetchText(url, headers);
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  throw lastError;
 }
 
 function parseTleText(text) {
@@ -249,8 +268,11 @@ async function main() {
           console.warn(
             `[catalog] ${chunk.id}/${group} GP JSON failed: ${gpError instanceof Error ? gpError.message : gpError}`,
           );
-          const tleText = await fetchText(
-            `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(group)}&FORMAT=tle`,
+          const tleText = await tryFetchText(
+            [
+              `https://celestrak.org/NORAD/elements/gp.php?GROUP=${encodeURIComponent(group)}&FORMAT=tle`,
+              ...(TLE_FALLBACKS[group] ?? []),
+            ],
             headers,
           );
           for (const record of parseTleText(tleText)) {
@@ -258,14 +280,20 @@ async function main() {
           }
         }
 
-        const metaRecords = await fetchJson(
-          `https://celestrak.org/satcat/records.php?GROUP=${encodeURIComponent(group)}&FORMAT=JSON`,
-          headers,
-        );
-        for (const record of metaRecords ?? []) {
-          const id = Number(record.NORAD_CAT_ID);
-          if (!Number.isFinite(id) || metaById.has(id)) continue;
-          metaById.set(id, record);
+        try {
+          const metaRecords = await fetchJson(
+            `https://celestrak.org/satcat/records.php?GROUP=${encodeURIComponent(group)}&FORMAT=JSON`,
+            headers,
+          );
+          for (const record of metaRecords ?? []) {
+            const id = Number(record.NORAD_CAT_ID);
+            if (!Number.isFinite(id) || metaById.has(id)) continue;
+            metaById.set(id, record);
+          }
+        } catch (metaError) {
+          console.warn(
+            `[catalog] ${chunk.id}/${group} metadata failed: ${metaError instanceof Error ? metaError.message : metaError}`,
+          );
         }
         okGroups++;
       } catch (err) {
