@@ -162,13 +162,19 @@ html {
   max-height: calc(100vh - 6rem);
 }
 
+.spacemap-right-rail {
+  bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(6.75rem, 14vh, 8.5rem));
+  max-height: calc(100vh - 6rem - env(safe-area-inset-bottom, 0px) - clamp(6.75rem, 14vh, 8.5rem));
+}
+
 /* Mobile-responsive tweaks. Panels shrink and reflow below `md` (768 px). */
 @media (max-width: 768px) {
   .spacemap-right-rail {
     left: 0.5rem !important;
     right: auto !important;
     top: 3.75rem !important;
-    bottom: 0.5rem !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 8.75rem) !important;
+    max-height: calc(100vh - 3.75rem - env(safe-area-inset-bottom, 0px) - 8.75rem) !important;
     width: 12rem !important;
     gap: 0.75rem !important;
   }
