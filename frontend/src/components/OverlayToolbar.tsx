@@ -22,7 +22,7 @@ export function OverlayToolbar() {
   };
 
   return (
-    <div className="spacemap-toolbar pointer-events-auto grid w-full grid-cols-2 gap-2.5">
+    <div className="spacemap-toolbar pointer-events-auto shrink-0 grid w-full grid-cols-2 gap-2.5">
       <ToolbarButton
         icon="⚠"
         label="Risks"

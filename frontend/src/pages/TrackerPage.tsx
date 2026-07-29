@@ -28,7 +28,7 @@ export function TrackerPage() {
       <GlobeCanvas />
       <HeaderHUD />
       <SearchBox />
-      <div className="spacemap-right-rail pointer-events-none absolute right-4 top-24 z-20 flex w-[19.25rem] flex-col gap-4">
+      <div className="spacemap-right-rail pointer-events-none absolute right-4 top-24 bottom-4 z-20 flex w-[19.25rem] max-h-[calc(100vh-7rem)] flex-col gap-4">
         <FilterPanel />
         <OverlayToolbar />
       </div>
