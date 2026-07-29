@@ -31,6 +31,12 @@ interface Record {
   satrec: satellite.SatRec;
 }
 
+interface SatVector {
+  x: number;
+  y: number;
+  z: number;
+}
+
 const records: Record[] = [];
 const byId = new Map<number, satellite.SatRec>();
 
@@ -87,7 +93,15 @@ function propagate(timeMs: number): void {
   for (let i = 0; i < cap; i++) {
     const rec = records[i];
     const pv = satellite.propagate(rec.satrec, date);
-    if (!pv || typeof pv.position === 'boolean' || typeof pv.velocity === 'boolean') continue;
+    if (
+      !pv ||
+      typeof pv.position === 'boolean' ||
+      typeof pv.velocity === 'boolean' ||
+      !isSatVector(pv.position) ||
+      !isSatVector(pv.velocity)
+    ) {
+      continue;
+    }
     const p = pv.position;
     const v = pv.velocity;
     const geo = satellite.eciToGeodetic(p, gmst);
@@ -153,6 +167,16 @@ function propagate(timeMs: number): void {
     payload.speed,
     payload.orbitClass,
   ]);
+}
+
+function isSatVector(value: unknown): value is SatVector {
+  if (!value || typeof value !== 'object') return false;
+  const vector = value as Partial<SatVector>;
+  return (
+    Number.isFinite(vector.x) &&
+    Number.isFinite(vector.y) &&
+    Number.isFinite(vector.z)
+  );
 }
 
 function separationKm(

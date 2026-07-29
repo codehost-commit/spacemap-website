@@ -1,7 +1,7 @@
 // SpaceMap service worker — network-first for the app shell, cache-first for
 // heavy static assets (Cesium chunks, GLB models, bundled TLE snapshot).
 // Bumping the CACHE_VERSION invalidates all previous caches on next load.
-const CACHE_VERSION = 'spacemap-v1';
+const CACHE_VERSION = 'spacemap-v2';
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 
 const PRECACHE_URL_SUFFIXES = [
@@ -48,8 +48,6 @@ self.addEventListener('fetch', (event) => {
   // Cache-first for durable assets.
   const durable =
     url.pathname.endsWith('.glb') ||
-    url.pathname.endsWith('.js') ||
-    url.pathname.endsWith('.css') ||
     url.pathname.endsWith('.woff2') ||
     url.pathname.includes('/cesium/') ||
     url.pathname.includes('/data/tles.txt');
