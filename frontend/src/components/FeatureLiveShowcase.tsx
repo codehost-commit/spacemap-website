@@ -15,20 +15,20 @@ import { setLocalCatalog } from '../simulation/catalog-store.js';
 import { computeTelemetry } from '../simulation/client-telemetry.js';
 import { ensureNotificationPermission } from '../simulation/notifications.js';
 import { closestPairs, findInSnapshot } from '../state/snapshot-util.js';
+import {
+  formatLaunchCountdown,
+  getLaunchTone,
+  type UpcomingLaunch,
+} from '../hooks/useUpcomingLaunches.js';
 
 const ISS_NORAD = 25544;
 const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
-const LL2_EXPEDITION_URL =
-  'https://ll.thespacedevs.com/2.2.0/expedition/?ongoing=true&format=json&limit=3';
-const LL2_LAUNCHES_URL =
-  'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true';
-const LAUNCH_REFRESH_MS = 5 * 60 * 1000;
+const LL2_ISS_STATION_URL =
+  'https://ll.thespacedevs.com/2.2.0/spacestation/4/?format=json';
 const CREW_REFRESH_MS = 10 * 60 * 1000;
 const SNAPSHOT_REFRESH_MS = 5000;
 const UI_TICK_MS = 100;
 const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
-
-type RiskLevel = 'danger' | 'caution' | 'watch';
 
 interface OrbitalFeed {
   snapshot: PropagationSnapshot | null;
@@ -81,7 +81,7 @@ interface LL2Astronaut {
   nationality?: {
     alpha_2_code?: string;
   };
-  agency?: { abbrev?: string };
+  agency?: { abbrev?: string; name?: string };
 }
 
 interface LL2Crew {
@@ -89,43 +89,24 @@ interface LL2Crew {
   astronaut?: LL2Astronaut;
 }
 
-interface LL2Expedition {
+interface LL2ExpeditionSummary {
   name?: string;
-  spacestation?: { name?: string };
-  crew?: LL2Crew[];
-}
-
-interface LaunchVideoUrl {
   url?: string;
 }
 
-interface LaunchMission {
+interface LL2SpaceStation {
+  active_expeditions?: LL2ExpeditionSummary[];
+}
+
+interface LL2Expedition {
   name?: string;
-  description?: string;
+  crew?: LL2Crew[];
 }
 
-interface LaunchPad {
-  name?: string;
-  location?: { name?: string };
-}
-
-interface LaunchStatus {
-  name?: string;
-}
-
-interface LaunchRocket {
-  configuration?: { full_name?: string; name?: string };
-}
-
-interface UpcomingLaunch {
-  id: string;
-  name: string;
-  net: string;
-  status?: LaunchStatus;
-  rocket?: LaunchRocket;
-  mission?: LaunchMission;
-  pad?: LaunchPad;
-  vidURLs?: LaunchVideoUrl[];
+interface LaunchFeed {
+  launches: UpcomingLaunch[] | null;
+  error: string | null;
+  loading: boolean;
 }
 
 const SHELL_CARD =
@@ -134,7 +115,7 @@ const SHELL_CARD =
 const PANEL_CARD =
   'rounded-[1.5rem] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(8,15,25,0.92))] backdrop-blur-sm';
 
-export function FeatureLiveShowcase() {
+export function FeatureLiveShowcase({ launchFeed }: { launchFeed: LaunchFeed }) {
   const feed = useFeatureOrbitalFeed();
 
   return (
@@ -142,7 +123,7 @@ export function FeatureLiveShowcase() {
       <CollisionWatchCard feed={feed} />
       <IssFeatureCard feed={feed} />
       <ProximityFeatureCard feed={feed} />
-      <LaunchFeatureCard catalogSize={feed.catalogSize} />
+      <LaunchFeatureCard catalogSize={feed.catalogSize} launchFeed={launchFeed} />
     </div>
   );
 }
@@ -219,7 +200,7 @@ function CollisionWatchCard({ feed }: { feed: OrbitalFeed }) {
     alertMemoryRef.current.set(key, now);
     try {
       new Notification('SpaceMap collision watch', {
-        body: `${hottest.aName} vs ${hottest.bName} · Pc ${formatProbabilityPercent(hottest.probabilityOfCollision)} · miss ${hottest.missKm.toFixed(3)} km`,
+        body: `${hottest.aName} vs ${hottest.bName} · Collision ${formatProbabilityPercent(hottest.probabilityOfCollision)} · miss ${hottest.missKm.toFixed(3)} km`,
         tag: `feature-conjunction-${key}`,
         icon: '/brand/favicon-3.png',
       });
@@ -239,23 +220,23 @@ function CollisionWatchCard({ feed }: { feed: OrbitalFeed }) {
       <div className="relative">
         <CardHeader
           icon={Activity}
-          eyebrow="Collision watch"
-          title="Highest Pc pairs pulled from the live conjunction engine"
-          detail={feed.loading ? 'Booting catalog' : '0.1 s board tick'}
+          eyebrow="Collision probability"
+          title="Most likely close approaches, ranked live"
+          detail={feed.loading ? 'Booting catalog' : '0.1 s display tick'}
         />
 
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-space-dim">
-          This board ranks the current most-likely encounters by actual probability of collision,
-          not placeholder severity art. Percentages are expanded out of scientific notation so the
-          risk reads instantly, and the countdown keeps ticking live until TCA.
+          This board ranks current close approaches by probability of collision, then keeps the miss
+          distance and time-to-closest-approach beside it. The percentage stays readable instead of
+          collapsing into scientific notation.
         </p>
 
-        <div className={`mt-6 overflow-hidden ${PANEL_CARD}`}>
-          <div className="grid grid-cols-[1.4fr_auto_auto_auto] gap-3 border-b border-white/10 px-4 py-3 text-[10px] uppercase tracking-[0.28em] text-space-dim">
+        <div className={`mt-6 overflow-x-auto ${PANEL_CARD}`}>
+          <div className="grid grid-cols-[minmax(12rem,1fr)_7.5rem_6.5rem_6.25rem] gap-3 border-b border-white/10 px-4 py-3 font-mono text-[10px] uppercase tracking-[0.14em] text-space-dim">
             <span>Pair</span>
-            <span>Pc</span>
-            <span>Miss</span>
-            <span>TCA</span>
+            <span className="text-right">Collision %</span>
+            <span className="text-right">Miss</span>
+            <span className="text-right">TCA</span>
           </div>
 
           {feed.error && (
@@ -276,7 +257,7 @@ function CollisionWatchCard({ feed }: { feed: OrbitalFeed }) {
             return (
               <div
                 key={`${row.aId}-${row.bId}`}
-                className="grid grid-cols-[1.4fr_auto_auto_auto] items-center gap-3 border-b border-white/10 px-4 py-3 last:border-b-0"
+                className="grid grid-cols-[minmax(12rem,1fr)_7.5rem_6.5rem_6.25rem] items-center gap-3 border-b border-white/10 px-4 py-3 last:border-b-0"
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
@@ -289,11 +270,11 @@ function CollisionWatchCard({ feed }: { feed: OrbitalFeed }) {
                     </div>
                   </div>
                 </div>
-                <div className={`text-right text-sm font-semibold ${tone.textClass}`}>
+                <div className={`text-right font-mono text-xs font-semibold ${tone.textClass}`}>
                   {formatProbabilityPercent(row.probabilityOfCollision)}
                 </div>
-                <div className="text-right text-xs text-space-dim">{row.missKm.toFixed(3)} km</div>
-                <div className="text-right text-xs text-space-dim">
+                <div className="text-right font-mono text-xs text-space-dim">{row.missKm.toFixed(3)} km</div>
+                <div className="text-right font-mono text-xs text-space-dim">
                   {formatTimeToEvent(row.tcaMs - clockMs)}
                 </div>
               </div>
@@ -314,8 +295,7 @@ function CollisionWatchCard({ feed }: { feed: OrbitalFeed }) {
             {alertsArmed ? 'Alerts armed' : 'Arm alerts'}
           </button>
           <span className="text-sm text-space-dim">
-            Same browser alert lane used for close conjunctions when something crosses the danger
-            threshold.
+            Same browser alert lane used for close conjunctions when the probability climbs.
           </span>
         </div>
       </div>
@@ -334,20 +314,22 @@ function IssFeatureCard({ feed }: { feed: OrbitalFeed }) {
     let cancelled = false;
     const loadCrew = async () => {
       try {
-        const res = await fetch(LL2_EXPEDITION_URL);
-        if (!res.ok) throw new Error(`LL2 ${res.status}`);
-        const body = (await res.json()) as { results?: LL2Expedition[] };
-        const iss =
-          body.results?.find((item) =>
-            (item.spacestation?.name ?? '').toLowerCase().includes('international'),
-          ) ?? body.results?.[0];
+        const stationRes = await fetch(LL2_ISS_STATION_URL);
+        if (!stationRes.ok) throw new Error(`LL2 ${stationRes.status}`);
+        const station = (await stationRes.json()) as LL2SpaceStation;
+        const activeExpedition = station.active_expeditions?.[0];
+        if (!activeExpedition?.url) throw new Error('no active ISS expedition');
+
+        const expeditionRes = await fetch(activeExpedition.url);
+        if (!expeditionRes.ok) throw new Error(`LL2 ${expeditionRes.status}`);
+        const iss = (await expeditionRes.json()) as LL2Expedition;
         const members =
           iss?.crew
             ?.filter((member) => member.astronaut?.name)
             .map((member) => ({
               name: member.astronaut!.name!,
               role: member.role?.name ?? member.role?.role ?? 'Crew',
-              agencyAbbrev: member.astronaut?.agency?.abbrev,
+              agencyAbbrev: member.astronaut?.agency?.abbrev ?? member.astronaut?.agency?.name,
               countryCode: member.astronaut?.nationality?.alpha_2_code?.toUpperCase(),
             })) ?? [];
         if (!cancelled) {
@@ -375,9 +357,10 @@ function IssFeatureCard({ feed }: { feed: OrbitalFeed }) {
       <div className="relative">
         <CardHeader
           icon={Camera}
+          iconClassName="scale-x-125"
           eyebrow="ISS cam"
           title="The live station feed sits right inside the feature stack"
-          detail="Embedded from tracker"
+          detail="Live ISS video"
         />
 
         <div className={`mt-6 overflow-hidden ${PANEL_CARD}`}>
@@ -427,6 +410,9 @@ function IssFeatureCard({ feed }: { feed: OrbitalFeed }) {
             <div className="mt-3 space-y-2 text-sm">
               {crewError && <div className="text-space-warn">Crew feed unavailable: {crewError}</div>}
               {!crew && !crewError && <div className="text-space-dim">Loading current crew…</div>}
+              {crew && crew.length === 0 && !crewError && (
+                <div className="text-space-dim">Crew manifest is updating.</div>
+              )}
               {crew?.slice(0, 3).map((member) => (
                 <div key={member.name} className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
@@ -519,13 +505,13 @@ function ProximityFeatureCard({ feed }: { feed: OrbitalFeed }) {
           icon={MapPin}
           eyebrow="Closest to you"
           title="Approve location and get a live nearest-object leaderboard in miles"
-          detail={observer ? 'Geolocation locked' : 'Location requested on demand'}
+          detail={observer ? 'Location locked' : 'Opt-in location'}
         />
 
         <p className="mt-4 max-w-3xl text-sm leading-relaxed text-space-dim">
           This is the same local-sky idea from the tracker, but surfaced as a leaderboard. Once you
           approve location, SpaceMap ranks the closest live objects relative to your position and
-          colors them by urgency: red, yellow, and light blue.
+          colors the distance bands as nearest, close, and on watch.
         </p>
 
         <div className="mt-5 flex flex-wrap items-center gap-3">
@@ -596,44 +582,19 @@ function ProximityFeatureCard({ feed }: { feed: OrbitalFeed }) {
 
 function LaunchFeatureCard({
   catalogSize,
+  launchFeed,
 }: {
   catalogSize: number;
+  launchFeed: LaunchFeed;
 }) {
   const [clockMs, setClockMs] = useState(() => Date.now());
-  const [launches, setLaunches] = useState<UpcomingLaunch[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const id = window.setInterval(() => setClockMs(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(LL2_LAUNCHES_URL);
-        if (!res.ok) throw new Error(`LL2 ${res.status}`);
-        const body = (await res.json()) as { results?: UpcomingLaunch[] };
-        if (!cancelled) {
-          setLaunches(body.results ?? []);
-          setError(null);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : String(loadError));
-        }
-      }
-    };
-    void load();
-    const id = window.setInterval(load, LAUNCH_REFRESH_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(id);
-    };
-  }, []);
-
-  const nextLaunches = launches?.slice(0, 3) ?? [];
+  const nextLaunches = launchFeed.launches?.slice(0, 3) ?? [];
 
   return (
     <section className={`${SHELL_CARD} lg:col-span-5`}>
@@ -643,12 +604,12 @@ function LaunchFeatureCard({
           icon={Rocket}
           eyebrow="Launch tracker"
           title="The next launches update from the same live list used in the tracker"
-          detail={catalogSize > 0 ? `${catalogSize.toLocaleString()} objects in catalog` : 'Live launch feed'}
+          detail={catalogSize > 0 ? 'Catalog synced' : 'Launch feed'}
         />
 
         <div className="mt-6 grid gap-3">
-          {error && <div className={`px-4 py-4 text-sm text-space-warn ${PANEL_CARD}`}>{error}</div>}
-          {!error && nextLaunches.length === 0 && (
+          {launchFeed.error && <div className={`px-4 py-4 text-sm text-space-warn ${PANEL_CARD}`}>{launchFeed.error}</div>}
+          {!launchFeed.error && nextLaunches.length === 0 && (
             <div className={`flex items-center justify-between px-4 py-5 text-sm text-space-dim ${PANEL_CARD}`}>
               <span>Loading next launches…</span>
               <Activity className="animate-spin" size={18} />
@@ -675,7 +636,7 @@ function LaunchFeatureCard({
 
                 <div className="mt-4 flex items-center justify-between gap-3">
                   <div className={`text-2xl font-semibold ${tone.textClass}`}>
-                    {formatCountdown(deltaMs)}
+                    {formatLaunchCountdown(deltaMs)}
                   </div>
                   <div className="text-right text-xs text-space-dim">
                     <div>{launch.pad?.name ?? 'Pad TBD'}</div>
@@ -825,28 +786,32 @@ function useFeatureOrbitalFeed(): OrbitalFeed {
 
 function CardHeader({
   icon: Icon,
+  iconClassName,
   eyebrow,
   title,
   detail,
 }: {
   icon: typeof Activity;
+  iconClassName?: string;
   eyebrow: string;
   title: string;
   detail: string;
 }) {
   return (
-    <div className="flex items-start justify-between gap-4">
+    <div className="grid gap-4 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
       <div>
         <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
           {eyebrow}
         </p>
         <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight text-white">{title}</h3>
       </div>
-      <div className="feature-float flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-space-accent">
-        <Icon size={22} />
-      </div>
-      <div className="hidden rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.24em] text-space-dim md:block">
-        {detail}
+      <div className="hidden grid-cols-[4rem_9.5rem] gap-3 md:grid">
+        <div className="feature-float flex h-16 w-16 shrink-0 items-center justify-center rounded-[1.25rem] border border-white/10 bg-white/10 text-space-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+          <Icon size={24} className={iconClassName} />
+        </div>
+        <div className="flex h-16 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-center text-[10px] font-semibold uppercase leading-[1.45] tracking-[0.22em] text-space-dim shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+          <span>{detail}</span>
+        </div>
       </div>
     </div>
   );
@@ -904,42 +869,20 @@ function getConjunctionTone(severity: number, pc: number) {
 function getRangeTone(rangeMiles: number) {
   if (rangeMiles <= 500) {
     return {
-      label: 'Danger',
+      label: 'Nearby',
       textClass: 'text-[#ff6b6b]',
       dotClass: 'border-[#ff6b6b]/35 bg-[#ff6b6b]/12 text-[#ff9ca6]',
     };
   }
   if (rangeMiles <= 1200) {
     return {
-      label: 'Caution',
+      label: 'Close',
       textClass: 'text-[#ffd166]',
       dotClass: 'border-[#ffd166]/35 bg-[#ffd166]/12 text-[#ffe19a]',
     };
   }
   return {
-    label: 'Watch',
-    textClass: 'text-[#8ed8ff]',
-    dotClass: 'border-[#8ed8ff]/35 bg-[#8ed8ff]/12 text-[#c7efff]',
-  };
-}
-
-function getLaunchTone(deltaMs: number) {
-  if (deltaMs <= 2 * 60 * 60 * 1000) {
-    return {
-      label: 'Hot',
-      textClass: 'text-[#ff6b6b]',
-      dotClass: 'border-[#ff6b6b]/35 bg-[#ff6b6b]/12 text-[#ff9ca6]',
-    };
-  }
-  if (deltaMs <= 24 * 60 * 60 * 1000) {
-    return {
-      label: 'Soon',
-      textClass: 'text-[#ffd166]',
-      dotClass: 'border-[#ffd166]/35 bg-[#ffd166]/12 text-[#ffe19a]',
-    };
-  }
-  return {
-    label: 'Tracked',
+    label: 'On watch',
     textClass: 'text-[#8ed8ff]',
     dotClass: 'border-[#8ed8ff]/35 bg-[#8ed8ff]/12 text-[#c7efff]',
   };
@@ -992,8 +935,8 @@ function nearestToObserver(
 function formatProbabilityPercent(pc: number): string {
   const percent = pc * 100;
   if (percent === 0) return '0%';
-  if (percent < 0.00000001) return '<0.00000001%';
-  if (percent < 0.0001) return `${trimTrailingZeroes(percent.toFixed(8))}%`;
+  if (percent < 0.000001) return '<0.000001%';
+  if (percent < 0.0001) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
   if (percent < 0.01) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
   return `${trimTrailingZeroes(percent.toFixed(4))}%`;
 }
@@ -1009,19 +952,6 @@ function formatTimeToEvent(deltaMs: number): string {
   const pad = (value: number) => value.toString().padStart(2, '0');
   if (hours > 0) return `${sign}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
   return `${sign}${pad(minutes)}:${pad(seconds)}.${tenths}`;
-}
-
-function formatCountdown(deltaMs: number): string {
-  const abs = Math.abs(deltaMs);
-  const sign = deltaMs < 0 ? 'T+' : 'T-';
-  const totalSec = Math.floor(abs / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hours = Math.floor((totalSec % 86400) / 3600);
-  const minutes = Math.floor((totalSec % 3600) / 60);
-  const seconds = totalSec % 60;
-  const pad = (value: number) => value.toString().padStart(2, '0');
-  if (days > 0) return `${sign}${days}d ${pad(hours)}h ${pad(minutes)}m`;
-  return `${sign}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
 }
 
 function trimTrailingZeroes(value: string): string {

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -12,12 +13,16 @@ import {
   Zap,
 } from 'lucide-react';
 import { FeatureLiveShowcase } from '../components/FeatureLiveShowcase.js';
+import {
+  formatLaunchCountdown,
+  getLaunchTone,
+  useUpcomingLaunches,
+} from '../hooks/useUpcomingLaunches.js';
 
-const HERO_METRICS = [
-  { value: 'Live', label: 'ISS video embedded in-page' },
-  { value: '0.1s', label: 'risk board display tick' },
-  { value: 'Miles', label: 'location-aware proximity ranking' },
-  { value: 'T-', label: 'next-launch countdown styling' },
+const BASE_HERO_METRICS = [
+  { value: 'Live', label: 'ISS video embedded in-page', valueClass: 'text-white' },
+  { value: '0.1s', label: 'risk board display tick', valueClass: 'text-white' },
+  { value: 'Miles', label: 'location-aware proximity ranking', valueClass: 'text-white' },
 ];
 
 const WORKFLOW = [
@@ -70,10 +75,19 @@ const SUPPORT_SYSTEMS = [
   },
 ];
 
+const PROOF_POINTS = [
+  { icon: Activity, label: 'Collision probability', value: 'Collision %, miss, and TCA' },
+  { icon: Camera, label: 'Live station feed', value: 'ISS video plus orbit data' },
+  { icon: MapPin, label: 'Local ranking', value: 'Nearest objects in miles' },
+  { icon: Rocket, label: 'Launch timeline', value: 'Next three countdowns' },
+];
+
 const CARD_HOVER =
   'transition-all duration-300 hover:-translate-y-1 hover:border-space-accent/30 hover:shadow-[0_18px_45px_rgba(77,150,232,0.12)]';
 
 export function FeaturesPage() {
+  const launchFeed = useUpcomingLaunches();
+
   return (
     <div className="relative overflow-hidden pt-24">
       <div className="absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(circle_at_top,rgba(77,150,232,0.18),transparent_62%)]" />
@@ -99,7 +113,7 @@ export function FeaturesPage() {
                 Same data lanes as the tracker
               </span>
               <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:text-white">
-                Collision ranking by live Pc
+                Live collision probability
               </span>
               <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:text-white">
                 Location-aware and launch-aware
@@ -124,7 +138,7 @@ export function FeaturesPage() {
                   </h2>
                 </div>
                 <div className="feature-float flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-space-accent">
-                  <Camera size={22} />
+                  <Camera size={24} className="scale-x-125" />
                 </div>
               </div>
 
@@ -175,7 +189,7 @@ export function FeaturesPage() {
                 <div className="mt-4 grid gap-3 text-sm text-space-dim">
                   {[
                     'ISS cam is embedded directly from the tracker source.',
-                    'Collision board ranks by Pc with percentages expanded out.',
+                    'Collision board ranks by probability with percentages expanded out.',
                     'Location permission unlocks the nearest-to-you leaderboard in miles.',
                     'Launches show the next three countdowns from the existing launch list.',
                   ].map((item) => (
@@ -190,17 +204,7 @@ export function FeaturesPage() {
           </div>
         </div>
 
-        <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {HERO_METRICS.map((metric) => (
-            <div
-              key={metric.label}
-              className={`rounded-2xl border border-white/10 bg-white/5 px-5 py-6 backdrop-blur-sm ${CARD_HOVER}`}
-            >
-              <div className="text-3xl font-bold text-white">{metric.value}</div>
-              <p className="mt-2 text-sm text-space-dim">{metric.label}</p>
-            </div>
-          ))}
-        </div>
+        <FeatureMetrics launchFeed={launchFeed} />
       </section>
 
       <section className="relative mx-auto max-w-7xl px-6 py-20">
@@ -217,7 +221,7 @@ export function FeaturesPage() {
           </p>
         </div>
 
-        <FeatureLiveShowcase />
+        <FeatureLiveShowcase launchFeed={launchFeed} />
       </section>
 
       <section className="relative mx-auto max-w-7xl px-6 py-20">
@@ -285,23 +289,49 @@ export function FeaturesPage() {
             </div>
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(77,150,232,0.16),rgba(8,15,25,0.96)_64%,rgba(255,255,255,0.06))] p-6 backdrop-blur-xl md:p-8">
+          <div className={`group relative flex min-h-full flex-col overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(145deg,rgba(142,216,255,0.12),rgba(8,15,25,0.96)_54%,rgba(242,109,125,0.08))] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-8 ${CARD_HOVER}`}>
+            <div className="absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-space-accent/60 to-transparent" />
+            <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-              Product Feel
+              Live Proof
             </p>
-            <h3 className="mt-4 text-2xl font-semibold text-white">
-              Still the same SpaceMap theme, just grounded in real behavior now.
+            <h3 className="mt-4 text-2xl font-semibold leading-tight text-white">
+              Four working surfaces that make the tracker feel worth opening.
             </h3>
-            <div className="mt-6 grid gap-3 text-sm text-space-dim">
-              {[
-                'Glass, gradients, and depth are still doing the visual work.',
-                'The red / yellow / light-blue risk language now carries across conjunctions, local proximity, and launches.',
-                'The feature page stays readable on its own while still feeling tied directly to the tracker experience.',
-              ].map((item) => (
-                <div key={item} className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3">
-                  {item}
+            <div className="mt-8 grid gap-3">
+              {PROOF_POINTS.map((item) => (
+                <div
+                  key={item.label}
+                  className="group/item grid grid-cols-[auto_1fr] items-center gap-4 rounded-[1.5rem] border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] transition-colors hover:bg-white/10"
+                >
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-space-accent transition-transform group-hover/item:scale-105">
+                    <item.icon size={19} />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-white">{item.label}</div>
+                    <div className="mt-1 truncate text-sm text-space-dim">{item.value}</div>
+                  </div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-auto pt-6">
+              <div className="rounded-[1.5rem] border border-white/10 bg-[#08111c]/85 p-5 shadow-[0_18px_45px_rgba(0,0,0,0.18)]">
+                <div className="flex items-center justify-between gap-3 text-xs uppercase tracking-[0.2em] text-space-dim">
+                  <span>Preview path</span>
+                  <span className="text-space-accent">Features &gt; Tracker</span>
+                </div>
+                <div className="mt-5 grid grid-cols-3 gap-2">
+                  {['See it', 'Trust it', 'Open it'].map((step, index) => (
+                    <div key={step} className="rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-center">
+                      <div className="text-sm font-semibold text-white">0{index + 1}</div>
+                      <div className="mt-1 text-[10px] uppercase tracking-[0.16em] text-space-dim">
+                        {step}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -328,6 +358,54 @@ export function FeaturesPage() {
           </Link>
         </div>
       </section>
+    </div>
+  );
+}
+
+function FeatureMetrics({ launchFeed }: { launchFeed: ReturnType<typeof useUpcomingLaunches> }) {
+  const [clockMs, setClockMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setClockMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const nextLaunch = launchFeed.launches?.find(
+    (launch) => new Date(launch.net).getTime() >= clockMs - 60_000,
+  );
+  const launchDeltaMs = nextLaunch ? new Date(nextLaunch.net).getTime() - clockMs : null;
+  const launchTone = launchDeltaMs == null ? null : getLaunchTone(launchDeltaMs);
+  const metrics = [
+    ...BASE_HERO_METRICS,
+    {
+      value:
+        launchDeltaMs == null
+          ? launchFeed.error
+            ? 'TBD'
+            : 'T-'
+          : formatLaunchCountdown(launchDeltaMs),
+      label: nextLaunch
+        ? nextLaunch.name
+        : launchFeed.error
+          ? 'launch feed retrying'
+          : 'loading next launch',
+      valueClass: launchTone?.textClass ?? 'text-white',
+    },
+  ];
+
+  return (
+    <div className="mt-12 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {metrics.map((metric) => (
+        <div
+          key={metric.label}
+          className={`rounded-2xl border border-white/10 bg-white/5 px-5 py-6 backdrop-blur-sm ${CARD_HOVER}`}
+        >
+          <div className={`truncate text-3xl font-bold ${metric.valueClass ?? 'text-white'}`}>
+            {metric.value}
+          </div>
+          <p className="mt-2 line-clamp-2 text-sm text-space-dim">{metric.label}</p>
+        </div>
+      ))}
     </div>
   );
 }
