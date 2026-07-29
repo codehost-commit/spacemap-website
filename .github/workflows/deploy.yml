@@ -32,11 +32,10 @@ jobs:
       - name: Install
         run: npm install --no-audit --no-fund
 
-      - name: Derive base URL from repo name
+      - name: Use root base URL for custom domain
         id: base
         run: |
-          REPO_NAME="${GITHUB_REPOSITORY##*/}"
-          echo "base=/${REPO_NAME}/" >> "$GITHUB_OUTPUT"
+          echo "base=/" >> "$GITHUB_OUTPUT"
 
       - name: Typecheck
         run: npm run typecheck
