@@ -25,7 +25,12 @@ const ISS_NORAD = 25544;
 const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
 const LL2_ISS_STATION_URL =
   'https://ll.thespacedevs.com/2.2.0/spacestation/4/?format=json';
+const BUNDLED_ISS_CREW_URL = `${import.meta.env.BASE_URL}data/iss-crew.json`;
 const CREW_REFRESH_MS = 10 * 60 * 1000;
+const CREW_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CREW_RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+const CREW_CACHE_KEY = 'spacemap.ll2.iss-crew.v1';
+const CREW_COOLDOWN_KEY = 'spacemap.ll2.iss-crew.cooldown.v1';
 const SNAPSHOT_REFRESH_MS = 5000;
 const UI_TICK_MS = 100;
 const ALERT_COOLDOWN_MS = 15 * 60 * 1000;
@@ -103,11 +108,19 @@ interface LL2Expedition {
   crew?: LL2Crew[];
 }
 
+interface CrewSnapshot {
+  fetchedAt: number;
+  expeditionName: string | null;
+  crew: CrewMember[];
+}
+
 interface LaunchFeed {
   launches: UpcomingLaunch[] | null;
   error: string | null;
   loading: boolean;
 }
+
+let crewRequest: Promise<CrewSnapshot> | null = null;
 
 const SHELL_CARD =
   'group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(165deg,rgba(255,255,255,0.08),rgba(8,15,25,0.97)_56%,rgba(77,150,232,0.14))] p-6 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-space-accent/30 hover:shadow-[0_26px_72px_rgba(77,150,232,0.12)] md:p-7';
@@ -313,33 +326,28 @@ function IssFeatureCard({ feed }: { feed: OrbitalFeed }) {
   useEffect(() => {
     let cancelled = false;
     const loadCrew = async () => {
-      try {
-        const stationRes = await fetch(LL2_ISS_STATION_URL);
-        if (!stationRes.ok) throw new Error(`LL2 ${stationRes.status}`);
-        const station = (await stationRes.json()) as LL2SpaceStation;
-        const activeExpedition = station.active_expeditions?.[0];
-        if (!activeExpedition?.url) throw new Error('no active ISS expedition');
+      const cached = readCrewCache();
+      if (cached) {
+        setCrew(cached.crew);
+        setExpeditionName(cached.expeditionName);
+        setCrewError(null);
+      }
 
-        const expeditionRes = await fetch(activeExpedition.url);
-        if (!expeditionRes.ok) throw new Error(`LL2 ${expeditionRes.status}`);
-        const iss = (await expeditionRes.json()) as LL2Expedition;
-        const members =
-          iss?.crew
-            ?.filter((member) => member.astronaut?.name)
-            .map((member) => ({
-              name: member.astronaut!.name!,
-              role: member.role?.name ?? member.role?.role ?? 'Crew',
-              agencyAbbrev: member.astronaut?.agency?.abbrev ?? member.astronaut?.agency?.name,
-              countryCode: member.astronaut?.nationality?.alpha_2_code?.toUpperCase(),
-            })) ?? [];
+      if (cached && Date.now() - cached.fetchedAt < CREW_CACHE_TTL_MS) return;
+      if (cached && isCrewRetryCoolingDown()) return;
+
+      try {
+        const snapshot = await loadIssCrewSnapshot();
         if (!cancelled) {
-          setCrew(members);
+          setCrew(snapshot.crew);
           setCrewError(null);
-          setExpeditionName(iss?.name ?? null);
+          setExpeditionName(snapshot.expeditionName);
         }
-      } catch (error) {
+      } catch {
         if (!cancelled) {
-          setCrewError(error instanceof Error ? error.message : String(error));
+          setCrew(cached?.crew ?? []);
+          setExpeditionName(cached?.expeditionName ?? null);
+          setCrewError(null);
         }
       }
     };
@@ -408,10 +416,10 @@ function IssFeatureCard({ feed }: { feed: OrbitalFeed }) {
               {expeditionName ? `Crew · ${expeditionName}` : 'Crew manifest'}
             </div>
             <div className="mt-3 space-y-2 text-sm">
-              {crewError && <div className="text-space-warn">Crew feed unavailable: {crewError}</div>}
+              {crewError && <div className="text-space-warn">{crewError}</div>}
               {!crew && !crewError && <div className="text-space-dim">Loading current crew…</div>}
               {crew && crew.length === 0 && !crewError && (
-                <div className="text-space-dim">Crew manifest is updating.</div>
+                <div className="text-space-dim">Crew manifest is retrying quietly.</div>
               )}
               {crew?.slice(0, 3).map((member) => (
                 <div key={member.name} className="flex items-center justify-between gap-2">
@@ -782,6 +790,126 @@ function useFeatureOrbitalFeed(): OrbitalFeed {
   }, []);
 
   return { snapshot, catalogSize, namesById, loading, error, runConjunction };
+}
+
+async function loadIssCrewSnapshot(): Promise<CrewSnapshot> {
+  if (crewRequest) return crewRequest;
+  crewRequest = (async () => {
+    const sources = import.meta.env.PROD ? [tryBundledCrew, tryLiveCrew] : [tryLiveCrew];
+    let firstError: unknown = null;
+
+    try {
+      for (const source of sources) {
+        try {
+          const snapshot = await source();
+          writeCrewCache(snapshot);
+          clearCrewRetryCooldown();
+          return snapshot;
+        } catch (sourceError) {
+          firstError ??= sourceError;
+        }
+      }
+
+      setCrewRetryCooldown();
+      const cached = readCrewCache();
+      if (cached) return cached;
+      if (firstError instanceof Error) {
+        throw firstError;
+      }
+      throw new Error(String(firstError ?? 'ISS crew unavailable'));
+    } finally {
+      crewRequest = null;
+    }
+  })();
+  return crewRequest;
+}
+
+async function tryLiveCrew(): Promise<CrewSnapshot> {
+  const stationRes = await fetch(LL2_ISS_STATION_URL);
+  if (!stationRes.ok) throw new Error(`LL2 ${stationRes.status}`);
+  const station = (await stationRes.json()) as LL2SpaceStation;
+  const activeExpedition = station.active_expeditions?.[0];
+  if (!activeExpedition?.url) throw new Error('no active ISS expedition');
+
+  const expeditionRes = await fetch(activeExpedition.url);
+  if (!expeditionRes.ok) throw new Error(`LL2 ${expeditionRes.status}`);
+  const expedition = (await expeditionRes.json()) as LL2Expedition;
+  return parseCrewSnapshot(expedition);
+}
+
+async function tryBundledCrew(): Promise<CrewSnapshot> {
+  const res = await fetch(BUNDLED_ISS_CREW_URL, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`bundled ISS crew ${res.status}`);
+  const body = (await res.json()) as CrewSnapshot | LL2Expedition;
+  if ('crew' in body && Array.isArray(body.crew) && body.crew.every((member) => 'name' in member)) {
+    return {
+      fetchedAt: Number('fetchedAt' in body ? body.fetchedAt : Date.now()),
+      expeditionName: 'expeditionName' in body ? body.expeditionName : body.name ?? null,
+      crew: body.crew as CrewMember[],
+    };
+  }
+  return parseCrewSnapshot(body as LL2Expedition);
+}
+
+function parseCrewSnapshot(expedition: LL2Expedition): CrewSnapshot {
+  return {
+    fetchedAt: Date.now(),
+    expeditionName: expedition.name ?? null,
+    crew:
+      expedition.crew
+        ?.filter((member) => member.astronaut?.name)
+        .map((member) => ({
+          name: member.astronaut!.name!,
+          role: member.role?.name ?? member.role?.role ?? 'Crew',
+          agencyAbbrev: member.astronaut?.agency?.abbrev ?? member.astronaut?.agency?.name,
+          countryCode: member.astronaut?.nationality?.alpha_2_code?.toUpperCase(),
+        })) ?? [],
+  };
+}
+
+function readCrewCache(): CrewSnapshot | null {
+  try {
+    const raw = localStorage.getItem(CREW_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CrewSnapshot;
+    if (!Array.isArray(parsed.crew)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeCrewCache(snapshot: CrewSnapshot): void {
+  try {
+    localStorage.setItem(CREW_CACHE_KEY, JSON.stringify({ ...snapshot, fetchedAt: Date.now() }));
+  } catch {
+    /* localStorage can be disabled in private browsing */
+  }
+}
+
+function isCrewRetryCoolingDown(): boolean {
+  try {
+    const retryAt = Number(sessionStorage.getItem(CREW_COOLDOWN_KEY) ?? 0);
+    return Number.isFinite(retryAt) && Date.now() < retryAt;
+  } catch {
+    return false;
+  }
+}
+
+function setCrewRetryCooldown(): void {
+  try {
+    sessionStorage.setItem(CREW_COOLDOWN_KEY, String(Date.now() + CREW_RETRY_COOLDOWN_MS));
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
+}
+
+function clearCrewRetryCooldown(): void {
+  try {
+    sessionStorage.removeItem(CREW_COOLDOWN_KEY);
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
 }
 
 function CardHeader({

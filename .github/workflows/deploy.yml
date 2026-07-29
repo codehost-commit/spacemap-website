@@ -45,6 +45,63 @@ jobs:
           VITE_BASE_URL: ${{ steps.base.outputs.base }}
         run: npm run build -w frontend
 
+      - name: Fetch Launch Library snapshots
+        # Browser-origin requests to Launch Library can rate-limit quickly, so
+        # bundle a recent server-side snapshot for the marketing feature panels.
+        # Runtime code still has a live fallback and local stale cache.
+        run: |
+          mkdir -p frontend/dist/data
+          set +e
+
+          curl -fsSL --max-time 45 -A "SpaceMap/1.0 (+https://github.com/${{ github.repository }})" \
+            "https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true" \
+            -o frontend/dist/data/launches.json
+          if [ ! -s frontend/dist/data/launches.json ]; then
+            echo "::warning::Launch snapshot fetch failed - frontend will use runtime cache/fallback"
+            rm -f frontend/dist/data/launches.json
+          fi
+
+          node --input-type=module <<'NODE'
+          import { writeFile, rm } from 'node:fs/promises';
+
+          const ua = 'SpaceMap/1.0 (+https://github.com/${{ github.repository }})';
+          const headers = { 'User-Agent': ua };
+          try {
+            const stationRes = await fetch('https://ll.thespacedevs.com/2.2.0/spacestation/4/?format=json', { headers });
+            if (!stationRes.ok) throw new Error(`station ${stationRes.status}`);
+            const station = await stationRes.json();
+            const expeditionUrl = station.active_expeditions?.[0]?.url;
+            if (!expeditionUrl) throw new Error('no active ISS expedition URL');
+
+            const expeditionRes = await fetch(expeditionUrl, { headers });
+            if (!expeditionRes.ok) throw new Error(`expedition ${expeditionRes.status}`);
+            const expedition = await expeditionRes.json();
+            const crew = (expedition.crew ?? [])
+              .filter((member) => member.astronaut?.name)
+              .map((member) => ({
+                name: member.astronaut.name,
+                role: member.role?.name ?? member.role?.role ?? 'Crew',
+                agencyAbbrev: member.astronaut.agency?.abbrev ?? member.astronaut.agency?.name,
+                countryCode: member.astronaut.nationality?.alpha_2_code?.toUpperCase(),
+              }));
+            await writeFile(
+              'frontend/dist/data/iss-crew.json',
+              JSON.stringify(
+                {
+                  fetchedAt: Date.now(),
+                  expeditionName: expedition.name ?? null,
+                  crew,
+                },
+                null,
+                2,
+              ),
+            );
+          } catch (err) {
+            console.log(`::warning::ISS crew snapshot fetch failed - ${err instanceof Error ? err.message : err}`);
+            await rm('frontend/dist/data/iss-crew.json', { force: true });
+          }
+          NODE
+
       - name: Fetch TLE snapshot for bundling
         # CelesTrak now returns 403 to browser-origin fetches, so we grab the
         # catalog server-side here and ship it as a static asset. Multiple

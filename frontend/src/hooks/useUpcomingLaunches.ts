@@ -2,7 +2,12 @@ import { useEffect, useState } from 'react';
 
 const LL2_LAUNCHES_URL =
   'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true';
-const LAUNCH_REFRESH_MS = 5 * 60 * 1000;
+const BUNDLED_LAUNCHES_URL = `${import.meta.env.BASE_URL}data/launches.json`;
+const LAUNCH_REFRESH_MS = 30 * 60 * 1000;
+const LAUNCH_CACHE_TTL_MS = 2 * 60 * 60 * 1000;
+const LAUNCH_RETRY_COOLDOWN_MS = 15 * 60 * 1000;
+const LAUNCH_CACHE_KEY = 'spacemap.ll2.launches.v1';
+const LAUNCH_COOLDOWN_KEY = 'spacemap.ll2.launches.cooldown.v1';
 
 export interface LaunchVideoUrl {
   url?: string;
@@ -37,24 +42,54 @@ export interface UpcomingLaunch {
   vidURLs?: LaunchVideoUrl[];
 }
 
-export function useUpcomingLaunches() {
-  const [launches, setLaunches] = useState<UpcomingLaunch[] | null>(null);
+interface LaunchCache {
+  fetchedAt: number;
+  launches: UpcomingLaunch[];
+}
+
+let launchRequest: Promise<UpcomingLaunch[]> | null = null;
+
+export function useUpcomingLaunches({ enabled = true }: { enabled?: boolean } = {}) {
+  const [launches, setLaunches] = useState<UpcomingLaunch[] | null>(
+    () => readLaunchCache()?.launches ?? null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!enabled) return;
+
     let cancelled = false;
     const load = async () => {
+      const cached = readLaunchCache();
+      if (cached?.launches.length) {
+        setLaunches(prioritizeUpcoming(cached.launches));
+      }
+
+      if (cached && Date.now() - cached.fetchedAt < LAUNCH_CACHE_TTL_MS) {
+        setError(null);
+        return;
+      }
+
+      if (cached?.launches.length && isLaunchRetryCoolingDown()) {
+        setError(null);
+        return;
+      }
+
       try {
-        const res = await fetch(LL2_LAUNCHES_URL);
-        if (!res.ok) throw new Error(`LL2 ${res.status}`);
-        const body = (await res.json()) as { results?: UpcomingLaunch[] };
+        const nextLaunches = await loadUpcomingLaunches();
         if (!cancelled) {
-          setLaunches(body.results ?? []);
+          setLaunches(prioritizeUpcoming(nextLaunches));
           setError(null);
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : String(loadError));
+          const fallback = readLaunchCache();
+          if (fallback?.launches.length) {
+            setLaunches(prioritizeUpcoming(fallback.launches));
+            setError(null);
+          } else {
+            setError('Launch feed is rate-limited right now. Retrying shortly.');
+          }
         }
       }
     };
@@ -64,13 +99,113 @@ export function useUpcomingLaunches() {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, []);
+  }, [enabled]);
 
   return {
     launches,
     error,
-    loading: launches == null && error == null,
+    loading: enabled && launches == null && error == null,
   };
+}
+
+async function loadUpcomingLaunches(): Promise<UpcomingLaunch[]> {
+  if (launchRequest) return launchRequest;
+  launchRequest = (async () => {
+    const sources = import.meta.env.PROD ? [tryBundledLaunches, tryLiveLaunches] : [tryLiveLaunches];
+    let firstError: unknown = null;
+
+    try {
+      for (const source of sources) {
+        try {
+          const launches = await source();
+          writeLaunchCache(launches);
+          clearLaunchRetryCooldown();
+          return launches;
+        } catch (sourceError) {
+          firstError ??= sourceError;
+        }
+      }
+
+      setLaunchRetryCooldown();
+      if (firstError instanceof Error) {
+        throw firstError;
+      }
+      throw new Error(String(firstError ?? 'launch feed unavailable'));
+    } finally {
+      launchRequest = null;
+    }
+  })();
+  return launchRequest;
+}
+
+async function tryLiveLaunches(): Promise<UpcomingLaunch[]> {
+  const res = await fetch(LL2_LAUNCHES_URL);
+  if (!res.ok) throw new Error(`LL2 ${res.status}`);
+  const body = (await res.json()) as { results?: UpcomingLaunch[] };
+  return body.results ?? [];
+}
+
+async function tryBundledLaunches(): Promise<UpcomingLaunch[]> {
+  const res = await fetch(BUNDLED_LAUNCHES_URL, { cache: 'no-cache' });
+  if (!res.ok) throw new Error(`bundled launches ${res.status}`);
+  const body = (await res.json()) as { results?: UpcomingLaunch[]; launches?: UpcomingLaunch[] };
+  return body.results ?? body.launches ?? [];
+}
+
+function prioritizeUpcoming(launches: UpcomingLaunch[]): UpcomingLaunch[] {
+  const now = Date.now() - 60_000;
+  return [...launches]
+    .filter((launch) => Number.isFinite(new Date(launch.net).getTime()))
+    .sort((a, b) => new Date(a.net).getTime() - new Date(b.net).getTime())
+    .filter((launch) => new Date(launch.net).getTime() >= now);
+}
+
+function readLaunchCache(): LaunchCache | null {
+  try {
+    const raw = localStorage.getItem(LAUNCH_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LaunchCache;
+    if (!Array.isArray(parsed.launches)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function writeLaunchCache(launches: UpcomingLaunch[]): void {
+  try {
+    localStorage.setItem(
+      LAUNCH_CACHE_KEY,
+      JSON.stringify({ fetchedAt: Date.now(), launches: prioritizeUpcoming(launches) }),
+    );
+  } catch {
+    /* localStorage can be disabled in private browsing */
+  }
+}
+
+function isLaunchRetryCoolingDown(): boolean {
+  try {
+    const retryAt = Number(sessionStorage.getItem(LAUNCH_COOLDOWN_KEY) ?? 0);
+    return Number.isFinite(retryAt) && Date.now() < retryAt;
+  } catch {
+    return false;
+  }
+}
+
+function setLaunchRetryCooldown(): void {
+  try {
+    sessionStorage.setItem(LAUNCH_COOLDOWN_KEY, String(Date.now() + LAUNCH_RETRY_COOLDOWN_MS));
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
+}
+
+function clearLaunchRetryCooldown(): void {
+  try {
+    sessionStorage.removeItem(LAUNCH_COOLDOWN_KEY);
+  } catch {
+    /* sessionStorage can be disabled in private browsing */
+  }
 }
 
 export function getLaunchTone(deltaMs: number) {

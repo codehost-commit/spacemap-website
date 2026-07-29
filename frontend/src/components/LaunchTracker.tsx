@@ -1,41 +1,20 @@
 import { useEffect, useMemo, useState } from 'react';
+import {
+  formatLaunchCountdown,
+  useUpcomingLaunches,
+} from '../hooks/useUpcomingLaunches.js';
 import { useStore } from '../state/store.js';
 
 /**
- * Upcoming-launches panel powered by Launch Library 2 (thespacedevs.com).
- * The free tier is CORS-open and rate-limited to ~15 req/hour per IP — we
- * fetch once when the panel opens and refresh every 5 min while it's open.
+ * Upcoming-launches panel powered by the shared SpaceMap launch feed.
  * Each row shows a countdown ticking to T-0 and, when the launch has a live
  * stream URL, a "Watch" button that embeds the YouTube video inline.
  */
-const LL2_URL =
-  'https://ll.thespacedevs.com/2.2.0/launch/upcoming/?limit=10&mode=list&hide_recent_previous=true';
-const REFRESH_MS = 5 * 60 * 1000;
-
-interface LL2VidUrl {
-  url?: string;
-  title?: string;
-}
-interface LL2Launch {
-  id: string;
-  name: string;
-  net: string; // ISO launch time (No Earlier Than)
-  status?: { name?: string };
-  rocket?: { configuration?: { full_name?: string; name?: string } };
-  mission?: { name?: string; description?: string; type?: string };
-  pad?: { name?: string; location?: { name?: string } };
-  image?: string;
-  vidURLs?: LL2VidUrl[];
-}
-interface LL2Response {
-  results: LL2Launch[];
-}
 
 export function LaunchTracker() {
   const open = useStore((s) => s.openOverlays.has('launches'));
   const setOverlay = useStore((s) => s.setOverlay);
-  const [launches, setLaunches] = useState<LL2Launch[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const { launches, error, loading } = useUpcomingLaunches({ enabled: open });
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [watching, setWatching] = useState<string | null>(null);
 
@@ -44,34 +23,6 @@ export function LaunchTracker() {
     if (!open) return;
     const id = setInterval(() => setNowMs(Date.now()), 1000);
     return () => clearInterval(id);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const res = await fetch(LL2_URL);
-        if (!res.ok) {
-          throw new Error(`LL2 ${res.status}`);
-        }
-        const body = (await res.json()) as LL2Response;
-        if (!cancelled) {
-          setLaunches(body.results ?? []);
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : String(err));
-        }
-      }
-    };
-    void load();
-    const id = setInterval(load, REFRESH_MS);
-    return () => {
-      cancelled = true;
-      clearInterval(id);
-    };
   }, [open]);
 
   const watchedEmbed = useMemo(() => {
@@ -128,11 +79,10 @@ export function LaunchTracker() {
       <div className="overflow-auto">
         {error && (
           <div className="p-3 text-xs text-space-warn">
-            Couldn't reach Launch Library ({error}). The service occasionally rate-limits public
-            traffic — try again in a few minutes.
+            {error}
           </div>
         )}
-        {launches == null && !error && (
+        {loading && !error && (
           <div className="p-3 text-xs text-space-dim">Loading upcoming launches…</div>
         )}
         {launches && launches.length === 0 && !error && (
@@ -148,7 +98,7 @@ export function LaunchTracker() {
               <li key={l.id} className="border-b border-space-border/40 px-3 py-2 last:border-b-0">
                 <div className="flex items-baseline justify-between gap-2">
                   <div className="min-w-0 flex-1 truncate text-space-text">{l.name}</div>
-                  <div className="shrink-0 text-space-accent">{formatCountdown(dt)}</div>
+                  <div className="shrink-0 text-space-accent">{formatLaunchCountdown(dt)}</div>
                 </div>
                 <div className="mt-0.5 flex items-center justify-between text-[10px] text-space-dim">
                   <span className="truncate">
@@ -188,20 +138,6 @@ export function LaunchTracker() {
       </div>
     </aside>
   );
-}
-
-function formatCountdown(deltaMs: number): string {
-  const abs = Math.abs(deltaMs);
-  const sign = deltaMs < 0 ? 'T+' : 'T-';
-  const totalSec = Math.floor(abs / 1000);
-  const days = Math.floor(totalSec / 86400);
-  const hours = Math.floor((totalSec % 86400) / 3600);
-  const minutes = Math.floor((totalSec % 3600) / 60);
-  const seconds = totalSec % 60;
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  if (days > 0) return `${sign}${days}d ${pad(hours)}h ${pad(minutes)}m`;
-  if (hours > 0) return `${sign}${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-  return `${sign}${pad(minutes)}:${pad(seconds)}`;
 }
 
 /**
