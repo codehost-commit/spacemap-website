@@ -1,38 +1,46 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { HeroGlobe } from '../components/HeroGlobe.js';
-import { Globe, Satellite, Search, Shield, Clock, Zap, Eye, ArrowRight } from 'lucide-react';
+import {
+  Activity,
+  ArrowRight,
+  Camera,
+  Eye,
+  Globe,
+  MapPin,
+  Radio,
+  Satellite,
+  Search,
+  Shield,
+  Zap,
+} from 'lucide-react';
 import emblemSrc from '../assets/brand-emblem.png';
+import {
+  formatLaunchCountdown,
+  getLaunchTone,
+  useUpcomingLaunches,
+} from '../hooks/useUpcomingLaunches.js';
 
-const FEATURES = [
+const FEATURE_SUPPORT = [
   {
     icon: Globe,
-    title: '3D Cesium Globe',
-    desc: 'A full-resolution, interactive 3D Earth rendered with CesiumJS. Rotate, zoom, and fly to any point on the planet.',
+    title: '3D scene control',
+    desc: 'Fly, rotate, scrub, and layer the globe without leaving the same browser surface.',
   },
   {
     icon: Satellite,
-    title: '30,000+ Tracked Objects',
-    desc: 'The full active catalog from Space-Track and CelesTrak. LEO, MEO, HEO, GEO, and sub-synchronous orbits, all color-coded.',
+    title: 'Deep live catalog',
+    desc: 'LEO, MEO, GEO, HEO, polar, and debris all stay visible instead of being flattened into a demo subset.',
   },
   {
     icon: Search,
-    title: 'Instant Search',
-    desc: 'Find any satellite by name, NORAD ID, or international designator. Results appear as you type.',
+    title: 'Fast object search',
+    desc: 'Name, NORAD ID, and designator lookup narrow the sky down fast when you already know what you want.',
   },
   {
     icon: Shield,
-    title: '100% Client-Side',
-    desc: 'SGP4 propagation runs in Web Workers on your CPU. No data is uploaded, no account is required.',
-  },
-  {
-    icon: Clock,
-    title: 'Time Travel',
-    desc: 'Scrub through time to replay past events or fast-forward into the future at up to 1000x speed.',
-  },
-  {
-    icon: Eye,
-    title: 'Live ISS Camera',
-    desc: 'Stream the ISS external HD camera feed directly inside the tracker, synced to its real-time position.',
+    title: 'Private local compute',
+    desc: 'Propagation stays client-side, so the responsive feel comes without handing your session off to a server.',
   },
 ];
 
@@ -44,6 +52,18 @@ const STATS = [
 ];
 
 export function HomePage() {
+  const launchFeed = useUpcomingLaunches();
+  const [clockMs, setClockMs] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = window.setInterval(() => setClockMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const nextLaunch = launchFeed.launches?.[0] ?? null;
+  const nextLaunchDeltaMs = nextLaunch ? new Date(nextLaunch.net).getTime() - clockMs : null;
+  const nextLaunchTone = nextLaunchDeltaMs == null ? null : getLaunchTone(nextLaunchDeltaMs);
+
   return (
     <div className="relative">
       {/* Hero Section — Globe spans FULL section behind text */}
@@ -121,32 +141,146 @@ export function HomePage() {
       {/* Features grid - top 6 */}
       <section id="features" className="relative z-10 py-24">
         <div className="mx-auto max-w-7xl px-6">
-          <div className="text-center mb-16">
-            <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3">
+          <div className="mb-16 text-center">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-space-accent">
               Features
             </p>
             <h2 className="text-3xl font-bold text-white md:text-5xl">
-              Everything you need for orbital awareness
+              A cleaner preview of what SpaceMap actually gives you
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-space-dim">
-              From satellite search to conjunction analysis, SpaceMap gives you a mission-control
-              experience in a single browser tab.
+              The home page should show the product, not just describe it. This section stays tight,
+              but it now hints at the live camera, collision watch, local sky ranking, and launch
+              countdowns waiting inside the tracker.
             </p>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map((f) => (
-              <div
-                key={f.title}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-7 backdrop-blur-sm transition-all hover:border-space-accent/30 hover:bg-white/10"
-              >
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/20 to-[#8ed8ff]/20 text-space-accent transition-transform group-hover:scale-110">
-                  <f.icon size={22} />
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
+            <div className="group relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(165deg,rgba(255,255,255,0.08),rgba(8,15,25,0.97)_58%,rgba(77,150,232,0.14))] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:border-space-accent/30 hover:shadow-[0_28px_75px_rgba(77,150,232,0.14)] md:p-8">
+              <div className="absolute right-[-4rem] top-[-3rem] h-32 w-32 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
+              <div className="absolute bottom-[-3rem] left-[-2rem] h-28 w-28 rounded-full bg-[#ff6b6b]/10 blur-3xl" />
+
+              <div className="relative">
+                <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_auto] md:items-start">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
+                      Mission Surface
+                    </p>
+                    <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight text-white md:text-3xl">
+                      The strongest product moments are visible here before you ever open the full
+                      feature stack.
+                    </h3>
+                    <p className="mt-4 max-w-2xl text-sm leading-relaxed text-space-dim">
+                      Real tracker behavior, compressed into one landing-page card so visitors can
+                      feel the product instead of reading six copies of the same pitch.
+                    </p>
+                  </div>
+
+                  <div className="hidden grid-cols-[4rem_9rem] gap-3 md:grid">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-[1.25rem] border border-white/10 bg-white/10 text-space-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                      <Activity size={24} />
+                    </div>
+                    <div className="flex h-16 items-center justify-center rounded-full border border-white/10 bg-white/5 px-5 py-3 text-center text-[10px] font-semibold uppercase leading-[1.45] tracking-[0.22em] text-space-dim shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]">
+                      <span>Live tracker preview</span>
+                    </div>
+                  </div>
                 </div>
-                <h3 className="text-base font-semibold text-white">{f.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-space-dim">{f.desc}</p>
+
+                <div className="mt-7 grid gap-4 md:grid-cols-3">
+                  {[
+                    {
+                      icon: Activity,
+                      title: 'Collision watch',
+                      desc: 'Probability-led ranking replaces abstract risk art.',
+                    },
+                    {
+                      icon: Camera,
+                      title: 'ISS camera',
+                      desc: 'Live station video sits in the same experience.',
+                    },
+                    {
+                      icon: MapPin,
+                      title: 'Closest to you',
+                      desc: 'Local sky ranking translates orbit into miles.',
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.title}
+                      className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-space-accent">
+                        <item.icon size={18} />
+                      </div>
+                      <h4 className="mt-4 text-sm font-semibold text-white">{item.title}</h4>
+                      <p className="mt-2 text-sm leading-relaxed text-space-dim">{item.desc}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-5 rounded-[1.6rem] border border-white/10 bg-[#09131f]/88 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-space-dim">
+                        Launch lane
+                      </div>
+                      <div className="mt-2 text-lg font-semibold text-white">
+                        {nextLaunch?.name ?? 'Upcoming launches stay synced to the tracker feed'}
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-space-dim">
+                        {launchFeed.loading ? 'Loading' : 'Shared feed'}
+                      </span>
+                      {nextLaunchTone && (
+                        <span
+                          className={`rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] ${nextLaunchTone.dotClass}`}
+                        >
+                          {nextLaunchTone.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-4 md:grid-cols-[minmax(0,1fr)_auto_auto] md:items-end">
+                    <div className="min-w-0">
+                      <div className="truncate text-sm text-space-dim">
+                        {nextLaunch?.rocket?.configuration?.full_name ??
+                          nextLaunch?.rocket?.configuration?.name ??
+                          'Launch vehicle details sync in from the live list'}
+                      </div>
+                      <div className="mt-1 truncate text-xs uppercase tracking-[0.24em] text-space-dim">
+                        {nextLaunch?.pad?.location?.name ??
+                          nextLaunch?.pad?.name ??
+                          launchFeed.error ??
+                          'Countdown and launch metadata appear here'}
+                      </div>
+                    </div>
+                    <div className="text-2xl font-semibold text-white">
+                      {nextLaunchDeltaMs == null ? 'T-' : formatLaunchCountdown(nextLaunchDeltaMs)}
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-space-dim">
+                      <Radio size={14} className={nextLaunchTone?.textClass ?? 'text-space-accent'} />
+                      <span>{launchFeed.error ? 'Retrying quietly' : 'Tracker-linked'}</span>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-1">
+              {FEATURE_SUPPORT.map((f) => (
+                <div
+                  key={f.title}
+                  className="group rounded-[1.75rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-space-accent/30 hover:bg-white/10 hover:shadow-[0_18px_45px_rgba(77,150,232,0.12)]"
+                >
+                  <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/20 to-[#8ed8ff]/20 text-space-accent transition-transform duration-300 group-hover:scale-110">
+                    <f.icon size={22} />
+                  </div>
+                  <h3 className="text-base font-semibold text-white">{f.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-space-dim">{f.desc}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="mt-12 text-center">
