@@ -5,7 +5,7 @@ import { closestPairs } from '../state/snapshot-util.js';
 import { getSimulation } from '../simulation/simulation.js';
 import { ORBIT_CLASS_COLOR } from '@spacemap/shared';
 
-const REFRESH_MS = 6000;
+const REFRESH_MS = 500;
 
 interface RankedConjunctionRow extends ConjunctionResult {
   aName: string;
@@ -92,9 +92,7 @@ export function ConjunctionLeaderboard() {
           <div className="text-[9px] uppercase tracking-widest text-space-dim">
             Global collision watch
           </div>
-          <div className="font-mono text-sm text-space-text">
-            Top 10 · updated every {REFRESH_MS / 1000}s
-          </div>
+          <div className="font-mono text-sm text-space-text">Top 10</div>
         </div>
         <button
           onClick={() => setOverlay('leaderboard', false)}
@@ -108,14 +106,6 @@ export function ConjunctionLeaderboard() {
         Pairs are ranked by actual collision probability over the next 24 hours, with miss distance
         and relative speed kept beside the percentage. Click any row to load the full conjunction
         analysis in the telemetry panel.
-      </div>
-
-      <div className="grid grid-cols-[auto_minmax(9rem,1fr)_6.5rem_4.75rem_5.5rem] gap-2 border-b border-space-border/40 px-3 py-2 font-mono text-[10px] uppercase tracking-[0.18em] text-space-dim">
-        <span>#</span>
-        <span>Pair</span>
-        <span className="text-right">Pc</span>
-        <span className="text-right">Miss</span>
-        <span className="text-right">Speed</span>
       </div>
 
       <ul className="flex-1 overflow-auto font-mono text-xs">
@@ -133,24 +123,38 @@ export function ConjunctionLeaderboard() {
                   p.aId,
                 );
               }}
-              className="grid w-full grid-cols-[auto_minmax(9rem,1fr)_6.5rem_4.75rem_5.5rem] items-center gap-2 px-3 py-2 text-left hover:bg-white/5"
+              className="block w-full px-3 py-3 text-left transition-colors hover:bg-white/5"
             >
-              <span className="w-4 text-space-dim">{idx + 1}</span>
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 truncate text-space-text">
-                  <ClassDot cls={p.aClass} />
-                  <span className="truncate">{p.aName}</span>
+              <div className="flex items-start gap-3">
+                <span className="mt-1 w-5 shrink-0 text-space-dim">{idx + 1}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5 truncate text-space-text">
+                    <ClassDot cls={p.aClass} />
+                    <span className="truncate">{p.aName}</span>
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5 truncate text-space-dim">
+                    <ClassDot cls={p.bClass} />
+                    <span className="truncate">{p.bName}</span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-1.5 truncate text-space-dim">
-                  <ClassDot cls={p.bClass} />
-                  <span className="truncate">{p.bName}</span>
+                <div className="shrink-0 text-right">
+                  <div className={`text-sm font-semibold ${getConjunctionTone(p.severity, p.probabilityOfCollision)}`}>
+                    {formatProbabilityPercent(p.probabilityOfCollision)}
+                  </div>
+                  <div className="mt-1 text-[9px] uppercase tracking-[0.18em] text-space-dim">
+                    Collision
+                  </div>
                 </div>
               </div>
-              <span className={`text-right ${getConjunctionTone(p.severity, p.probabilityOfCollision)}`}>
-                {formatProbabilityPercent(p.probabilityOfCollision)}
-              </span>
-              <span className="text-right text-space-warn">{p.missKm.toFixed(2)} km</span>
-              <span className="text-right text-space-dim">{p.relSpeedKmS.toFixed(2)} km/s</span>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 pl-8">
+                <MetricChip label="Miss" value={`${p.missKm.toFixed(2)} km`} valueClass="text-space-warn" />
+                <MetricChip
+                  label="Speed"
+                  value={`${p.relSpeedKmS.toFixed(2)} km/s`}
+                  valueClass="text-space-dim"
+                />
+              </div>
             </button>
           </li>
         ))}
@@ -186,4 +190,21 @@ function formatProbabilityPercent(pc: number): string {
 
 function trimTrailingZeroes(value: string): string {
   return value.replace(/(\.\d*?[1-9])0+$/u, '$1').replace(/\.0+$/u, '');
+}
+
+function MetricChip({
+  label,
+  value,
+  valueClass,
+}: {
+  label: string;
+  value: string;
+  valueClass: string;
+}) {
+  return (
+    <div className="rounded-lg border border-space-border/60 bg-space-bg/30 px-2.5 py-2">
+      <div className="text-[9px] uppercase tracking-[0.18em] text-space-dim">{label}</div>
+      <div className={`mt-1 text-xs font-semibold ${valueClass}`}>{value}</div>
+    </div>
+  );
 }
