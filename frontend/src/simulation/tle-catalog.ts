@@ -131,6 +131,11 @@ const LIVE_CHUNKS: CatalogChunkDefinition[] = [
     groups: ['active'],
   },
   {
+    id: 'recent',
+    label: 'Recent launches',
+    groups: ['last-30-days'],
+  },
+  {
     id: 'debris',
     label: 'Tracked debris',
     groups: ['cosmos-2251-debris', 'fengyun-1c-debris', 'iridium-33-debris'],

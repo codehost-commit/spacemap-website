@@ -1,6 +1,6 @@
 {
-  "fetchedAt": 1785365955935,
-  "totalCount": 19545,
+  "fetchedAt": 1785368494398,
+  "totalCount": 19696,
   "chunks": [
     {
       "id": "core",
@@ -31,6 +31,12 @@
       "label": "General on-orbit catalog",
       "count": 12657,
       "path": "data/catalog-payloads.json"
+    },
+    {
+      "id": "recent",
+      "label": "Recent launches",
+      "count": 151,
+      "path": "data/catalog-recent.json"
     },
     {
       "id": "debris",
