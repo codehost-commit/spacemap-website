@@ -39,6 +39,10 @@ export function TrackerPage() {
 
   function dismissGuide() {
     setShowGuide(false);
+  }
+
+  function hideGuideOnFutureVisits() {
+    setShowGuide(false);
     try {
       localStorage.setItem(TRACKER_GUIDE_KEY, '1');
     } catch {
@@ -62,7 +66,7 @@ export function TrackerPage() {
                       First pass
                     </SystemPill>
                     <SystemPill tone="neutral">
-                      Shows once on this browser
+                      Shown on each visit by default
                     </SystemPill>
                   </div>
                   <h1 className="mt-4 text-2xl font-semibold leading-tight text-white">
@@ -113,13 +117,21 @@ export function TrackerPage() {
                 ))}
               </div>
 
-              <button
-                onClick={dismissGuide}
-                className="mt-6 inline-flex items-center gap-2 rounded-xl border border-space-accent/30 bg-space-accent/10 px-5 py-3 text-sm font-semibold text-space-accent transition-all hover:bg-space-accent/15 hover:text-white"
-              >
-                <Radio size={16} />
-                Start tracking
-              </button>
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <button
+                  onClick={dismissGuide}
+                  className="inline-flex items-center gap-2 rounded-xl border border-space-accent/30 bg-space-accent/10 px-5 py-3 text-sm font-semibold text-space-accent transition-all hover:bg-space-accent/15 hover:text-white"
+                >
+                  <Radio size={16} />
+                  Start tracking
+                </button>
+                <button
+                  onClick={hideGuideOnFutureVisits}
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-space-dim transition-all hover:border-white/20 hover:bg-white/10 hover:text-white"
+                >
+                  Do not show on future visits
+                </button>
+              </div>
             </div>
           </div>
         </div>
