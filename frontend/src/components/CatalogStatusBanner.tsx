@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import emblemSrc from '../assets/brand-emblem.png';
 import { useStore } from '../state/store.js';
 
@@ -16,36 +17,60 @@ export function CatalogStatusBanner() {
   const imageryReady = useStore((s) => s.imageryReady);
   const firstSnapshot = useStore((s) => s.firstSnapshotReceived);
   const catalogSize = useStore((s) => s.catalogSize);
+  const [displayedStepCount, setDisplayedStepCount] = useState(0);
+  const [allowDismiss, setAllowDismiss] = useState(false);
 
   const catalogReady = status === 'ready';
   const isError = status === 'error';
   const fullyReady = catalogReady && imageryReady && firstSnapshot;
-  if (fullyReady && !isError) return null;
-
   const step1Done = catalogReady || isError;
   const step2Done = step1Done && imageryReady;
   const step3Done = step2Done && firstSnapshot;
   const step4Done = step3Done;
+  const targetStepCount = isError ? 0 : step4Done ? 4 : step3Done ? 3 : step2Done ? 2 : step1Done ? 1 : 0;
+
+  useEffect(() => {
+    if (isError) {
+      setAllowDismiss(false);
+      setDisplayedStepCount(0);
+      return undefined;
+    }
+    if (targetStepCount > displayedStepCount) {
+      const timeout = window.setTimeout(() => {
+        setDisplayedStepCount((count) => Math.min(count + 1, targetStepCount));
+      }, displayedStepCount === 0 ? 260 : 420);
+      return () => window.clearTimeout(timeout);
+    }
+    if (fullyReady && displayedStepCount === 4 && !allowDismiss) {
+      const timeout = window.setTimeout(() => {
+        setAllowDismiss(true);
+      }, 320);
+      return () => window.clearTimeout(timeout);
+    }
+    return undefined;
+  }, [allowDismiss, displayedStepCount, fullyReady, isError, targetStepCount]);
+
+  if (fullyReady && allowDismiss && !isError) return null;
+
   const steps: Array<{ label: string; done: boolean; note?: string }> = [
     {
       label: 'Loading orbital catalog',
-      done: step1Done,
+      done: displayedStepCount >= 1,
       note: catalogReady ? `${catalogSize.toLocaleString()} objects` : undefined,
     },
     {
       label: 'Rendering Earth imagery',
-      done: step2Done,
+      done: displayedStepCount >= 2,
     },
     {
       label: 'Computing first snapshot',
-      done: step3Done,
+      done: displayedStepCount >= 3,
     },
     {
       label: 'Finalizing interface',
-      done: step4Done,
+      done: displayedStepCount >= 4,
     },
   ];
-  const doneCount = steps.filter((s) => s.done).length;
 
   return (
     <div className="pointer-events-auto absolute inset-0 z-40 flex items-center justify-center bg-space-bg/90 backdrop-blur">

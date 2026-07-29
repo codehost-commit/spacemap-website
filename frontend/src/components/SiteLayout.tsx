@@ -4,6 +4,14 @@ import { SiteHeader } from './SiteHeader.js';
 import { SiteFooter } from './SiteFooter.js';
 import { ShaderBackground } from './ui/shader-r.js';
 
+const PAGE_TITLES: Record<string, string> = {
+  '/': 'Home',
+  '/tracker': 'Tracker',
+  '/about': 'About',
+  '/features': 'Features',
+  '/contact': 'Contact',
+};
+
 export function SiteLayout() {
   const { pathname } = useLocation();
   const isTracker = pathname === '/tracker';
@@ -11,6 +19,10 @@ export function SiteLayout() {
   // Scroll to top on route change
   useEffect(() => {
     window.scrollTo({ top: 0 });
+  }, [pathname]);
+
+  useEffect(() => {
+    document.title = `SpaceMap | ${PAGE_TITLES[pathname] ?? 'Home'}`;
   }, [pathname]);
 
   if (isTracker) {
