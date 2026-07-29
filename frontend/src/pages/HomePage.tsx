@@ -149,9 +149,9 @@ export function HomePage() {
               A cleaner preview of what SpaceMap actually gives you
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-space-dim">
-              The home page should show the product, not just describe it. This section stays tight,
-              but it now hints at the live camera, collision watch, local sky ranking, and launch
-              countdowns waiting inside the tracker.
+              Track live satellites and debris, monitor close approaches, watch the ISS camera,
+              rank what is nearest to you, and stay ahead of upcoming launches from one browser-based
+              orbital map.
             </p>
           </div>
 
