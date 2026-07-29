@@ -8,7 +8,7 @@
     "moduleResolution": "Bundler",
     "outDir": "./dist",
     "noEmit": true,
-    "types": ["vite/client"],
+    "types": ["vite/client", "three"],
     "allowImportingTsExtensions": false
   },
   "include": ["src/**/*"]

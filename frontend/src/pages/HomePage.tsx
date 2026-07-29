@@ -46,9 +46,14 @@ const STATS = [
 export function HomePage() {
   return (
     <div className="relative">
-      {/* Hero Section */}
+      {/* Hero Section — Globe spans FULL section behind text */}
       <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
-        {/* Hero text + product image side by side */}
+        {/* Full-bleed globe background */}
+        <div className="absolute inset-0 z-0">
+          <HeroGlobe className="w-full h-full" />
+        </div>
+
+        {/* Content overlay */}
         <div className="relative z-10 mx-auto max-w-7xl px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left: text */}
           <div className="text-center lg:text-left">
@@ -60,14 +65,14 @@ export function HomePage() {
                 draggable={false}
               />
             </div>
-            <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl">
+            <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl drop-shadow-lg">
               See everything
               <br />
               <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
                 above Earth.
               </span>
             </h1>
-            <p className="mt-6 max-w-xl text-lg text-space-dim md:text-xl">
+            <p className="mt-6 max-w-xl text-lg text-white/80 md:text-xl drop-shadow-md">
               Real-time orbital tracking for every satellite, piece of debris, and spacecraft,
               rendered on a 3D globe and powered entirely by your browser.
             </p>
@@ -81,7 +86,7 @@ export function HomePage() {
               </Link>
               <Link
                 to="/about"
-                className="flex items-center gap-2 rounded-xl border border-white/20 px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/10"
+                className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/10"
               >
                 <Eye size={18} />
                 Learn More
@@ -89,14 +94,12 @@ export function HomePage() {
             </div>
           </div>
 
-          {/* Right: animated 3D globe with satellite particles */}
-          <div className="relative flex items-center justify-center">
-            <HeroGlobe className="w-full aspect-square max-w-[580px]" />
-          </div>
+          {/* Right: empty space — globe continues underneath */}
+          <div className="hidden lg:block" />
         </div>
 
         {/* Scroll hint */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce z-10">
           <div className="h-8 w-5 rounded-full border-2 border-white/30 flex items-start justify-center pt-1.5">
             <div className="h-2 w-1 rounded-full bg-white/50" />
           </div>

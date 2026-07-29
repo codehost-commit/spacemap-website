@@ -89,13 +89,12 @@ export function AboutPage() {
 
         <div className="flex flex-col items-center">
           <div className="relative group" style={{ transformStyle: 'preserve-3d' }}>
-            {/* Layered glow rings for depth */}
-            <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-[#4d96e8] to-[#8ed8ff] opacity-20 blur-2xl group-hover:opacity-40 transition-opacity" />
+            <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-[#4d96e8] to-[#8ed8ff] opacity-20 blur-2xl transition-opacity group-hover:opacity-40" />
             <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[#4d96e8] to-[#8ed8ff] opacity-50 blur-lg" />
             <img
               src={founderImg}
               alt="Rahul Awasthi"
-              className="relative h-44 w-44 rounded-full object-cover border-4 border-white/10 transition-transform duration-500 group-hover:scale-105"
+              className="relative h-56 w-56 rounded-full border-4 border-white/10 object-cover shadow-[0_24px_70px_rgba(5,16,26,0.45)] transition-transform duration-500 group-hover:scale-[1.02] md:h-64 md:w-64"
               style={{ transform: 'translateZ(20px)' }}
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';

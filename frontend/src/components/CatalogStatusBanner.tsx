@@ -79,8 +79,7 @@ export function CatalogStatusBanner() {
           <>
             <div className="mb-3 whitespace-pre-line text-xs text-space-bad">{error}</div>
             <div className="text-xs text-space-dim">
-              If you deployed via GitHub Actions, check the "Fetch TLE snapshot for bundling" step
-              in the workflow log.
+              Wait a few minutes and try again. If the problem persists, please report it on the Contact form. 
             </div>
             <button
               onClick={() => location.reload()}

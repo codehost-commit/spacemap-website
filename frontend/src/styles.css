@@ -38,6 +38,64 @@ html {
   }
 }
 
+@keyframes featureFloat {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes featureOrbitSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes featureScanSweep {
+  0% {
+    transform: translateX(-140%) skewX(-22deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateX(220%) skewX(-22deg);
+    opacity: 0;
+  }
+}
+
+.feature-float {
+  animation: featureFloat 6.4s ease-in-out infinite;
+}
+
+.feature-float-delayed {
+  animation-delay: -2.15s;
+}
+
+.feature-orbit-ring {
+  animation: featureOrbitSpin 18s linear infinite;
+  transform-origin: center;
+}
+
+.feature-orbit-ring-slow {
+  animation-duration: 26s;
+  animation-direction: reverse;
+}
+
+.feature-scan-beam {
+  animation: featureScanSweep 4.2s ease-in-out infinite;
+}
+
 /* Liquid glass header effect */
 .liquid-glass {
   background: linear-gradient(
