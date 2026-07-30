@@ -8,7 +8,7 @@ export type CatalogSourceProvider =
   | 'celestrak-tle'
   | 'spacemap-bundled-tle'
   | 'unknown';
-export type CatalogElementSource = 'gp' | 'supgp' | 'tle' | 'none';
+export type CatalogElementSource = 'gp' | 'supgp' | 'tle' | 'derived' | 'none';
 
 /** Static, slow-changing satellite metadata. */
 export interface SatelliteMeta {

@@ -115,9 +115,7 @@ interface StoreState {
 }
 
 const defaultFilter = new Set<OrbitClass>(ORBIT_CLASSES);
-const defaultObjectFilter = new Set<CatalogObjectType>(
-  CATALOG_OBJECT_TYPES.filter((kind) => kind !== 'debris'),
-);
+const defaultObjectFilter = new Set<CatalogObjectType>(CATALOG_OBJECT_TYPES);
 
 export const useStore = create<StoreState>((set) => ({
   catalogStatus: 'idle',
