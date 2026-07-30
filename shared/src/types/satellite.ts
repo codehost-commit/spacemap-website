@@ -1,6 +1,13 @@
 /** Orbital regime used for coloring trails and filtering. */
 export type OrbitClass = 'LEO' | 'MEO' | 'GEO' | 'HEO' | 'POLAR' | 'SSO' | 'UNKNOWN';
 export type CatalogObjectType = 'payload' | 'rocket-body' | 'debris' | 'unknown';
+export type CatalogSourceProvider =
+  | 'celestrak-gp'
+  | 'celestrak-supgp'
+  | 'celestrak-tle'
+  | 'spacemap-bundled-tle'
+  | 'unknown';
+export type CatalogElementSource = 'gp' | 'supgp' | 'tle' | 'none';
 
 /** Static, slow-changing satellite metadata. */
 export interface SatelliteMeta {
@@ -33,6 +40,11 @@ export interface Tle {
   launchDate?: string;
   decayDate?: string;
   sourceGroups?: string[];
+  sourceFeeds?: string[];
+  sourceProvider?: CatalogSourceProvider;
+  sourcePriority?: number;
+  elementSource?: CatalogElementSource;
+  propagatable?: boolean;
   classificationType?: string;
   /** GP/OMM orbital fields. */
   meanMotion?: number;
@@ -52,16 +64,20 @@ export interface CatalogChunkFile {
   id: string;
   label: string;
   count: number;
+  propagatableCount: number;
   objects: Tle[];
 }
 
 export interface CatalogChunkManifest {
   fetchedAt: number;
   totalCount: number;
+  propagatableCount: number;
+  metadataOnlyCount: number;
   chunks: Array<{
     id: string;
     label: string;
     count: number;
+    propagatableCount: number;
     path: string;
   }>;
 }

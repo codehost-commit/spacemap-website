@@ -37,6 +37,7 @@ export class Simulation {
             name: t.name,
             objectType: t.objectType ?? 'unknown',
             owner: t.owner,
+            sourcePriority: t.sourcePriority,
           }));
           if (mode === 'replace') store.setIndex(indexEntries);
           else store.appendIndex(indexEntries);

@@ -17,6 +17,7 @@ export interface SatelliteIndexEntry {
   objectType: CatalogObjectType;
   orbitClass?: OrbitClass;
   owner?: string;
+  sourcePriority?: number;
 }
 
 export type OverlayId = 'iss' | 'sky' | 'saved' | 'leaderboard' | 'launches';
@@ -165,13 +166,22 @@ export const useStore = create<StoreState>((set) => ({
       const index = [...s.index];
       const indexByNorad = new Map(s.indexByNorad);
       const objectTypeByNorad = new Map(s.objectTypeByNorad);
-      const seen = new Set(index.map((entry) => entry.noradId));
+      const byNorad = new Map(index.map((entry, idx) => [entry.noradId, idx]));
       for (const entry of incoming) {
-        if (seen.has(entry.noradId)) continue;
-        seen.add(entry.noradId);
-        index.push(entry);
-        indexByNorad.set(entry.noradId, entry.name);
-        objectTypeByNorad.set(entry.noradId, entry.objectType);
+        const existingIdx = byNorad.get(entry.noradId);
+        if (existingIdx == null) {
+          byNorad.set(entry.noradId, index.length);
+          index.push(entry);
+          indexByNorad.set(entry.noradId, entry.name);
+          objectTypeByNorad.set(entry.noradId, entry.objectType);
+          continue;
+        }
+        const existing = index[existingIdx];
+        if ((entry.sourcePriority ?? 0) >= (existing.sourcePriority ?? 0)) {
+          index[existingIdx] = { ...existing, ...entry };
+          indexByNorad.set(entry.noradId, entry.name);
+          objectTypeByNorad.set(entry.noradId, entry.objectType);
+        }
       }
       return {
         index,

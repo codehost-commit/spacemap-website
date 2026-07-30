@@ -11,13 +11,26 @@ import { catalogObjectToSatRec } from './catalog-satrec.js';
 const tles = new Map<number, Tle>();
 const satrecs = new Map<number, satellite.SatRec>();
 
+function epochMs(entry: Tle): number {
+  const ms = Date.parse(entry.epoch ?? '');
+  return Number.isFinite(ms) ? ms : -1;
+}
+
+function incomingWins(current: Tle, incoming: Tle): boolean {
+  const currentPriority = current.sourcePriority ?? 0;
+  const incomingPriority = incoming.sourcePriority ?? 0;
+  if (incomingPriority !== currentPriority) return incomingPriority > currentPriority;
+  return epochMs(incoming) > epochMs(current);
+}
+
 export function setLocalCatalog(items: Tle[], mode: 'replace' | 'append' = 'replace'): void {
   if (mode === 'replace') {
     tles.clear();
     satrecs.clear();
   }
   for (const t of items) {
-    if (tles.has(t.noradId)) continue;
+    const existing = tles.get(t.noradId);
+    if (existing && !incomingWins(existing, t)) continue;
     tles.set(t.noradId, t);
     const sr = catalogObjectToSatRec(t);
     if (sr) satrecs.set(t.noradId, sr);

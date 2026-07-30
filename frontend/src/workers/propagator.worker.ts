@@ -40,6 +40,20 @@ interface SatVector {
 
 const records: Record[] = [];
 const byId = new Map<number, satellite.SatRec>();
+const recordIndexById = new Map<number, number>();
+const entryMetaById = new Map<number, Tle>();
+
+function epochMs(entry: Tle): number {
+  const ms = Date.parse(entry.epoch ?? '');
+  return Number.isFinite(ms) ? ms : -1;
+}
+
+function incomingWins(current: Tle, incoming: Tle): boolean {
+  const currentPriority = current.sourcePriority ?? 0;
+  const incomingPriority = incoming.sourcePriority ?? 0;
+  if (incomingPriority !== currentPriority) return incomingPriority > currentPriority;
+  return epochMs(incoming) > epochMs(current);
+}
 
 self.onmessage = (ev: MessageEvent<InMsg>) => {
   const msg = ev.data;
@@ -59,17 +73,27 @@ function load(tles: Tle[], mode: 'replace' | 'append'): void {
   if (mode === 'replace') {
     records.length = 0;
     byId.clear();
+    recordIndexById.clear();
+    entryMetaById.clear();
   }
   let bad = 0;
   for (const t of tles) {
-    if (byId.has(t.noradId)) continue;
+    const existingMeta = entryMetaById.get(t.noradId);
+    if (existingMeta && !incomingWins(existingMeta, t)) continue;
     try {
       const sr = catalogObjectToSatRec(t);
       if (!sr) {
         bad++;
         continue;
       }
-      records.push({ id: t.noradId, satrec: sr });
+      entryMetaById.set(t.noradId, t);
+      const existingIndex = recordIndexById.get(t.noradId);
+      if (existingIndex != null) {
+        records[existingIndex] = { id: t.noradId, satrec: sr };
+      } else {
+        recordIndexById.set(t.noradId, records.length);
+        records.push({ id: t.noradId, satrec: sr });
+      }
       byId.set(t.noradId, sr);
     } catch {
       bad++;
