@@ -17,6 +17,7 @@ import { Planets } from '../cesium/planets.js';
 import { Countries } from '../cesium/countries.js';
 import { Cities } from '../cesium/cities.js';
 import { GroundStations } from '../cesium/ground-stations.js';
+import { CloudOverlay } from '../cesium/clouds.js';
 import { Simulation, installSimulation } from '../simulation/simulation.js';
 import { useStore } from '../state/store.js';
 import { installFocusApi } from '../cesium/focus.js';
@@ -53,6 +54,7 @@ export function GlobeCanvas() {
     const countries = new Countries(viewer.scene);
     const cities = new Cities(viewer.scene);
     const groundStations = new GroundStations(viewer.scene);
+    const clouds = new CloudOverlay(viewer);
     const sim = new Simulation(viewer);
 
     const uninstallFocus = installFocusApi(viewer, layer);
@@ -72,6 +74,7 @@ export function GlobeCanvas() {
     // Apply the initial imagery layer immediately so users see something even
     // while TLEs download.
     void imagery.apply(useStore.getState().imageryId);
+    clouds.setEnabled(useStore.getState().cloudsOn);
 
     // Track initial-tile-load completion so the loading screen can dismiss
     // once the globe is actually rendered. Cesium fires
@@ -254,6 +257,7 @@ export function GlobeCanvas() {
     let lastCountries = false;
     let lastCities = false;
     let lastGroundStations = false;
+    let lastClouds = useStore.getState().cloudsOn;
     let lastImagery = useStore.getState().imageryId;
     const unsubUi = useStore.subscribe((s) => {
       if (s.filter !== lastFilterRef || s.objectFilter !== lastObjectFilterRef) {
@@ -314,6 +318,10 @@ export function GlobeCanvas() {
         lastGroundStations = s.groundStationsOn;
         groundStations.setEnabled(s.groundStationsOn);
       }
+      if (s.cloudsOn !== lastClouds) {
+        lastClouds = s.cloudsOn;
+        clouds.setEnabled(s.cloudsOn);
+      }
       if (s.imageryId !== lastImagery) {
         lastImagery = s.imageryId;
         void imagery.apply(s.imageryId);
@@ -349,6 +357,7 @@ export function GlobeCanvas() {
       countries.destroy();
       cities.destroy();
       groundStations.destroy();
+      clouds.destroy();
       stars.destroy();
       planets.destroy();
       imagery.destroy();

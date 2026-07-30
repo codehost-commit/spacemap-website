@@ -55,6 +55,8 @@ export function FilterPanel() {
   const setCities = useStore((s) => s.setCities);
   const groundStationsOn = useStore((s) => s.groundStationsOn);
   const setGroundStations = useStore((s) => s.setGroundStations);
+  const cloudsOn = useStore((s) => s.cloudsOn);
+  const setClouds = useStore((s) => s.setClouds);
 
   return (
     <aside className="spacemap-filter pointer-events-auto min-h-0 flex-1 overflow-y-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
@@ -227,6 +229,15 @@ export function FilterPanel() {
           className="h-3 w-3 accent-space-accent"
         />
         <span>Ground stations</span>
+      </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={cloudsOn}
+          onChange={(e) => setClouds(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Cloud cover (MODIS)</span>
       </label>
     </aside>
   );
