@@ -10,6 +10,8 @@ export function HeaderHUD() {
   const error = useStore((s) => s.catalogError);
   const catalogSize = useStore((s) => s.catalogSize);
   const catalogTargetCount = useStore((s) => s.catalogTargetCount);
+  const trackableCatalogSize = useStore((s) => s.trackableCatalogSize);
+  const trackableTargetCount = useStore((s) => s.trackableTargetCount);
   const catalogHydrating = useStore((s) => s.catalogHydrating);
   const snapshotCount = useStore((s) => s.snapshot?.count ?? 0);
   const simTimeMs = useStore((s) => s.simTimeMs);
@@ -66,11 +68,19 @@ export function HeaderHUD() {
 
       <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
         <Stat
-          label="Catalog"
+          label="Known"
           value={
             catalogHydrating && catalogTargetCount > catalogSize
               ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()}`
               : catalogSize.toLocaleString()
+          }
+        />
+        <Stat
+          label="Trackable"
+          value={
+            catalogHydrating && trackableTargetCount > trackableCatalogSize
+              ? `${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()}`
+              : trackableCatalogSize.toLocaleString()
           }
         />
         <Stat label="Rendered" value={snapshotCount.toLocaleString()} />

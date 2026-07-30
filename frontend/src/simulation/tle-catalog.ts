@@ -21,6 +21,7 @@ const ACTIVE_TLE_FALLBACKS = [
 const SOURCE_PRIORITY: Record<CatalogSourceProvider, number> = {
   'celestrak-supgp': 320,
   'celestrak-gp': 220,
+  'celestrak-satcat': 40,
   'celestrak-tle': 140,
   'spacemap-bundled-tle': 120,
   unknown: 0,
@@ -33,6 +34,7 @@ interface CatalogChunkDefinition {
   label: string;
   groups: string[];
   supplementalFiles?: string[];
+  satcatFull?: boolean;
 }
 
 interface LoadCatalogOptions {
@@ -43,6 +45,8 @@ interface LoadCatalogOptions {
     mode: ChunkMode;
     loadedCount: number;
     totalCount: number;
+    propagatableLoadedCount: number;
+    propagatableTotalCount: number;
     hydrating: boolean;
   }) => void | Promise<void>;
   maxChunks?: number;
@@ -76,6 +80,18 @@ interface SatcatRecord {
   OWNER?: string;
   LAUNCH_DATE?: string;
   DECAY_DATE?: string;
+}
+
+interface FullSatcatRecord extends SatcatRecord {
+  LAUNCH_SITE?: string;
+  PERIOD?: string;
+  INCLINATION?: string;
+  APOGEE?: string;
+  PERIGEE?: string;
+  RCS?: string;
+  DATA_STATUS_CODE?: string;
+  ORBIT_CENTER?: string;
+  ORBIT_TYPE?: string;
 }
 
 const LIVE_CHUNKS: CatalogChunkDefinition[] = [
@@ -162,6 +178,13 @@ const LIVE_CHUNKS: CatalogChunkDefinition[] = [
     groups: ['cosmos-2251-debris', 'fengyun-1c-debris', 'iridium-33-debris'],
     supplementalFiles: [],
   },
+  {
+    id: 'known',
+    label: 'Known public catalog',
+    groups: [],
+    supplementalFiles: [],
+    satcatFull: true,
+  },
 ];
 
 export async function loadCatalogProgressively({
@@ -172,11 +195,13 @@ export async function loadCatalogProgressively({
   const bundledManifest = await tryBundledManifest();
   if (bundledManifest) {
     let loadedCount = 0;
+    let propagatableLoadedCount = 0;
     const chunks = bundledManifest.chunks.slice(0, cappedChunks);
     for (let i = 0; i < chunks.length; i++) {
       const chunk = chunks[i];
       const payload = await fetchBundledChunk(chunk.path);
       loadedCount += payload.objects.length;
+      propagatableLoadedCount += payload.propagatableCount;
       await onChunk({
         id: payload.id,
         label: payload.label,
@@ -184,6 +209,8 @@ export async function loadCatalogProgressively({
         mode: i === 0 ? 'replace' : 'append',
         loadedCount,
         totalCount: bundledManifest.totalCount,
+        propagatableLoadedCount,
+        propagatableTotalCount: bundledManifest.propagatableCount,
         hydrating: i < chunks.length - 1,
       });
     }
@@ -192,11 +219,13 @@ export async function loadCatalogProgressively({
 
   try {
     let loadedCount = 0;
+    let propagatableLoadedCount = 0;
     const liveChunks = LIVE_CHUNKS.slice(0, cappedChunks);
     for (let i = 0; i < liveChunks.length; i++) {
       const definition = liveChunks[i];
       const objects = await fetchLiveChunk(definition);
       loadedCount += objects.length;
+      propagatableLoadedCount += objects.filter((object) => object.propagatable !== false).length;
       await onChunk({
         id: definition.id,
         label: definition.label,
@@ -204,6 +233,8 @@ export async function loadCatalogProgressively({
         mode: i === 0 ? 'replace' : 'append',
         loadedCount,
         totalCount: loadedCount,
+        propagatableLoadedCount,
+        propagatableTotalCount: propagatableLoadedCount,
         hydrating: i < liveChunks.length - 1,
       });
     }
@@ -218,6 +249,8 @@ export async function loadCatalogProgressively({
       mode: 'replace',
       loadedCount: fallback.length,
       totalCount: fallback.length,
+      propagatableLoadedCount: fallback.length,
+      propagatableTotalCount: fallback.length,
       hydrating: false,
     });
     if (!fallback.length) {
@@ -259,6 +292,44 @@ async function fetchBundledChunk(path: string): Promise<CatalogChunkFile> {
   });
   if (!res.ok) throw new Error(`bundled catalog chunk ${res.status}`);
   return (await res.json()) as CatalogChunkFile;
+}
+
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === ',' && !inQuotes) {
+      out.push(current);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  out.push(current);
+  return out;
+}
+
+function parseCsvObjects<T>(text: string): T[] {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headers = parseCsvLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    const row: Record<string, string> = {};
+    for (let i = 0; i < headers.length; i++) row[headers[i]] = values[i] ?? '';
+    return row as T;
+  });
 }
 
 function inferObjectType(
@@ -352,6 +423,14 @@ function sourceDescriptor(
 }
 
 async function fetchLiveChunk(definition: CatalogChunkDefinition): Promise<Tle[]> {
+  if (definition.satcatFull) {
+    const csvText = await fetchTextSourceCandidates(['https://celestrak.org/pub/satcat.csv']);
+    return parseCsvObjects<FullSatcatRecord>(csvText)
+      .map((row) => satcatRowToKnownObject(row, definition.id))
+      .filter((row): row is Tle => row != null)
+      .sort((a, b) => a.noradId - b.noradId);
+  }
+
   const objectsById = new Map<number, Tle>();
   const gpById = new Map<number, GpRecord>();
   const tleById = new Map<number, Tle>();
@@ -516,6 +595,31 @@ function buildCatalogObject(
     meanMotionDDot: numberOrUndefined(gp.MEAN_MOTION_DDOT),
     ephemerisType: numberOrUndefined(gp.EPHEMERIS_TYPE),
     revAtEpoch: numberOrUndefined(gp.REV_AT_EPOCH),
+  };
+}
+
+function satcatRowToKnownObject(row: FullSatcatRecord, chunkId: string): Tle | null {
+  const noradId = Number(row.NORAD_CAT_ID);
+  if (!Number.isFinite(noradId)) return null;
+  const name = String(row.OBJECT_NAME ?? `#${noradId}`).trim();
+  const launchDate = String(row.LAUNCH_DATE ?? '').trim();
+  const decayDate = String(row.DECAY_DATE ?? '').trim();
+  return {
+    noradId,
+    name,
+    epoch: launchDate ? `${launchDate}T00:00:00.000Z` : '1970-01-01T00:00:00.000Z',
+    intlDesignator: row.OBJECT_ID ? String(row.OBJECT_ID).trim() : undefined,
+    objectType: inferObjectType(row.OBJECT_TYPE, name, 'celestrak-satcat'),
+    opsStatusCode: row.OPS_STATUS_CODE ? String(row.OPS_STATUS_CODE).trim() : undefined,
+    owner: row.OWNER ? String(row.OWNER).trim() : undefined,
+    launchDate: launchDate || undefined,
+    decayDate: decayDate || undefined,
+    sourceGroups: [chunkId],
+    sourceFeeds: ['satcat.csv'],
+    sourceProvider: 'celestrak-satcat',
+    sourcePriority: SOURCE_PRIORITY['celestrak-satcat'],
+    elementSource: 'none',
+    propagatable: false,
   };
 }
 

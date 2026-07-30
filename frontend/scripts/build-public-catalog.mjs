@@ -89,11 +89,19 @@ const CHUNKS = [
     groups: ['cosmos-2251-debris', 'fengyun-1c-debris', 'iridium-33-debris'],
     supplementalFiles: [],
   },
+  {
+    id: 'known',
+    label: 'Known public catalog',
+    groups: [],
+    supplementalFiles: [],
+    satcatFull: true,
+  },
 ];
 
 const SOURCE_PRIORITY = {
   'celestrak-supgp': 320,
   'celestrak-gp': 220,
+  'celestrak-satcat': 40,
   'celestrak-tle': 140,
   'spacemap-bundled-tle': 120,
   unknown: 0,
@@ -240,6 +248,44 @@ async function tryFetchText(urls, headers) {
   throw lastError;
 }
 
+function parseCsvLine(line) {
+  const out = [];
+  let current = '';
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') {
+        current += '"';
+        i++;
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+    if (ch === ',' && !inQuotes) {
+      out.push(current);
+      current = '';
+      continue;
+    }
+    current += ch;
+  }
+  out.push(current);
+  return out;
+}
+
+function parseCsvObjects(text) {
+  const lines = text.split(/\r?\n/).filter(Boolean);
+  if (lines.length === 0) return [];
+  const headers = parseCsvLine(lines[0]);
+  return lines.slice(1).map((line) => {
+    const values = parseCsvLine(line);
+    const row = {};
+    for (let i = 0; i < headers.length; i++) row[headers[i]] = values[i] ?? '';
+    return row;
+  });
+}
+
 function parseTleEpoch(line1) {
   const yy = Number(line1.slice(18, 20));
   const dayOfYear = Number(line1.slice(20, 32));
@@ -321,6 +367,31 @@ function buildObject(gp, meta, chunkId, source) {
   };
 }
 
+function satcatRowToKnownObject(row, chunkId) {
+  const noradId = Number(row.NORAD_CAT_ID);
+  if (!Number.isFinite(noradId)) return null;
+  const name = String(row.OBJECT_NAME ?? `#${noradId}`).trim();
+  const launchDate = String(row.LAUNCH_DATE ?? '').trim();
+  const decayDate = String(row.DECAY_DATE ?? '').trim();
+  return {
+    noradId,
+    name,
+    epoch: launchDate ? `${launchDate}T00:00:00.000Z` : '1970-01-01T00:00:00.000Z',
+    intlDesignator: row.OBJECT_ID ? String(row.OBJECT_ID).trim() : undefined,
+    objectType: inferObjectType(row.OBJECT_TYPE, name, 'celestrak-satcat'),
+    opsStatusCode: row.OPS_STATUS_CODE ? String(row.OPS_STATUS_CODE).trim() : undefined,
+    owner: row.OWNER ? String(row.OWNER).trim() : undefined,
+    launchDate: launchDate || undefined,
+    decayDate: decayDate || undefined,
+    sourceGroups: [chunkId],
+    sourceFeeds: ['satcat.csv'],
+    sourceProvider: 'celestrak-satcat',
+    sourcePriority: SOURCE_PRIORITY['celestrak-satcat'],
+    elementSource: 'none',
+    propagatable: false,
+  };
+}
+
 function enrichLegacyObject(record, meta, chunkId, source) {
   const name = record.name ?? meta?.OBJECT_NAME ?? `#${record.noradId}`;
   return {
@@ -350,6 +421,16 @@ function sourceDescriptor(provider, feed, elementSource) {
 }
 
 async function buildChunkCandidates(chunk, headers) {
+  if (chunk.satcatFull) {
+    const candidates = new Map();
+    const csvText = await fetchText('https://celestrak.org/pub/satcat.csv', headers);
+    for (const row of parseCsvObjects(csvText)) {
+      const object = satcatRowToKnownObject(row, chunk.id);
+      if (object) mergeIntoMap(candidates, object);
+    }
+    return candidates;
+  }
+
   const candidates = new Map();
   const gpById = new Map();
   const tleById = new Map();

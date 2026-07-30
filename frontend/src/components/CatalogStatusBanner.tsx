@@ -18,6 +18,8 @@ export function CatalogStatusBanner() {
   const firstSnapshot = useStore((s) => s.firstSnapshotReceived);
   const catalogSize = useStore((s) => s.catalogSize);
   const catalogTargetCount = useStore((s) => s.catalogTargetCount);
+  const trackableCatalogSize = useStore((s) => s.trackableCatalogSize);
+  const trackableTargetCount = useStore((s) => s.trackableTargetCount);
   const catalogHydrating = useStore((s) => s.catalogHydrating);
   const [displayedStepCount, setDisplayedStepCount] = useState(0);
   const [allowDismiss, setAllowDismiss] = useState(false);
@@ -60,7 +62,7 @@ export function CatalogStatusBanner() {
       done: displayedStepCount >= 1,
       note:
         catalogReady && catalogTargetCount > 0
-          ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()}`
+          ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()} known · ${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()} live`
           : catalogReady
             ? `${catalogSize.toLocaleString()} objects`
             : undefined,
@@ -126,8 +128,9 @@ export function CatalogStatusBanner() {
             {catalogHydrating && (
               <div className="mt-4 rounded-lg border border-space-accent/20 bg-space-accent/8 px-3 py-2 text-[11px] text-space-dim">
                 The tracker opens on the startup set first, then streams in the wider public
-                catalog in the background so search, risk, and telemetry keep expanding without a
-                cold start.
+                catalog and SATCAT metadata in the background so the known-object count expands
+                without slowing first render. Live-trackable objects stay separated from
+                metadata-only history.
               </div>
             )}
           </>

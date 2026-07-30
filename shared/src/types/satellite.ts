@@ -4,6 +4,7 @@ export type CatalogObjectType = 'payload' | 'rocket-body' | 'debris' | 'unknown'
 export type CatalogSourceProvider =
   | 'celestrak-gp'
   | 'celestrak-supgp'
+  | 'celestrak-satcat'
   | 'celestrak-tle'
   | 'spacemap-bundled-tle'
   | 'unknown';

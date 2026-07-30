@@ -27,6 +27,8 @@ interface StoreState {
   catalogError: string | null;
   catalogSize: number;
   catalogTargetCount: number;
+  trackableCatalogSize: number;
+  trackableTargetCount: number;
   catalogHydrating: boolean;
   index: SatelliteIndexEntry[];
   indexByNorad: Map<number, string>;
@@ -69,7 +71,13 @@ interface StoreState {
   setCatalogStatus: (s: CatalogStatus, err?: string | null) => void;
   setIndex: (index: SatelliteIndexEntry[]) => void;
   appendIndex: (index: SatelliteIndexEntry[]) => void;
-  setCatalogProgress: (loaded: number, total: number, hydrating: boolean) => void;
+  setCatalogProgress: (
+    loaded: number,
+    total: number,
+    trackableLoaded: number,
+    trackableTotal: number,
+    hydrating: boolean,
+  ) => void;
   setSnapshot: (snap: PropagationSnapshot) => void;
   setImageryReady: (v: boolean) => void;
 
@@ -112,6 +120,8 @@ export const useStore = create<StoreState>((set) => ({
   catalogError: null,
   catalogSize: 0,
   catalogTargetCount: 0,
+  trackableCatalogSize: 0,
+  trackableTargetCount: 0,
   catalogHydrating: false,
   index: [],
   indexByNorad: new Map(),
@@ -190,8 +200,20 @@ export const useStore = create<StoreState>((set) => ({
         objectTypeByNorad,
       };
     }),
-  setCatalogProgress: (catalogSize, catalogTargetCount, catalogHydrating) =>
-    set({ catalogSize, catalogTargetCount, catalogHydrating }),
+  setCatalogProgress: (
+    catalogSize,
+    catalogTargetCount,
+    trackableCatalogSize,
+    trackableTargetCount,
+    catalogHydrating,
+  ) =>
+    set({
+      catalogSize,
+      catalogTargetCount,
+      trackableCatalogSize,
+      trackableTargetCount,
+      catalogHydrating,
+    }),
   setSnapshot: (snap) =>
     set((s) => ({
       snapshot: snap,

@@ -29,10 +29,19 @@ export class Simulation {
     try {
       let coreReady = false;
       await loadCatalogProgressively({
-        onChunk: async ({ objects, mode, loadedCount, totalCount, hydrating }) => {
-          this.worker.postMessage({ type: 'load', tles: objects, mode });
-          setLocalCatalog(objects, mode);
-          const indexEntries = objects.map((t: Tle) => ({
+        onChunk: async ({
+          objects,
+          mode,
+          loadedCount,
+          totalCount,
+          propagatableLoadedCount,
+          propagatableTotalCount,
+          hydrating,
+        }) => {
+          const propagatableObjects = objects.filter((t) => t.propagatable !== false);
+          this.worker.postMessage({ type: 'load', tles: propagatableObjects, mode });
+          setLocalCatalog(propagatableObjects, mode);
+          const indexEntries = propagatableObjects.map((t: Tle) => ({
             noradId: t.noradId,
             name: t.name,
             objectType: t.objectType ?? 'unknown',
@@ -41,7 +50,13 @@ export class Simulation {
           }));
           if (mode === 'replace') store.setIndex(indexEntries);
           else store.appendIndex(indexEntries);
-          store.setCatalogProgress(loadedCount, totalCount, hydrating);
+          store.setCatalogProgress(
+            loadedCount,
+            totalCount,
+            propagatableLoadedCount,
+            propagatableTotalCount,
+            hydrating,
+          );
           if (!coreReady) {
             coreReady = true;
             store.setCatalogStatus('ready');

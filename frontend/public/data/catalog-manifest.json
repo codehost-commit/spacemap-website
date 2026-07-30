@@ -1,8 +1,8 @@
 {
-  "fetchedAt": 1785376082786,
-  "totalCount": 19720,
+  "fetchedAt": 1785378018359,
+  "totalCount": 70741,
   "propagatableCount": 19720,
-  "metadataOnlyCount": 0,
+  "metadataOnlyCount": 51021,
   "chunks": [
     {
       "id": "core",
@@ -14,8 +14,8 @@
     {
       "id": "constellations",
       "label": "Live constellations",
-      "count": 12420,
-      "propagatableCount": 12420,
+      "count": 12419,
+      "propagatableCount": 12419,
       "path": "data/catalog-constellations.json"
     },
     {
@@ -35,15 +35,15 @@
     {
       "id": "payloads",
       "label": "General on-orbit catalog",
-      "count": 1952,
-      "propagatableCount": 1952,
+      "count": 1891,
+      "propagatableCount": 1891,
       "path": "data/catalog-payloads.json"
     },
     {
       "id": "recent",
       "label": "Recent launches",
-      "count": 9,
-      "propagatableCount": 9,
+      "count": 71,
+      "propagatableCount": 71,
       "path": "data/catalog-recent.json"
     },
     {
@@ -52,6 +52,13 @@
       "count": 2630,
       "propagatableCount": 2630,
       "path": "data/catalog-debris.json"
+    },
+    {
+      "id": "known",
+      "label": "Known public catalog",
+      "count": 51021,
+      "propagatableCount": 0,
+      "path": "data/catalog-known.json"
     }
   ]
 }
