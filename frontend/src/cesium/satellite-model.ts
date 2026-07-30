@@ -38,6 +38,15 @@ export class SatelliteModel {
   private hidden = false;
   private preRenderDispose: (() => void) | null = null;
   private loadingUrl: string | null = null;
+  /** Cached snapshot timeMs so we can detect stale snapshots and interpolate. */
+  private lastSnapTimeMs = -1;
+  private lastSnapWallMs = 0;
+  private lastPx = 0;
+  private lastPy = 0;
+  private lastPz = 0;
+  private lastVx = 0;
+  private lastVy = 0;
+  private lastVz = 0;
 
   constructor(
     private readonly viewer: Cesium.Viewer,
@@ -127,12 +136,37 @@ export class SatelliteModel {
     }
     if (i < 0) return;
 
-    const px = snap.ecefPos[i * 3];
-    const py = snap.ecefPos[i * 3 + 1];
-    const pz = snap.ecefPos[i * 3 + 2];
-    const vx = snap.ecefVel[i * 3];
-    const vy = snap.ecefVel[i * 3 + 1];
-    const vz = snap.ecefVel[i * 3 + 2];
+    const nowWall = performance.now();
+    let px: number;
+    let py: number;
+    let pz: number;
+    let vx: number;
+    let vy: number;
+    let vz: number;
+
+    if (snap.timeMs !== this.lastSnapTimeMs) {
+      // New snapshot arrived — latch base values.
+      this.lastSnapTimeMs = snap.timeMs;
+      this.lastSnapWallMs = nowWall;
+      this.lastPx = snap.ecefPos[i * 3];
+      this.lastPy = snap.ecefPos[i * 3 + 1];
+      this.lastPz = snap.ecefPos[i * 3 + 2];
+      this.lastVx = snap.ecefVel[i * 3];
+      this.lastVy = snap.ecefVel[i * 3 + 1];
+      this.lastVz = snap.ecefVel[i * 3 + 2];
+      px = this.lastPx;
+      py = this.lastPy;
+      pz = this.lastPz;
+    } else {
+      // Same snapshot — interpolate forward using velocity (m/s → m).
+      const dtSec = (nowWall - this.lastSnapWallMs) / 1000;
+      px = this.lastPx + this.lastVx * dtSec;
+      py = this.lastPy + this.lastVy * dtSec;
+      pz = this.lastPz + this.lastVz * dtSec;
+    }
+    vx = this.lastVx;
+    vy = this.lastVy;
+    vz = this.lastVz;
 
     const position = new Cesium.Cartesian3(px, py, pz);
     // Build a local ENU frame, then compute heading from velocity so +X of the

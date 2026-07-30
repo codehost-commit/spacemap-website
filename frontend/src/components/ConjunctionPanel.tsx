@@ -116,19 +116,19 @@ export function ConjunctionPanel() {
           {loading && <div className="text-space-dim">Searching next 24 h…</div>}
           {conjunction && (
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-              <Cell label="Now" value={`${conjunction.currentSepKm.toFixed(1)} km`} />
+              <Cell label="Now" value={`${conjunction.currentSepKm} km`} />
               <Cell
                 label="Rel. speed"
-                value={`${conjunction.currentRelSpeedKmS.toFixed(3)} km/s`}
+                value={`${conjunction.currentRelSpeedKmS} km/s`}
               />
               <Cell
                 label="TCA"
                 value={new Date(conjunction.tcaMs).toISOString().slice(0, 19)}
                 wide
               />
-              <Cell label="Miss @ TCA" value={`${conjunction.missKm.toFixed(3)} km`} />
-              <Cell label="Rel. speed @ TCA" value={`${conjunction.relSpeedKmS.toFixed(3)} km/s`} />
-              <Cell label="Pc" value={conjunction.probabilityOfCollision.toExponential(2)} />
+              <Cell label="Miss @ TCA" value={`${conjunction.missKm} km`} />
+              <Cell label="Rel. speed @ TCA" value={`${conjunction.relSpeedKmS} km/s`} />
+              <Cell label="Pc" value={conjunction.probabilityOfCollision.toExponential()} />
               <Cell label="Severity" value={<SeverityBar value={conjunction.severity} />} />
             </div>
           )}

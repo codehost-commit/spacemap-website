@@ -148,10 +148,10 @@ export function ConjunctionLeaderboard() {
               </div>
 
               <div className="mt-3 grid grid-cols-2 gap-2 pl-8">
-                <MetricChip label="Miss" value={`${p.missKm.toFixed(2)} km`} valueClass="text-space-warn" />
+                <MetricChip label="Miss" value={`${p.missKm} km`} valueClass="text-space-warn" />
                 <MetricChip
                   label="Speed"
-                  value={`${p.relSpeedKmS.toFixed(2)} km/s`}
+                  value={`${p.relSpeedKmS} km/s`}
                   valueClass="text-space-dim"
                 />
               </div>
@@ -182,14 +182,10 @@ function getConjunctionTone(severity: number, pc: number): string {
 function formatProbabilityPercent(pc: number): string {
   const percent = pc * 100;
   if (percent === 0) return '0%';
-  if (percent < 0.000001) return '<0.000001%';
-  if (percent < 0.0001) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
-  if (percent < 0.01) return `${trimTrailingZeroes(percent.toFixed(6))}%`;
-  return `${trimTrailingZeroes(percent.toFixed(4))}%`;
-}
-
-function trimTrailingZeroes(value: string): string {
-  return value.replace(/(\.\d*?[1-9])0+$/u, '$1').replace(/\.0+$/u, '');
+  // Show full decimal precision so the user can see exactly how small the
+  // probability is — never round or truncate significant digits.
+  if (percent < 1) return `${percent.toExponential()}%`;
+  return `${percent}%`;
 }
 
 function MetricChip({
