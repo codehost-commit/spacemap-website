@@ -56,7 +56,9 @@ const NAME_PATTERN_MODELS: Array<{ test: (name: string) => boolean; spec: ModelS
 ];
 
 const TYPE_MODELS: Record<CatalogObjectType, ModelSpec> = {
-  payload: { url: MODEL_URL('payload.glb'), ...TIGHT_TUNING },
+  // Payload falls back to the same generic silhouette used for uncategorised
+  // objects — the dedicated payload.glb had broken UVs and crashed Cesium.
+  payload: { url: MODEL_URL('voyager.glb'), ...LOOSE_TUNING },
   'rocket-body': { url: MODEL_URL('rocket-body.glb'), ...TIGHT_TUNING },
   debris: { url: MODEL_URL('debris.glb'), ...TIGHT_TUNING },
   unknown: { url: MODEL_URL('voyager.glb'), ...LOOSE_TUNING },
