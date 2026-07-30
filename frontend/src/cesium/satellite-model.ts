@@ -61,6 +61,10 @@ export class SatelliteModel {
   async setFor(noradId: number | null): Promise<void> {
     if (noradId === this.noradId) return;
     this.noradId = noradId;
+    // Reset interpolation state so we don't extrapolate from the previous
+    // satellite's cached position/velocity while the new GLB loads.
+    this.lastSnapTimeMs = -1;
+    this.lastSnapWallMs = 0;
     this.clearModel();
     if (noradId == null) return;
 

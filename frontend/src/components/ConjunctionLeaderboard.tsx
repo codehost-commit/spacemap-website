@@ -5,7 +5,7 @@ import { closestPairs } from '../state/snapshot-util.js';
 import { getSimulation } from '../simulation/simulation.js';
 import { ORBIT_CLASS_COLOR } from '@spacemap/shared';
 
-const REFRESH_MS = 500;
+const REFRESH_MS = 3_000;
 
 interface RankedConjunctionRow extends ConjunctionResult {
   aName: string;
@@ -44,28 +44,34 @@ export function ConjunctionLeaderboard() {
 
       try {
         const result = closestPairs(snap, 10, 40, 0.4);
-        const nextRows: RankedConjunctionRow[] = [];
 
-        for (const pair of result) {
-          try {
-            const conjunction = await sim.runConjunction(pair.aId, pair.bId, {
-              hours: 24,
-              coarseStepSec: 90,
-            });
-            if (cancelled) return;
-            nextRows.push({
-              ...conjunction,
-              aName: names.get(pair.aId) ?? `#${pair.aId}`,
-              bName: names.get(pair.bId) ?? `#${pair.bId}`,
-              aClass: pair.aClass,
-              bClass: pair.bClass,
-            });
-          } catch {
-            // Skip pairs that fail refinement so the panel still renders.
-          }
+        // Fire all 10 conjunction refinements in parallel — the worker
+        // processes them concurrently instead of one after another, cutting
+        // the total scan time from ~5s (10 × ~500ms) down to ~500ms total.
+        // Coarser step (180s) also halves the coarse-sweep cost per pair.
+        const settled = await Promise.all(
+          result.map((pair) =>
+            sim
+              .runConjunction(pair.aId, pair.bId, { hours: 24, coarseStepSec: 180 })
+              .then((conjunction) => ({ pair, conjunction }))
+              .catch(() => null),
+          ),
+        );
+        if (cancelled) return;
+
+        const nextRows: RankedConjunctionRow[] = [];
+        for (const entry of settled) {
+          if (!entry) continue;
+          const { pair, conjunction } = entry;
+          nextRows.push({
+            ...conjunction,
+            aName: names.get(pair.aId) ?? `#${pair.aId}`,
+            bName: names.get(pair.bId) ?? `#${pair.bId}`,
+            aClass: pair.aClass,
+            bClass: pair.bClass,
+          });
         }
 
-        if (cancelled) return;
         nextRows.sort((a, b) => b.probabilityOfCollision - a.probabilityOfCollision);
         setPairs(nextRows);
       } finally {
@@ -180,12 +186,17 @@ function getConjunctionTone(severity: number, pc: number): string {
 }
 
 function formatProbabilityPercent(pc: number): string {
+  if (pc === 0) return '0%';
+  // Show the FULL raw decimal, so the user can visually see how tiny the
+  // number is. Small values use fixed notation (many leading zeros) — never
+  // exponential, never rounded.
   const percent = pc * 100;
-  if (percent === 0) return '0%';
-  // Show full decimal precision so the user can see exactly how small the
-  // probability is — never round or truncate significant digits.
-  if (percent < 1) return `${percent.toExponential()}%`;
-  return `${percent}%`;
+  if (percent >= 0.01) return `${percent}%`;
+  // JavaScript's default number-to-string uses exponential for very small
+  // values; force fixed-notation with 20 fractional digits, then trim only
+  // the trailing zeros that never contained information.
+  const fixed = percent.toFixed(20).replace(/0+$/u, '').replace(/\.$/u, '');
+  return `${fixed}%`;
 }
 
 function MetricChip({

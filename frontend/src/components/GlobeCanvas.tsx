@@ -245,6 +245,9 @@ export function GlobeCanvas() {
       }
       if (s.selectedNoradId !== lastSelection) {
         lastSelection = s.selectedNoradId;
+        // Apply highlight instantly so the user sees feedback on click without
+        // waiting for the next propagator snapshot.
+        layer.setSelected(s.selectedNoradId);
         void updateOrbitRibbon(orbitRibbon, sonar, s.selectedNoradId);
         void model.setFor(s.selectedNoradId);
         applyCameraMode(follow, pov, model, s.cameraMode, s.selectedNoradId);

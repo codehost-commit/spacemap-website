@@ -43,8 +43,6 @@ const HORIZON_PREWARM_FACTOR = 1.18;
 
 const EARTH_R_M = 6_378_137;
 const EARTH_R_SQ = EARTH_R_M * EARTH_R_M;
-const TARGET_STALE_SIM_MS = 2_000;
-const FULL_REFRESH_JUMP_SIM_MS = 10_000;
 
 const DEFAULT_MARKER_SCALE = 0.94;
 const DEFAULT_DETAIL_SCALE = 0.54;
@@ -78,14 +76,21 @@ export class SatelliteLayer {
   private readonly billboardPosById = new Map<number, Float64Array>();
   private readonly markerTypeById = new Map<number, CatalogObjectType>();
   private readonly billboardTypeById = new Map<number, CatalogObjectType>();
+  /** Per-satellite ECEF velocity (m/s) for per-frame extrapolation between snapshots. */
+  private readonly velocityById = new Map<number, Float64Array>();
+  /** Base ECEF position at snapshot time (m). */
+  private readonly baseposById = new Map<number, Float64Array>();
+  /** Wall-clock time (ms) when the latest snapshot was applied. */
+  private snapshotAppliedAtMs = 0;
   private hoveredId: number | null = null;
   private selectedId: number | null = null;
-  private catchupCursor = 0;
-  private prevSnapSimMs: number | null = null;
   private lastBandCheckMs = 0;
   private generation = 0;
+  private preRenderDispose: (() => void) | null = null;
+  private scene: Cesium.Scene | null = null;
 
   constructor(scene: Cesium.Scene) {
+    this.scene = scene;
     this.markers = scene.primitives.add(new Cesium.BillboardCollection({ scene }));
     this.billboards = scene.primitives.add(new Cesium.BillboardCollection({ scene }));
     this.colorByClass = ORBIT_CLASSES.map((cls: OrbitClass) => {
@@ -101,12 +106,53 @@ export class SatelliteLayer {
     );
     this.markerIconByType = buildTypeIconMap((kind) => buildObjectMarkerIcon(kind));
     this.detailIconByType = buildTypeIconMap((kind) => buildObjectDetailIcon(kind));
+    // Per-frame interpolation: between worker snapshots (~100ms apart), advance
+    // every billboard's position using its cached velocity so satellites glide
+    // smoothly at 60fps instead of jumping in batches.
+    this.preRenderDispose = scene.preRender.addEventListener(() => this.interpolate());
+  }
+
+  /**
+   * Per-frame extrapolation. For every billboard/marker, compute
+   * `pos = base + velocity * (now - snapshotAppliedAt)` and write to the
+   * primitive. This makes non-selected satellites move smoothly between
+   * SGP4 propagator ticks instead of teleporting in bursts.
+   */
+  private interpolate(): void {
+    if (this.snapshotAppliedAtMs === 0) return;
+    const dtSec = (performance.now() - this.snapshotAppliedAtMs) / 1000;
+    if (dtSec <= 0) return;
+    const scratch = new Cesium.Cartesian3();
+    this.velocityById.forEach((vel, id) => {
+      const base = this.baseposById.get(id);
+      if (!base) return;
+      scratch.x = base[0] + vel[0] * dtSec;
+      scratch.y = base[1] + vel[1] * dtSec;
+      scratch.z = base[2] + vel[2] * dtSec;
+      const marker = this.markerIndex.get(id);
+      if (marker) marker.position = scratch;
+      const billboard = this.billboardIndex.get(id);
+      if (billboard) billboard.position = scratch;
+    });
   }
 
   setHovered(noradId: number | null): void {
     if (this.hoveredId === noradId) return;
     const prev = this.hoveredId;
     this.hoveredId = noradId;
+    if (prev != null) this.applyStyle(prev);
+    if (noradId != null) this.applyStyle(noradId);
+  }
+
+  /**
+   * Apply the selection highlight immediately, without waiting for the next
+   * propagator snapshot. Called from the click handler so the user sees the
+   * new satellite pulse the instant they click.
+   */
+  setSelected(noradId: number | null): void {
+    if (this.selectedId === noradId) return;
+    const prev = this.selectedId;
+    this.selectedId = noradId;
     if (prev != null) this.applyStyle(prev);
     if (noradId != null) this.applyStyle(noradId);
   }
@@ -132,21 +178,11 @@ export class SatelliteLayer {
       this.objectFilterMask[i] = objectFilter.has(CATALOG_OBJECT_TYPES[i]) ? 1 : 0;
     }
 
-    const { count, ids, ecefPos, orbitClass } = snap;
+    const { count, ids, ecefPos, ecefVel, orbitClass } = snap;
 
-    const simDt =
-      this.prevSnapSimMs != null
-        ? Math.abs(snap.timeMs - this.prevSnapSimMs)
-        : Number.POSITIVE_INFINITY;
-    this.prevSnapSimMs = snap.timeMs;
-    const forceAll = simDt > FULL_REFRESH_JUMP_SIM_MS;
-    const rollingCount = forceAll
-      ? count
-      : Math.min(count, Math.ceil((count * simDt) / TARGET_STALE_SIM_MS));
-    const catchupEnd = this.catchupCursor + rollingCount;
-    const catchupWraps = catchupEnd > count;
-    const catchupHi = catchupWraps ? count : catchupEnd;
-    const catchupLo2 = catchupWraps ? catchupEnd - count : 0;
+    // Latch snapshot wall-clock so the preRender interpolator can extrapolate
+    // positions continuously between propagator ticks.
+    this.snapshotAppliedAtMs = performance.now();
 
     let cameraCulling = false;
     let cx = 0;
@@ -212,12 +248,6 @@ export class SatelliteLayer {
         const horizonTerm = Math.sqrt(camTangentSq * satTangentSq);
         frontish = dotCS > EARTH_R_SQ - HORIZON_PREWARM_FACTOR * horizonTerm;
       }
-
-      const inRolling = forceAll
-        ? true
-        : catchupWraps
-          ? n >= this.catchupCursor || n < catchupLo2
-          : n >= this.catchupCursor && n < catchupHi;
 
       let camDistSq = 0;
       let inActiveCone = true;
@@ -348,10 +378,29 @@ export class SatelliteLayer {
         }
       }
 
-      if (alwaysUpdate || inRolling || hadRenderable) this.applyStyle(id);
-    }
+      this.applyStyle(id);
 
-    this.catchupCursor = catchupEnd % count;
+      // Store velocity + base position for per-frame interpolation.
+      const vx = ecefVel[n * 3];
+      const vy = ecefVel[n * 3 + 1];
+      const vz = ecefVel[n * 3 + 2];
+      let vel = this.velocityById.get(id);
+      if (!vel) {
+        vel = new Float64Array(3);
+        this.velocityById.set(id, vel);
+      }
+      vel[0] = vx;
+      vel[1] = vy;
+      vel[2] = vz;
+      let base = this.baseposById.get(id);
+      if (!base) {
+        base = new Float64Array(3);
+        this.baseposById.set(id, base);
+      }
+      base[0] = sx;
+      base[1] = sy;
+      base[2] = sz;
+    }
 
     if (canRemoveThisTick) {
       for (const [id, marker] of this.markerIndex) {
@@ -427,8 +476,9 @@ export class SatelliteLayer {
     this.billboardPosById.clear();
     this.markerTypeById.clear();
     this.billboardTypeById.clear();
-    this.catchupCursor = 0;
-    this.prevSnapSimMs = null;
+    this.velocityById.clear();
+    this.baseposById.clear();
+    this.snapshotAppliedAtMs = 0;
     this.lastBandCheckMs = 0;
   }
 }
