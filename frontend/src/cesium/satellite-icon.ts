@@ -1,5 +1,16 @@
 import type { CatalogObjectType } from '@spacemap/shared';
 
+/**
+ * Object-type icons for the Cesium billboards. Two variants per type:
+ *   • Marker (far LOD) — compact, high-contrast silhouette that reads at
+ *     ~8-16 px on screen.
+ *   • Detail (close LOD) — richer silhouette that reveals the object's shape
+ *     when the user zooms in.
+ *
+ * All icons are drawn white-on-transparent so Cesium can tint them by orbit
+ * class (LEO, MEO, GEO, HEO, POLAR, SSO) without redrawing.
+ */
+
 function makeCanvas(size: number) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
@@ -7,6 +18,8 @@ function makeCanvas(size: number) {
   const ctx = canvas.getContext('2d');
   return { canvas, ctx };
 }
+
+// ─── Shared drawing primitives ─────────────────────────────────────────────
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -26,23 +39,113 @@ function roundRect(
   ctx.closePath();
 }
 
-function drawPolygon(
+// ─── FAR-LOD MARKERS (compact ~8–16px) ─────────────────────────────────────
+// These need to read instantly at a tiny size, so we use bold, distinct
+// silhouettes with a subtle glow ring for contrast against the imagery.
+
+function drawGlowRing(ctx: CanvasRenderingContext2D, cx: number, cy: number, radius: number) {
+  const grad = ctx.createRadialGradient(cx, cy, radius * 0.4, cx, cy, radius);
+  grad.addColorStop(0, 'rgba(255,255,255,0.35)');
+  grad.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.save();
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawPayloadMarker(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  // Squarish bus with two long solar wings — instantly reads as "satellite".
+  drawGlowRing(ctx, cx, cy, size * 0.42);
+  const bodyW = size * 0.16;
+  const bodyH = size * 0.24;
+  const panelW = size * 0.36;
+  const panelH = size * 0.09;
+  // Solar panels (wings)
+  ctx.fillRect(cx - panelW - bodyW * 0.5, cy - panelH / 2, panelW, panelH);
+  ctx.fillRect(cx + bodyW * 0.5, cy - panelH / 2, panelW, panelH);
+  // Central bus
+  roundRect(ctx, cx - bodyW / 2, cy - bodyH / 2, bodyW, bodyH, size * 0.04);
+  ctx.fill();
+}
+
+function drawRocketBodyMarker(
   ctx: CanvasRenderingContext2D,
   cx: number,
   cy: number,
-  radius: number,
-  sides: number,
-  rotationRad = 0,
+  size: number,
 ) {
+  // Elongated cylinder with a pointed nose — the classic rocket silhouette.
+  drawGlowRing(ctx, cx, cy, size * 0.42);
+  const bodyW = size * 0.18;
+  const bodyH = size * 0.44;
+  const noseH = size * 0.14;
+  // Body
+  roundRect(ctx, cx - bodyW / 2, cy - bodyH / 2 + noseH, bodyW, bodyH - noseH, bodyW * 0.25);
+  ctx.fill();
+  // Nose cone
   ctx.beginPath();
-  for (let i = 0; i < sides; i++) {
-    const angle = rotationRad + (Math.PI * 2 * i) / sides;
-    const x = cx + Math.cos(angle) * radius;
-    const y = cy + Math.sin(angle) * radius;
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  }
+  ctx.moveTo(cx, cy - bodyH / 2);
+  ctx.lineTo(cx - bodyW / 2, cy - bodyH / 2 + noseH);
+  ctx.lineTo(cx + bodyW / 2, cy - bodyH / 2 + noseH);
   ctx.closePath();
+  ctx.fill();
+  // Fins at base
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyW / 2, cy + bodyH / 2 - size * 0.06);
+  ctx.lineTo(cx - bodyW * 0.9, cy + bodyH / 2);
+  ctx.lineTo(cx - bodyW / 2, cy + bodyH / 2);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + bodyW / 2, cy + bodyH / 2 - size * 0.06);
+  ctx.lineTo(cx + bodyW * 0.9, cy + bodyH / 2);
+  ctx.lineTo(cx + bodyW / 2, cy + bodyH / 2);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawDebrisMarker(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  // A cluster of three jagged shards — deliberately irregular so it doesn't
+  // look "designed" like a spacecraft.
+  drawGlowRing(ctx, cx, cy, size * 0.42);
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.06, cy - size * 0.22);
+  ctx.lineTo(cx + size * 0.16, cy - size * 0.06);
+  ctx.lineTo(cx + size * 0.02, cy + size * 0.02);
+  ctx.lineTo(cx - size * 0.18, cy - size * 0.1);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx + size * 0.02, cy + size * 0.04);
+  ctx.lineTo(cx + size * 0.22, cy + size * 0.18);
+  ctx.lineTo(cx + size * 0.05, cy + size * 0.22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.2, cy + size * 0.04);
+  ctx.lineTo(cx - size * 0.06, cy + size * 0.2);
+  ctx.lineTo(cx - size * 0.22, cy + size * 0.22);
+  ctx.closePath();
+  ctx.fill();
+}
+
+function drawUnknownMarker(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  // Diamond outline with a subtle dot — reads as "tracked but unclassified".
+  drawGlowRing(ctx, cx, cy, size * 0.42);
+  const r = size * 0.22;
+  ctx.lineWidth = size * 0.06;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - r);
+  ctx.lineTo(cx + r, cy);
+  ctx.lineTo(cx, cy + r);
+  ctx.lineTo(cx - r, cy);
+  ctx.closePath();
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, size * 0.05, 0, Math.PI * 2);
+  ctx.fill();
 }
 
 function drawMarker(
@@ -52,145 +155,227 @@ function drawMarker(
   cy: number,
   size: number,
 ) {
-  const r = size * 0.26;
-  ctx.lineWidth = size * 0.08;
   switch (kind) {
     case 'payload':
-      drawPolygon(ctx, cx, cy + size * 0.015, r, 3, -Math.PI / 2);
-      ctx.fill();
+      drawPayloadMarker(ctx, cx, cy, size);
       break;
     case 'rocket-body':
-      roundRect(ctx, cx - size * 0.14, cy - size * 0.24, size * 0.28, size * 0.48, size * 0.08);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - size * 0.34);
-      ctx.lineTo(cx - size * 0.12, cy - size * 0.12);
-      ctx.lineTo(cx + size * 0.12, cy - size * 0.12);
-      ctx.closePath();
-      ctx.fill();
+      drawRocketBodyMarker(ctx, cx, cy, size);
       break;
     case 'debris':
-      ctx.beginPath();
-      ctx.moveTo(cx, cy - r);
-      ctx.lineTo(cx + r * 0.7, cy - r * 0.2);
-      ctx.lineTo(cx + r * 0.28, cy + r);
-      ctx.lineTo(cx - r * 0.78, cy + r * 0.22);
-      ctx.lineTo(cx - r * 0.26, cy - r * 0.68);
-      ctx.closePath();
-      ctx.fill();
+      drawDebrisMarker(ctx, cx, cy, size);
       break;
     default:
-      drawPolygon(ctx, cx, cy, r, 6, Math.PI / 6);
-      ctx.fill();
-      ctx.globalAlpha = 0.35;
-      ctx.beginPath();
-      ctx.arc(cx, cy, size * 0.09, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      drawUnknownMarker(ctx, cx, cy, size);
       break;
   }
 }
 
+// ─── CLOSE-LOD DETAIL ICONS (richer, ~32–64px) ─────────────────────────────
+
 function drawPayloadDetail(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
-  const panelW = size * 0.34;
-  const panelH = size * 0.13;
-  ctx.globalAlpha = 0.92;
-  ctx.fillRect(cx - panelW - size * 0.1, cy - panelH / 2, panelW, panelH);
-  ctx.fillRect(cx + size * 0.1, cy - panelH / 2, panelW, panelH);
+  // Realistic satellite with articulated solar arrays, main bus, antenna dish,
+  // and a small comms boom.
+  const panelW = size * 0.36;
+  const panelH = size * 0.16;
+  const bodyW = size * 0.22;
+  const bodyH = size * 0.3;
+
+  // Solar arrays with cell grid
+  const leftX = cx - bodyW / 2 - panelW - size * 0.03;
+  const rightX = cx + bodyW / 2 + size * 0.03;
+  ctx.globalAlpha = 0.95;
+  ctx.fillRect(leftX, cy - panelH / 2, panelW, panelH);
+  ctx.fillRect(rightX, cy - panelH / 2, panelW, panelH);
+  // Array support struts
+  ctx.lineWidth = size * 0.02;
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyW / 2, cy);
+  ctx.lineTo(leftX + panelW, cy);
+  ctx.moveTo(cx + bodyW / 2, cy);
+  ctx.lineTo(rightX, cy);
+  ctx.stroke();
+  // Cell subdivisions
   ctx.globalAlpha = 0.35;
   ctx.lineWidth = 1;
-  for (let side = 0; side < 2; side++) {
-    const x0 = side === 0 ? cx - panelW - size * 0.1 : cx + size * 0.1;
-    for (let i = 1; i < 4; i++) {
-      const x = x0 + (panelW * i) / 4;
-      ctx.beginPath();
-      ctx.moveTo(x, cy - panelH / 2);
-      ctx.lineTo(x, cy + panelH / 2);
-      ctx.stroke();
-    }
+  for (let i = 1; i < 5; i++) {
+    ctx.beginPath();
+    ctx.moveTo(leftX + (panelW * i) / 5, cy - panelH / 2);
+    ctx.lineTo(leftX + (panelW * i) / 5, cy + panelH / 2);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(rightX + (panelW * i) / 5, cy - panelH / 2);
+    ctx.lineTo(rightX + (panelW * i) / 5, cy + panelH / 2);
+    ctx.stroke();
   }
+  ctx.beginPath();
+  ctx.moveTo(leftX, cy);
+  ctx.lineTo(leftX + panelW, cy);
+  ctx.moveTo(rightX, cy);
+  ctx.lineTo(rightX + panelW, cy);
+  ctx.stroke();
   ctx.globalAlpha = 1;
-  const bodyW = size * 0.2;
-  const bodyH = size * 0.28;
-  ctx.fillRect(cx - bodyW / 2, cy - bodyH / 2, bodyW, bodyH);
-  ctx.beginPath();
-  ctx.arc(cx, cy - bodyH / 2 - size * 0.06, size * 0.055, 0, Math.PI * 2);
+
+  // Central bus
+  roundRect(ctx, cx - bodyW / 2, cy - bodyH / 2, bodyW, bodyH, size * 0.03);
   ctx.fill();
-  ctx.lineWidth = 1.5;
+
+  // Antenna dish (top)
   ctx.beginPath();
-  ctx.moveTo(cx, cy - bodyH / 2 - size * 0.11);
+  ctx.arc(cx, cy - bodyH / 2 - size * 0.06, size * 0.07, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = size * 0.02;
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - bodyH / 2 - size * 0.13);
   ctx.lineTo(cx, cy - bodyH / 2);
   ctx.stroke();
+
+  // Instrument boom (bottom)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + bodyH / 2);
+  ctx.lineTo(cx, cy + bodyH / 2 + size * 0.1);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy + bodyH / 2 + size * 0.12, size * 0.03, 0, Math.PI * 2);
+  ctx.fill();
 }
 
-function drawRocketBodyDetail(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
-  const bodyW = size * 0.22;
-  const bodyH = size * 0.46;
-  roundRect(ctx, cx - bodyW / 2, cy - bodyH * 0.38, bodyW, bodyH * 0.72, bodyW * 0.38);
-  ctx.fill();
+function drawRocketBodyDetail(
+  ctx: CanvasRenderingContext2D,
+  cx: number,
+  cy: number,
+  size: number,
+) {
+  // Upper-stage rocket booster — cylindrical body, nozzle bell, nose cone,
+  // and side stringers.
+  const bodyW = size * 0.24;
+  const bodyH = size * 0.48;
+  const noseH = size * 0.14;
+  const nozzleH = size * 0.1;
+
+  // Body
+  ctx.fillRect(cx - bodyW / 2, cy - bodyH / 2 + noseH, bodyW, bodyH - noseH - nozzleH);
+
+  // Nose cone
   ctx.beginPath();
-  ctx.moveTo(cx, cy - bodyH * 0.56);
-  ctx.lineTo(cx - bodyW * 0.56, cy - bodyH * 0.14);
-  ctx.lineTo(cx + bodyW * 0.56, cy - bodyH * 0.14);
+  ctx.moveTo(cx, cy - bodyH / 2);
+  ctx.lineTo(cx - bodyW / 2, cy - bodyH / 2 + noseH);
+  ctx.lineTo(cx + bodyW / 2, cy - bodyH / 2 + noseH);
   ctx.closePath();
   ctx.fill();
+
+  // Engine nozzle (trapezoid)
   ctx.beginPath();
-  ctx.moveTo(cx - bodyW * 0.48, cy + bodyH * 0.16);
-  ctx.lineTo(cx - bodyW * 1.02, cy + bodyH * 0.42);
-  ctx.lineTo(cx - bodyW * 0.2, cy + bodyH * 0.24);
+  ctx.moveTo(cx - bodyW / 2, cy + bodyH / 2 - nozzleH);
+  ctx.lineTo(cx + bodyW / 2, cy + bodyH / 2 - nozzleH);
+  ctx.lineTo(cx + bodyW * 0.7, cy + bodyH / 2);
+  ctx.lineTo(cx - bodyW * 0.7, cy + bodyH / 2);
   ctx.closePath();
   ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(cx + bodyW * 0.48, cy + bodyH * 0.16);
-  ctx.lineTo(cx + bodyW * 1.02, cy + bodyH * 0.42);
-  ctx.lineTo(cx + bodyW * 0.2, cy + bodyH * 0.24);
-  ctx.closePath();
-  ctx.fill();
+
+  // Nozzle throat highlight
+  ctx.globalAlpha = 0.35;
+  ctx.fillRect(cx - bodyW * 0.55, cy + bodyH / 2 - nozzleH * 0.15, bodyW * 1.1, nozzleH * 0.15);
+  ctx.globalAlpha = 1;
+
+  // Stringers (vertical lines along the body)
   ctx.globalAlpha = 0.4;
-  ctx.lineWidth = size * 0.035;
+  ctx.lineWidth = size * 0.015;
   ctx.beginPath();
-  ctx.moveTo(cx, cy - bodyH * 0.22);
-  ctx.lineTo(cx, cy + bodyH * 0.22);
+  ctx.moveTo(cx - bodyW * 0.28, cy - bodyH / 2 + noseH + size * 0.02);
+  ctx.lineTo(cx - bodyW * 0.28, cy + bodyH / 2 - nozzleH - size * 0.02);
+  ctx.moveTo(cx + bodyW * 0.28, cy - bodyH / 2 + noseH + size * 0.02);
+  ctx.lineTo(cx + bodyW * 0.28, cy + bodyH / 2 - nozzleH - size * 0.02);
+  ctx.moveTo(cx, cy - bodyH / 2 + noseH + size * 0.02);
+  ctx.lineTo(cx, cy + bodyH / 2 - nozzleH - size * 0.02);
+  ctx.stroke();
+  // Circumferential band
+  ctx.beginPath();
+  ctx.moveTo(cx - bodyW / 2, cy);
+  ctx.lineTo(cx + bodyW / 2, cy);
   ctx.stroke();
   ctx.globalAlpha = 1;
 }
 
 function drawDebrisDetail(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
+  // Jagged tumbling fragment — irregular, no symmetry, with a couple of
+  // smaller shards floating alongside. Deliberately raw and organic.
   ctx.beginPath();
-  ctx.moveTo(cx - size * 0.08, cy - size * 0.22);
-  ctx.lineTo(cx + size * 0.2, cy - size * 0.12);
-  ctx.lineTo(cx + size * 0.06, cy + size * 0.22);
-  ctx.lineTo(cx - size * 0.24, cy + size * 0.08);
-  ctx.lineTo(cx - size * 0.12, cy - size * 0.04);
+  ctx.moveTo(cx - size * 0.02, cy - size * 0.24);
+  ctx.lineTo(cx + size * 0.18, cy - size * 0.18);
+  ctx.lineTo(cx + size * 0.26, cy - size * 0.02);
+  ctx.lineTo(cx + size * 0.14, cy + size * 0.18);
+  ctx.lineTo(cx - size * 0.08, cy + size * 0.22);
+  ctx.lineTo(cx - size * 0.24, cy + size * 0.06);
+  ctx.lineTo(cx - size * 0.2, cy - size * 0.14);
   ctx.closePath();
   ctx.fill();
 
-  ctx.globalAlpha = 0.65;
+  // Rough surface detail (darker facets)
+  ctx.globalAlpha = 0.35;
   ctx.beginPath();
-  ctx.moveTo(cx + size * 0.18, cy + size * 0.02);
-  ctx.lineTo(cx + size * 0.3, cy + size * 0.16);
-  ctx.lineTo(cx + size * 0.1, cy + size * 0.18);
+  ctx.moveTo(cx - size * 0.02, cy - size * 0.24);
+  ctx.lineTo(cx + size * 0.08, cy - size * 0.04);
+  ctx.lineTo(cx - size * 0.2, cy - size * 0.14);
   ctx.closePath();
   ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(cx - size * 0.28, cy - size * 0.02);
-  ctx.lineTo(cx - size * 0.18, cy - size * 0.16);
-  ctx.lineTo(cx - size * 0.04, cy - size * 0.04);
+  ctx.moveTo(cx + size * 0.14, cy + size * 0.18);
+  ctx.lineTo(cx + size * 0.06, cy + size * 0.02);
+  ctx.lineTo(cx + size * 0.26, cy - size * 0.02);
+  ctx.closePath();
+  ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // Two orbiting fragment satellites
+  ctx.globalAlpha = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(cx + size * 0.3, cy + size * 0.16);
+  ctx.lineTo(cx + size * 0.38, cy + size * 0.24);
+  ctx.lineTo(cx + size * 0.26, cy + size * 0.28);
+  ctx.closePath();
+  ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(cx - size * 0.32, cy - size * 0.02);
+  ctx.lineTo(cx - size * 0.24, cy - size * 0.16);
+  ctx.lineTo(cx - size * 0.16, cy - size * 0.06);
   ctx.closePath();
   ctx.fill();
   ctx.globalAlpha = 1;
 }
 
 function drawUnknownDetail(ctx: CanvasRenderingContext2D, cx: number, cy: number, size: number) {
-  ctx.lineWidth = size * 0.08;
-  drawPolygon(ctx, cx, cy, size * 0.22, 6, Math.PI / 6);
-  ctx.stroke();
-  ctx.globalAlpha = 0.6;
+  // Question-mark-in-a-shield motif — dashed hexagon outline with a ? glyph.
+  ctx.lineWidth = size * 0.05;
+  const r = size * 0.26;
+  ctx.setLineDash([size * 0.06, size * 0.04]);
   ctx.beginPath();
-  ctx.arc(cx, cy, size * 0.08, 0, Math.PI * 2);
+  for (let i = 0; i < 6; i++) {
+    const angle = Math.PI / 6 + (Math.PI / 3) * i;
+    const x = cx + Math.cos(angle) * r;
+    const y = cy + Math.sin(angle) * r;
+    if (i === 0) ctx.moveTo(x, y);
+    else ctx.lineTo(x, y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // "?" glyph — hook + dot
+  ctx.lineWidth = size * 0.045;
+  ctx.beginPath();
+  ctx.arc(cx, cy - size * 0.06, size * 0.08, Math.PI * 0.9, Math.PI * 2.2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(cx, cy + size * 0.02);
+  ctx.lineTo(cx, cy + size * 0.08);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy + size * 0.13, size * 0.024, 0, Math.PI * 2);
   ctx.fill();
-  ctx.globalAlpha = 1;
 }
+
+// ─── Builders ──────────────────────────────────────────────────────────────
 
 function buildCanvasIcon(
   size: number,
@@ -208,18 +393,17 @@ function buildCanvasIcon(
 }
 
 /**
- * White-on-transparent marker icons so Cesium billboards can be tinted by
- * orbit class while still reading as different object types.
+ * White-on-transparent marker icons for the far-LOD billboard collection.
+ * Cesium tints them by orbit class at draw time.
  */
-export function buildObjectMarkerIcon(kind: CatalogObjectType, size = 28): string {
+export function buildObjectMarkerIcon(kind: CatalogObjectType, size = 32): string {
   return buildCanvasIcon(size, (ctx, cx, cy, iconSize) => drawMarker(ctx, kind, cx, cy, iconSize));
 }
 
 /**
- * Close-range billboards with slightly more descriptive silhouettes for each
- * catalog object type.
+ * Close-range detail icons for the near-LOD billboard collection.
  */
-export function buildObjectDetailIcon(kind: CatalogObjectType, size = 64): string {
+export function buildObjectDetailIcon(kind: CatalogObjectType, size = 72): string {
   return buildCanvasIcon(size, (ctx, cx, cy, iconSize) => {
     switch (kind) {
       case 'payload':

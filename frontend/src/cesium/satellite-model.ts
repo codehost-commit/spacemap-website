@@ -1,11 +1,20 @@
 import * as Cesium from 'cesium';
-import type { PropagationSnapshot } from '@spacemap/shared';
+import type { CatalogObjectType, PropagationSnapshot } from '@spacemap/shared';
+import { useStore } from '../state/store.js';
 
 /**
- * Registry: which NORAD id gets which GLB. Anything not listed falls back to
- * a generic spacecraft silhouette (Voyager) so the user always gets a 3-D
- * shape when they select something. Loaded lazily on first use so the initial
- * page load doesn't pay for a satellite the user never selects.
+ * Model resolution priority:
+ *   1. SPECIFIC_MODELS — famous individual spacecraft (ISS, Hubble, JWST) get
+ *      their real 3-D scans.
+ *   2. NAME_PATTERN_MODELS — well-known families identified by name prefix
+ *      (Starlink, and easy to extend to GPS/GLONASS/etc later).
+ *   3. TYPE_MODELS — per object-type fallback so every payload looks like a
+ *      payload, every rocket body looks like a rocket body, and every debris
+ *      piece looks like a fragment.
+ *   4. Voyager silhouette as absolute last resort for uncategorised objects.
+ *
+ * All GLBs are lazy-loaded — the file only downloads the first time a user
+ * selects a satellite that resolves to it.
  */
 const MODEL_URL = (name: string) => `${import.meta.env.BASE_URL}models/${name}`;
 
@@ -15,10 +24,45 @@ const SPECIFIC_MODELS: Record<number, string> = {
   50463: MODEL_URL('jwst.glb'), // JAMES WEBB SPACE TELESCOPE (L2 halo)
 };
 
+const NAME_PATTERN_MODELS: Array<{ test: (name: string) => boolean; url: string }> = [
+  {
+    test: (name) => name.startsWith('STARLINK'),
+    url: MODEL_URL('starlink.glb'),
+  },
+];
+
+const TYPE_MODELS: Record<CatalogObjectType, string> = {
+  payload: MODEL_URL('payload.glb'),
+  'rocket-body': MODEL_URL('rocket-body.glb'),
+  debris: MODEL_URL('debris.glb'),
+  unknown: MODEL_URL('voyager.glb'),
+};
+
 const GENERIC_MODEL = MODEL_URL('voyager.glb');
 
 export function modelUrlFor(noradId: number): string {
-  return SPECIFIC_MODELS[noradId] ?? GENERIC_MODEL;
+  // Level 1 — hand-curated famous satellites.
+  const specific = SPECIFIC_MODELS[noradId];
+  if (specific) return specific;
+
+  // Look up the catalog entry for name + type so we can match families and
+  // categories. The store carries this via catalogEntryByNorad + indexByNorad.
+  const state = useStore.getState();
+  const entry = state.catalogEntryByNorad.get(noradId);
+  const name = (entry?.name ?? state.indexByNorad.get(noradId) ?? '').toUpperCase();
+  const objectType = entry?.objectType ?? state.objectTypeByNorad.get(noradId);
+
+  // Level 2 — name-pattern families (Starlink, and easily extensible).
+  for (const { test, url } of NAME_PATTERN_MODELS) {
+    if (test(name)) return url;
+  }
+
+  // Level 3 — per-object-type fallback so a Falcon 9 upper stage never
+  // renders as a Voyager probe.
+  if (objectType && TYPE_MODELS[objectType]) return TYPE_MODELS[objectType];
+
+  // Level 4 — final fallback.
+  return GENERIC_MODEL;
 }
 
 export function isSpecificModel(noradId: number): boolean {

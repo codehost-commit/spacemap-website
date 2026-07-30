@@ -16,8 +16,6 @@ export function CatalogStatusBanner() {
   const error = useStore((s) => s.catalogError);
   const imageryReady = useStore((s) => s.imageryReady);
   const firstSnapshot = useStore((s) => s.firstSnapshotReceived);
-  const catalogSize = useStore((s) => s.catalogSize);
-  const catalogTargetCount = useStore((s) => s.catalogTargetCount);
   const trackableCatalogSize = useStore((s) => s.trackableCatalogSize);
   const trackableTargetCount = useStore((s) => s.trackableTargetCount);
   const catalogHydrating = useStore((s) => s.catalogHydrating);
@@ -61,10 +59,10 @@ export function CatalogStatusBanner() {
       label: 'Loading startup catalog',
       done: displayedStepCount >= 1,
       note:
-        catalogReady && catalogTargetCount > 0
-          ? `${catalogSize.toLocaleString()} / ${catalogTargetCount.toLocaleString()} known · ${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()} live`
+        catalogReady && trackableTargetCount > 0
+          ? `${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()} live`
           : catalogReady
-            ? `${catalogSize.toLocaleString()} objects`
+            ? `${trackableCatalogSize.toLocaleString()} objects`
             : undefined,
     },
     {
