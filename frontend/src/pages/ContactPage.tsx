@@ -3,7 +3,7 @@ import {
   Bug,
   CheckCircle,
   ChevronDown,
-  Github,
+  Code,
   HelpCircle,
   LifeBuoy,
   Mail,
@@ -390,7 +390,7 @@ function FaqAndSupportSection() {
               href="mailto:hello@spacemap.earth?subject=Feature%20request"
             />
             <SupportCard
-              icon={Github}
+              icon={Code}
               title="Source & issues"
               desc="SpaceMap is open by design. File issues where the code lives."
               action="View on GitHub"

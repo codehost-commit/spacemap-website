@@ -42,7 +42,6 @@ declare module 'lucide-react' {
   export const Minus: Icon;
   export const ChevronDown: Icon;
   export const Bug: Icon;
-  export const Github: Icon;
   export const HelpCircle: Icon;
   export const LifeBuoy: Icon;
   export const Mail: Icon;
