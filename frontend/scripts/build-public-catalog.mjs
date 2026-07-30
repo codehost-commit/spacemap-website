@@ -86,7 +86,15 @@ const CHUNKS = [
   {
     id: 'debris',
     label: 'Tracked debris',
-    groups: ['cosmos-2251-debris', 'fengyun-1c-debris', 'iridium-33-debris'],
+    groups: [
+      'cosmos-2251-debris',
+      'fengyun-1c-debris',
+      'iridium-33-debris',
+      '1999-025',
+      '2012-044',
+      'indian-asat-debris',
+      'cosmos-1408-debris',
+    ],
     supplementalFiles: [],
   },
   {
@@ -373,6 +381,43 @@ function satcatRowToKnownObject(row, chunkId) {
   const name = String(row.OBJECT_NAME ?? `#${noradId}`).trim();
   const launchDate = String(row.LAUNCH_DATE ?? '').trim();
   const decayDate = String(row.DECAY_DATE ?? '').trim();
+
+  // Derive approximate orbital elements from SATCAT fields for non-decayed
+  // objects so they can be rendered in roughly the right orbital shell.
+  const period = parseFloat(String(row.PERIOD ?? ''));
+  const inc = parseFloat(String(row.INCLINATION ?? ''));
+  const apogee = parseFloat(String(row.APOGEE ?? ''));
+  const perigee = parseFloat(String(row.PERIGEE ?? ''));
+  const hasOrbitalParams =
+    !decayDate &&
+    Number.isFinite(period) && period > 0 &&
+    Number.isFinite(inc) &&
+    Number.isFinite(apogee) && apogee > 0 &&
+    Number.isFinite(perigee) && perigee > 0;
+
+  let derivedElements = {};
+  if (hasOrbitalParams) {
+    const EARTH_RADIUS_KM = 6371;
+    const ra = apogee + EARTH_RADIUS_KM;
+    const rp = perigee + EARTH_RADIUS_KM;
+    const ecc = (ra - rp) / (ra + rp);
+    const n = 1440 / period;
+    const pseudoRaan = ((noradId * 137.508) % 360);
+    const pseudoArgP = ((noradId * 97.531) % 360);
+    const pseudoMA = ((noradId * 211.137) % 360);
+    derivedElements = {
+      meanMotion: n,
+      eccentricity: ecc,
+      inclinationDeg: inc,
+      raanDeg: pseudoRaan,
+      argPerigeeDeg: pseudoArgP,
+      meanAnomalyDeg: pseudoMA,
+      bstar: 0,
+      meanMotionDot: 0,
+      meanMotionDDot: 0,
+    };
+  }
+
   return {
     noradId,
     name,
@@ -387,8 +432,9 @@ function satcatRowToKnownObject(row, chunkId) {
     sourceFeeds: ['satcat.csv'],
     sourceProvider: 'celestrak-satcat',
     sourcePriority: SOURCE_PRIORITY['celestrak-satcat'],
-    elementSource: 'none',
-    propagatable: false,
+    elementSource: hasOrbitalParams ? 'derived' : 'none',
+    propagatable: hasOrbitalParams,
+    ...derivedElements,
   };
 }
 

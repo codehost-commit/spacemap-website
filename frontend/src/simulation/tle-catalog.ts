@@ -200,7 +200,10 @@ export async function loadCatalogProgressively({
   maxChunks,
 }: LoadCatalogOptions): Promise<void> {
   const cappedChunks = typeof maxChunks === 'number' ? Math.max(1, maxChunks) : Infinity;
-  const bundledManifest = await tryBundledManifest();
+  // In dev mode, always use live CelesTrak loading so code changes take
+  // effect immediately. The bundled manifest is only used in production
+  // (where it gets rebuilt by build-public-catalog.mjs before deploy).
+  const bundledManifest = IS_DEV ? null : await tryBundledManifest();
   if (bundledManifest) {
     let loadedCount = 0;
     let propagatableLoadedCount = 0;

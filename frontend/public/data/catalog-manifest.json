@@ -1,8 +1,8 @@
 {
-  "fetchedAt": 1785378018359,
-  "totalCount": 70741,
-  "propagatableCount": 19720,
-  "metadataOnlyCount": 51021,
+  "fetchedAt": 1785388912084,
+  "totalCount": 70740,
+  "propagatableCount": 34704,
+  "metadataOnlyCount": 36036,
   "chunks": [
     {
       "id": "core",
@@ -28,36 +28,36 @@
     {
       "id": "special",
       "label": "Special access catalog",
-      "count": 623,
-      "propagatableCount": 623,
+      "count": 622,
+      "propagatableCount": 622,
       "path": "data/catalog-special.json"
     },
     {
       "id": "payloads",
       "label": "General on-orbit catalog",
-      "count": 1891,
-      "propagatableCount": 1891,
+      "count": 1952,
+      "propagatableCount": 1952,
       "path": "data/catalog-payloads.json"
     },
     {
       "id": "recent",
       "label": "Recent launches",
-      "count": 71,
-      "propagatableCount": 71,
+      "count": 9,
+      "propagatableCount": 9,
       "path": "data/catalog-recent.json"
     },
     {
       "id": "debris",
       "label": "Tracked debris",
-      "count": 2630,
-      "propagatableCount": 2630,
+      "count": 2635,
+      "propagatableCount": 2635,
       "path": "data/catalog-debris.json"
     },
     {
       "id": "known",
       "label": "Known public catalog",
-      "count": 51021,
-      "propagatableCount": 0,
+      "count": 51017,
+      "propagatableCount": 14981,
       "path": "data/catalog-known.json"
     }
   ]
