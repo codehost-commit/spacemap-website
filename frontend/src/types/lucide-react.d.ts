@@ -38,4 +38,23 @@ declare module 'lucide-react' {
   export const Cpu: Icon;
   export const ShieldCheck: Icon;
   export const AlertTriangle: Icon;
+  export const Check: Icon;
+  export const Minus: Icon;
+  export const ChevronDown: Icon;
+  export const Bug: Icon;
+  export const Github: Icon;
+  export const HelpCircle: Icon;
+  export const LifeBuoy: Icon;
+  export const Mail: Icon;
+  export const MessageSquare: Icon;
+  export const Binary: Icon;
+  export const BookOpen: Icon;
+  export const Calculator: Icon;
+  export const Compass: Icon;
+  export const Database: Icon;
+  export const GraduationCap: Icon;
+  export const Signal: Icon;
+  export const Sigma: Icon;
+  export const Sparkles: Icon;
+  export const Target: Icon;
 }

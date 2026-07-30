@@ -3,13 +3,16 @@ import { Link } from 'react-router-dom';
 import {
   Activity,
   Camera,
+  Check,
   Clock,
   Layers,
   MapPin,
+  Minus,
   Radio,
   Rocket,
   Search,
   Shield,
+  X,
   Zap,
 } from 'lucide-react';
 import { FeatureLiveShowcase } from '../components/FeatureLiveShowcase.js';
@@ -338,6 +341,8 @@ export function FeaturesPage() {
         </div>
       </section>
 
+      <ComparisonSection />
+
       <section className="relative px-6 py-24">
         <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(77,150,232,0.18),rgba(8,15,25,0.94)_55%,rgba(142,216,255,0.12))] p-10 text-center shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl md:p-14">
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
@@ -408,5 +413,218 @@ function FeatureMetrics({ launchFeed }: { launchFeed: ReturnType<typeof useUpcom
         </div>
       ))}
     </div>
+  );
+}
+
+// ─── Comparison section ────────────────────────────────────────────────────
+
+type CellState = 'yes' | 'no' | 'partial' | string;
+
+interface CompetitorRow {
+  feature: string;
+  spacemap: CellState;
+  n2yo: CellState;
+  heavensAbove: CellState;
+  stuffInSpace: CellState;
+}
+
+const COMPARISON_ROWS: CompetitorRow[] = [
+  { feature: 'Free, no account required', spacemap: 'yes', n2yo: 'partial', heavensAbove: 'yes', stuffInSpace: 'yes' },
+  { feature: 'Fully 3D interactive globe', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'yes' },
+  { feature: 'Tracks 30,000+ objects', spacemap: 'yes', n2yo: 'partial', heavensAbove: 'no', stuffInSpace: 'partial' },
+  { feature: 'Includes debris + rocket bodies', spacemap: 'yes', n2yo: 'partial', heavensAbove: 'no', stuffInSpace: 'partial' },
+  { feature: '100% client-side propagation', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'yes' },
+  { feature: 'No data leaves your device', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'yes' },
+  { feature: 'Real-time conjunction analysis', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'no' },
+  { feature: 'Live ISS HD camera embedded', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'no' },
+  { feature: 'Time travel (past + future)', spacemap: 'yes', n2yo: 'partial', heavensAbove: 'partial', stuffInSpace: 'yes' },
+  { feature: 'Local sky view + pass predictions', spacemap: 'yes', n2yo: 'yes', heavensAbove: 'yes', stuffInSpace: 'no' },
+  { feature: 'POV camera (ride-along)', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'no' },
+  { feature: 'Ground stations + launch sites', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'no' },
+  { feature: '3D glTF spacecraft models', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'no' },
+  { feature: 'Modern responsive UI', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'partial' },
+  { feature: 'Open source / inspectable', spacemap: 'yes', n2yo: 'no', heavensAbove: 'no', stuffInSpace: 'yes' },
+];
+
+function ComparisonCell({ state }: { state: CellState }) {
+  if (state === 'yes') {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#4d96e8]/25 text-[#8ed8ff]">
+          <Check size={16} />
+        </div>
+      </div>
+    );
+  }
+  if (state === 'partial') {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#ffd166]/20 text-[#ffd166]">
+          <Minus size={16} />
+        </div>
+      </div>
+    );
+  }
+  if (state === 'no') {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/5 text-space-dim">
+          <X size={16} />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="text-center text-xs font-mono text-space-dim">{state}</div>
+  );
+}
+
+function ComparisonSection() {
+  return (
+    <section id="compare" className="scroll-mt-32 relative px-6 py-24">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
+            How SpaceMap compares
+          </p>
+          <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
+            Every other satellite tracker,{' '}
+            <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
+              side by side.
+            </span>
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-space-dim">
+            Honest column view of what SpaceMap ships versus the tools most people compare it to.
+            Green check = full support. Yellow bar = partial. Blank = not available.
+          </p>
+        </div>
+
+        {/* Desktop table */}
+        <div className="hidden overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 backdrop-blur-sm md:block">
+          {/* Header row */}
+          <div className="grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr] border-b border-white/10 bg-[linear-gradient(120deg,rgba(77,150,232,0.14),rgba(8,15,25,0.6))]">
+            <div className="p-5 text-[10px] font-semibold uppercase tracking-[0.28em] text-space-dim">
+              Feature
+            </div>
+            <div className="p-5 text-center">
+              <div className="text-sm font-bold text-white">SpaceMap</div>
+              <div className="mt-1 text-[10px] uppercase tracking-widest text-space-accent">
+                spacemap.earth
+              </div>
+            </div>
+            <div className="p-5 text-center">
+              <div className="text-sm font-bold text-white">N2YO</div>
+              <div className="mt-1 text-[10px] uppercase tracking-widest text-space-dim">
+                n2yo.com
+              </div>
+            </div>
+            <div className="p-5 text-center">
+              <div className="text-sm font-bold text-white">Heavens-Above</div>
+              <div className="mt-1 text-[10px] uppercase tracking-widest text-space-dim">
+                heavens-above.com
+              </div>
+            </div>
+            <div className="p-5 text-center">
+              <div className="text-sm font-bold text-white">Stuff-in-Space</div>
+              <div className="mt-1 text-[10px] uppercase tracking-widest text-space-dim">
+                stuffin.space
+              </div>
+            </div>
+          </div>
+
+          {COMPARISON_ROWS.map((row, i) => (
+            <div
+              key={row.feature}
+              className={`grid grid-cols-[1.6fr_1fr_1fr_1fr_1fr] items-center border-b border-white/5 last:border-b-0 ${
+                i % 2 === 0 ? 'bg-white/[0.02]' : ''
+              }`}
+            >
+              <div className="p-4 text-sm text-white">{row.feature}</div>
+              <div className="p-4">
+                <ComparisonCell state={row.spacemap} />
+              </div>
+              <div className="p-4">
+                <ComparisonCell state={row.n2yo} />
+              </div>
+              <div className="p-4">
+                <ComparisonCell state={row.heavensAbove} />
+              </div>
+              <div className="p-4">
+                <ComparisonCell state={row.stuffInSpace} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mobile stacked cards */}
+        <div className="space-y-6 md:hidden">
+          {[
+            { name: 'SpaceMap', domain: 'spacemap.earth', key: 'spacemap' as const, accent: true },
+            { name: 'N2YO', domain: 'n2yo.com', key: 'n2yo' as const, accent: false },
+            {
+              name: 'Heavens-Above',
+              domain: 'heavens-above.com',
+              key: 'heavensAbove' as const,
+              accent: false,
+            },
+            {
+              name: 'Stuff-in-Space',
+              domain: 'stuffin.space',
+              key: 'stuffInSpace' as const,
+              accent: false,
+            },
+          ].map((col) => (
+            <div
+              key={col.name}
+              className={`rounded-2xl border p-5 backdrop-blur-sm ${
+                col.accent
+                  ? 'border-[#4d96e8]/30 bg-[linear-gradient(140deg,rgba(77,150,232,0.16),rgba(8,15,25,0.9))]'
+                  : 'border-white/10 bg-white/5'
+              }`}
+            >
+              <div className="mb-4 flex items-baseline justify-between">
+                <div className="text-lg font-bold text-white">{col.name}</div>
+                <div className="text-[10px] uppercase tracking-widest text-space-dim">
+                  {col.domain}
+                </div>
+              </div>
+              <div className="space-y-2">
+                {COMPARISON_ROWS.map((row) => (
+                  <div
+                    key={row.feature}
+                    className="flex items-center justify-between gap-3 border-b border-white/5 pb-2 last:border-b-0"
+                  >
+                    <span className="text-sm text-space-dim">{row.feature}</span>
+                    <ComparisonCell state={row[col.key]} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Legend */}
+        <div className="mt-8 flex flex-wrap justify-center gap-6 text-xs text-space-dim">
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#4d96e8]/25 text-[#8ed8ff]">
+              <Check size={14} />
+            </div>
+            <span>Full support</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#ffd166]/20 text-[#ffd166]">
+              <Minus size={14} />
+            </div>
+            <span>Partial or with limits</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/5 text-space-dim">
+              <X size={14} />
+            </div>
+            <span>Not available</span>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }

@@ -123,6 +123,9 @@ export function SiteFooter() {
               <li>
                 <FooterLink to="/features">Features</FooterLink>
               </li>
+              <li>
+                <FooterLink to="/learn">Learn</FooterLink>
+              </li>
             </ul>
           </div>
 

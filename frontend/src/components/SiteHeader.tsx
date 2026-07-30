@@ -6,6 +6,7 @@ import emblemSrc from '../assets/brand-emblem.png';
 const NAV_LINKS = [
   { to: '/', label: 'Home' },
   { to: '/features', label: 'Features' },
+  { to: '/learn', label: 'Learn' },
   { to: '/about', label: 'About' },
   { to: '/contact', label: 'Contact' },
 ];

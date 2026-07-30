@@ -1,5 +1,18 @@
 import { useState } from 'react';
-import { CheckCircle, Radio, Search, Send, Zap } from 'lucide-react';
+import {
+  Bug,
+  CheckCircle,
+  ChevronDown,
+  Github,
+  HelpCircle,
+  LifeBuoy,
+  Mail,
+  MessageSquare,
+  Radio,
+  Search,
+  Send,
+  Zap,
+} from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SystemPill } from '../components/SystemPill.js';
 
@@ -222,6 +235,203 @@ export function ContactPage() {
           </form>
         </div>
       </section>
+
+      <FaqAndSupportSection />
     </div>
+  );
+}
+
+// ─── FAQ + Support ─────────────────────────────────────────────────────────
+
+const FAQS: Array<{ q: string; a: string }> = [
+  {
+    q: 'Is SpaceMap really free?',
+    a: 'Yes. No paywall, no signup, no trial. Every feature works in the browser without an account. There are no ads.',
+  },
+  {
+    q: 'How often is satellite data updated?',
+    a: 'The live catalog is pulled from CelesTrak and refreshed whenever you open the app. New TLE data is typically published every 4 – 12 hours; SpaceMap picks up the latest set on load.',
+  },
+  {
+    q: 'How accurate is the tracking?',
+    a: 'SGP4 propagation from a fresh TLE is accurate to roughly ±1 km at the epoch and drifts over days. SpaceMap propagates continuously in the browser so the number you see is the same math NORAD uses.',
+  },
+  {
+    q: 'Why can\'t I find a specific satellite?',
+    a: 'It may be classified (military assets aren\'t in the public catalog), decayed, or listed under a different name or NORAD ID. Try searching by international designator (e.g. "2020-100").',
+  },
+  {
+    q: 'Does SpaceMap send my location or data anywhere?',
+    a: 'No. All computation is client-side and no personal data leaves your device. Your local sky view only works locally in your browser; your coordinates are never transmitted.',
+  },
+  {
+    q: 'Can I embed the tracker on my own site?',
+    a: 'Not officially yet — a public embed is on the roadmap. For now you can link to spacemap.earth/tracker with a satellite pre-selected via URL parameters.',
+  },
+  {
+    q: 'The globe is slow / uses a lot of GPU. How can I improve performance?',
+    a: 'Reduce the number of rendered objects using the orbit-class filters (LEO, MEO, GEO, HEO) or hide debris from the object-type filter. Closing background browser tabs also helps.',
+  },
+  {
+    q: 'How do I report a bug or request a feature?',
+    a: 'Use the form above or email hello@spacemap.earth. Include screenshots plus browser and OS if it\'s a rendering bug — it makes reproduction much faster.',
+  },
+  {
+    q: 'Is there an API?',
+    a: 'A public JSON API for TLE data is on the roadmap. Until then, all the raw data feeding SpaceMap comes from CelesTrak\'s free public endpoints.',
+  },
+  {
+    q: 'Who runs SpaceMap?',
+    a: 'Rahul Awasthi — solo developer and designer. See the About page for the full story.',
+  },
+];
+
+function FaqRow({
+  q,
+  a,
+  open,
+  onToggle,
+}: {
+  q: string;
+  a: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm transition-colors hover:border-space-accent/30">
+      <button
+        onClick={onToggle}
+        className="flex w-full items-center justify-between gap-4 p-5 text-left"
+      >
+        <span className="text-sm font-semibold text-white md:text-base">{q}</span>
+        <ChevronDown
+          size={18}
+          className={`shrink-0 text-space-accent transition-transform ${open ? 'rotate-180' : ''}`}
+        />
+      </button>
+      {open && (
+        <div className="border-t border-white/10 px-5 pb-5 pt-4 text-sm leading-relaxed text-space-dim">
+          {a}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function FaqAndSupportSection() {
+  const [openIdx, setOpenIdx] = useState<number | null>(0);
+
+  return (
+    <>
+      <section id="faq" className="scroll-mt-32 relative px-6 py-24">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-10 text-center">
+            <div className="flex justify-center">
+              <SystemPill tone="accent" icon={HelpCircle}>
+                Frequently asked
+              </SystemPill>
+            </div>
+            <h2 className="mt-4 text-3xl font-bold text-white md:text-5xl">
+              Questions people actually ask.
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-space-dim">
+              Answers to the ten questions that come up most in email. Something not covered?
+              Message us up top or email hello@spacemap.earth.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {FAQS.map((f, i) => (
+              <FaqRow
+                key={f.q}
+                q={f.q}
+                a={f.a}
+                open={openIdx === i}
+                onToggle={() => setOpenIdx(openIdx === i ? null : i)}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section id="support" className="scroll-mt-32 relative px-6 pb-24">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-10 text-center">
+            <div className="flex justify-center">
+              <SystemPill tone="live" icon={LifeBuoy} pulse>
+                Support
+              </SystemPill>
+            </div>
+            <h2 className="mt-4 text-3xl font-bold text-white md:text-5xl">
+              Four ways to get unstuck.
+            </h2>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-2">
+            <SupportCard
+              icon={Mail}
+              title="Email"
+              desc="Fastest for feedback, questions, and partnership."
+              action="hello@spacemap.earth"
+              href="mailto:hello@spacemap.earth"
+            />
+            <SupportCard
+              icon={Bug}
+              title="Bug reports"
+              desc="Include browser + OS + steps to reproduce. Screenshots help a lot."
+              action="Report via contact form"
+              href="#top"
+            />
+            <SupportCard
+              icon={MessageSquare}
+              title="Feature requests"
+              desc="Tell us what would make SpaceMap more useful for your workflow."
+              action="Open a request"
+              href="mailto:hello@spacemap.earth?subject=Feature%20request"
+            />
+            <SupportCard
+              icon={Github}
+              title="Source & issues"
+              desc="SpaceMap is open by design. File issues where the code lives."
+              action="View on GitHub"
+              href="https://github.com/codehost-commit/spacemap-website"
+            />
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function SupportCard({
+  icon: Icon,
+  title,
+  desc,
+  action,
+  href,
+}: {
+  icon: React.ComponentType<{ size?: number | string }>;
+  title: string;
+  desc: string;
+  action: string;
+  href: string;
+}) {
+  const isExternal = href.startsWith('http');
+  return (
+    <a
+      href={href}
+      target={isExternal ? '_blank' : undefined}
+      rel={isExternal ? 'noreferrer' : undefined}
+      className="group flex items-start gap-4 rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-space-accent/30 hover:bg-white/10"
+    >
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/25 to-[#8ed8ff]/15 text-space-accent transition-transform group-hover:scale-110">
+        <Icon size={20} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-base font-semibold text-white">{title}</div>
+        <p className="mt-1 text-sm leading-relaxed text-space-dim">{desc}</p>
+        <div className="mt-3 text-xs font-semibold text-space-accent">{action} →</div>
+      </div>
+    </a>
   );
 }
