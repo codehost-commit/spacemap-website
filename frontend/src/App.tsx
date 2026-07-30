@@ -7,6 +7,7 @@ import { TrackerPage } from './pages/TrackerPage.js';
 import { ContactPage } from './pages/ContactPage.js';
 import { LegalPage } from './pages/LegalPage.js';
 import { LearnPage } from './pages/LearnPage.js';
+import { NotFoundPage } from './pages/NotFoundPage.js';
 
 export function App() {
   // Vite sets import.meta.env.BASE_URL from the `base` config (e.g. "/spacemap-website/")
@@ -23,6 +24,7 @@ export function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/legal" element={<LegalPage />} />
           <Route path="/tracker" element={<TrackerPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

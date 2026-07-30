@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+Disallow: /data/
+Disallow: /models/
+Disallow: /sw.js
+
+Sitemap: https://spacemap.earth/sitemap.xml

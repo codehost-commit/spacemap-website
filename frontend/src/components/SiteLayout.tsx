@@ -38,7 +38,7 @@ export function SiteLayout() {
   }, [pathname, hash]);
 
   useEffect(() => {
-    document.title = `SpaceMap | ${PAGE_TITLES[normalizedPath] ?? 'Home'}`;
+    document.title = `SpaceMap | ${PAGE_TITLES[normalizedPath] ?? 'Not Found'}`;
   }, [normalizedPath]);
 
   if (isTracker) {
