@@ -271,12 +271,14 @@ export function GlobeCanvas() {
           trails.ingest(s.snapshot, s.filter, { force: true });
         }
       }
-      if (s.selectedNoradId !== lastSelection) {
+      if (s.selectedNoradId !== lastSelection || s.trailMode !== lastTrailMode) {
         lastSelection = s.selectedNoradId;
         // Apply highlight instantly so the user sees feedback on click without
         // waiting for the next propagator snapshot.
         layer.setSelected(s.selectedNoradId);
-        void updateOrbitRibbon(orbitRibbon, sonar, s.selectedNoradId);
+        // Only show the orbit ribbon when trail mode is 'selected' or 'visible'
+        const showRibbon = s.trailMode !== 'off' && s.selectedNoradId != null;
+        void updateOrbitRibbon(orbitRibbon, sonar, showRibbon ? s.selectedNoradId : null);
         void model.setFor(s.selectedNoradId);
         applyCameraMode(follow, pov, model, s.cameraMode, s.selectedNoradId);
       }
