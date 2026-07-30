@@ -1,31 +1,46 @@
 import * as Cesium from 'cesium';
 
 /**
- * NASA GIBS MODIS Terra true-color cloud overlay.
+ * NASA GIBS MODIS cloud overlay — stacks Terra + Aqua corrected-reflectance
+ * layers so their orbital swaths fill each other's gaps. Terra crosses the
+ * equator ~10:30 AM, Aqua ~1:30 PM; combined they cover most of the sunlit
+ * hemisphere each day.
  *
- * Uses CorrectedReflectance which includes clouds as they actually appeared
- * in the most recent MODIS pass (~12h old). Rendered as a semi-transparent
- * overlay on top of the base imagery.
- *
- * Alpha fades with camera altitude:
- *   • Above ~8,000 km  → full opacity (MAX_ALPHA)
- *   • Below ~800 km    → fully transparent (you've "descended through" the clouds)
- *   • Between           → smooth interpolation
- *
- * This gives the effect of flying through a cloud layer.
+ * Alpha fades with camera altitude so you "descend through" the cloud deck:
+ *   • Above ~8,000 km  → full combined opacity
+ *   • Below ~800 km    → fully transparent
+ *   • Between           → smoothstep interpolation
  */
 
-const MAX_ALPHA = 0.45;
-const FADE_HIGH_M = 8_000_000; // full opacity above this
-const FADE_LOW_M = 800_000;   // fully transparent below this
-const UPDATE_INTERVAL_MS = 200; // throttle camera-height checks
+const PER_LAYER_ALPHA = 0.32; // each layer's max alpha (combined ~0.55 where they overlap)
+const FADE_HIGH_M = 8_000_000;
+const FADE_LOW_M = 800_000;
+const UPDATE_INTERVAL_MS = 200;
 
-function twoDaysAgoIso(): string {
-  return new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+function recentDateIso(daysAgo: number): string {
+  return new Date(Date.now() - daysAgo * 86_400_000).toISOString().slice(0, 10);
+}
+
+function createGibsProvider(layer: string, time: string): Cesium.UrlTemplateImageryProvider {
+  const url =
+    `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/` +
+    `${layer}/default/${time}/250m/{z}/{y}/{x}.jpg`;
+
+  return new Cesium.UrlTemplateImageryProvider({
+    url,
+    tileWidth: 512,
+    tileHeight: 512,
+    minimumLevel: 0,
+    maximumLevel: 7,
+    tilingScheme: new Cesium.GeographicTilingScheme(),
+    rectangle: Cesium.Rectangle.MAX_VALUE,
+    credit: new Cesium.Credit('NASA GIBS · MODIS cloud cover', true),
+  });
 }
 
 export class CloudOverlay {
-  private layer: Cesium.ImageryLayer | null = null;
+  private terraLayer: Cesium.ImageryLayer | null = null;
+  private aquaLayer: Cesium.ImageryLayer | null = null;
   private readonly viewer: Cesium.Viewer;
   private enabled = false;
   private preRenderDispose: (() => void) | null = null;
@@ -39,38 +54,38 @@ export class CloudOverlay {
     if (on === this.enabled) return;
     this.enabled = on;
     if (on) {
-      this.addLayer();
+      this.addLayers();
     } else {
-      this.removeLayer();
+      this.removeLayers();
     }
   }
 
-  private addLayer(): void {
-    if (this.layer) return;
+  private addLayers(): void {
+    if (this.terraLayer) return;
 
-    const time = twoDaysAgoIso();
-    const url =
-      `https://gibs.earthdata.nasa.gov/wmts/epsg4326/best/` +
-      `MODIS_Terra_CorrectedReflectance_TrueColor/default/${time}/` +
-      `250m/{z}/{y}/{x}.jpg`;
+    // Use 2 days ago — GIBS needs processing time, and older dates have
+    // more complete coverage. Terra and Aqua together fill most swath gaps.
+    const time = recentDateIso(2);
 
-    const provider = new Cesium.UrlTemplateImageryProvider({
-      url,
-      tileWidth: 512,
-      tileHeight: 512,
-      minimumLevel: 0,
-      maximumLevel: 7,
-      tilingScheme: new Cesium.GeographicTilingScheme(),
-      rectangle: Cesium.Rectangle.MAX_VALUE,
-      credit: new Cesium.Credit('NASA GIBS · MODIS Terra clouds', true),
+    const terraProvider = createGibsProvider(
+      'MODIS_Terra_CorrectedReflectance_TrueColor',
+      time,
+    );
+    const aquaProvider = createGibsProvider(
+      'MODIS_Aqua_CorrectedReflectance_TrueColor',
+      time,
+    );
+
+    this.terraLayer = new Cesium.ImageryLayer(terraProvider, {
+      alpha: PER_LAYER_ALPHA,
+    });
+    this.aquaLayer = new Cesium.ImageryLayer(aquaProvider, {
+      alpha: PER_LAYER_ALPHA,
     });
 
-    this.layer = new Cesium.ImageryLayer(provider, {
-      alpha: MAX_ALPHA,
-    });
-
-    // Add on top of all existing imagery layers
-    this.viewer.imageryLayers.add(this.layer);
+    // Add both on top of existing imagery
+    this.viewer.imageryLayers.add(this.terraLayer);
+    this.viewer.imageryLayers.add(this.aquaLayer);
 
     // Per-frame altitude-based alpha fade
     this.preRenderDispose = this.viewer.scene.preRender.addEventListener(() => {
@@ -78,29 +93,28 @@ export class CloudOverlay {
     });
   }
 
-  private removeLayer(): void {
+  private removeLayers(): void {
     if (this.preRenderDispose) {
       this.preRenderDispose();
       this.preRenderDispose = null;
     }
-    if (this.layer) {
-      try {
-        this.viewer.imageryLayers.remove(this.layer);
-      } catch {
-        /* viewer may be torn down */
-      }
-      this.layer = null;
+    try {
+      if (this.terraLayer) this.viewer.imageryLayers.remove(this.terraLayer);
+      if (this.aquaLayer) this.viewer.imageryLayers.remove(this.aquaLayer);
+    } catch {
+      /* viewer may be torn down */
     }
+    this.terraLayer = null;
+    this.aquaLayer = null;
   }
 
   private updateAlpha(): void {
-    if (!this.layer) return;
+    if (!this.terraLayer || !this.aquaLayer) return;
     const now = performance.now();
     if (now - this.lastCheckMs < UPDATE_INTERVAL_MS) return;
     this.lastCheckMs = now;
 
-    const carto = this.viewer.camera.positionCartographic;
-    const altM = carto.height;
+    const altM = this.viewer.camera.positionCartographic.height;
 
     let t: number;
     if (altM >= FADE_HIGH_M) {
@@ -108,15 +122,17 @@ export class CloudOverlay {
     } else if (altM <= FADE_LOW_M) {
       t = 0;
     } else {
-      // Smooth ease: use a cubic curve for natural fade
+      // Smoothstep for natural fade
       const linear = (altM - FADE_LOW_M) / (FADE_HIGH_M - FADE_LOW_M);
-      t = linear * linear * (3 - 2 * linear); // smoothstep
+      t = linear * linear * (3 - 2 * linear);
     }
 
-    this.layer.alpha = t * MAX_ALPHA;
+    const alpha = t * PER_LAYER_ALPHA;
+    this.terraLayer.alpha = alpha;
+    this.aquaLayer.alpha = alpha;
   }
 
   destroy(): void {
-    this.removeLayer();
+    this.removeLayers();
   }
 }
