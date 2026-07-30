@@ -11,7 +11,7 @@ export class Simulation {
   private queued = false;
   private timerScheduled = false;
   private lastRequestMs = 0;
-  private readonly minIntervalMs = 180;
+  private readonly minIntervalMs = 80;
   private disposers: Array<() => void> = [];
   private nextRequestId = 1;
   private conjunctionWaiters = new Map<number, (result: ConjunctionResult | Error) => void>();
