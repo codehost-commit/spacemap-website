@@ -16,6 +16,9 @@ export function TelemetryPanel() {
   const selected = useStore((s) => s.selectedNoradId);
   const snapshot = useStore((s) => s.snapshot);
   const name = useStore((s) => (selected != null ? s.indexByNorad.get(selected) : undefined));
+  const catalogEntry = useStore((s) =>
+    selected != null ? s.catalogEntryByNorad.get(selected) : undefined,
+  );
   const select = useStore((s) => s.select);
   const cameraMode = useStore((s) => s.cameraMode);
   const setCameraMode = useStore((s) => s.setCameraMode);
@@ -29,6 +32,7 @@ export function TelemetryPanel() {
 
   const live = selected != null ? findInSnapshot(snapshot, selected) : null;
   const isSaved = selected != null && savedIds.has(selected);
+  const isCatalogOnly = catalogEntry?.propagatable === false;
 
   useEffect(() => {
     setTelemetry(null);
@@ -75,6 +79,7 @@ export function TelemetryPanel() {
           <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-wider">
             {live && <span className="text-space-accent">{live.orbitClass}</span>}
             {objectType && <span className="text-space-dim">{CATALOG_OBJECT_TYPE_LABEL[objectType]}</span>}
+            {isCatalogOnly && <span className="text-space-warn">Catalog only</span>}
           </div>
         </div>
         <button
@@ -85,67 +90,92 @@ export function TelemetryPanel() {
         </button>
       </header>
 
-      <div className="flex gap-1 border-b border-space-border px-3 py-2 font-mono text-[11px]">
-        {(['orbit', 'follow', 'pov'] as const).map((m) => (
-          <button
-            key={m}
-            onClick={() => setCameraMode(m)}
-            className={`flex-1 rounded border px-2 py-1 ${
-              cameraMode === m
-                ? 'border-space-accent bg-space-accent/10 text-space-accent'
-                : 'border-space-border text-space-dim hover:text-space-text'
-            }`}
-          >
-            {MODE_LABEL[m]}
-          </button>
-        ))}
-      </div>
+      {!isCatalogOnly && (
+        <div className="flex gap-1 border-b border-space-border px-3 py-2 font-mono text-[11px]">
+          {(['orbit', 'follow', 'pov'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => setCameraMode(m)}
+              className={`flex-1 rounded border px-2 py-1 ${
+                cameraMode === m
+                  ? 'border-space-accent bg-space-accent/10 text-space-accent'
+                  : 'border-space-border text-space-dim hover:text-space-text'
+              }`}
+            >
+              {MODE_LABEL[m]}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div className="min-h-0 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-4 font-mono text-xs">
-          <Field label="Latitude" value={live ? fmt(live.latDeg, 3, '°') : '—'} />
-          <Field label="Longitude" value={live ? fmt(live.lonDeg, 3, '°') : '—'} />
-          <Field label="Altitude" value={live ? fmt(live.altKm, 1, ' km') : '—'} />
-          <Field label="Speed" value={live ? fmt(live.speedKmS, 3, ' km/s') : '—'} />
-          {telemetry && (
-            <>
-              <Field label="Inclination" value={fmt(telemetry.elements.inclinationDeg, 2, '°')} />
-              <Field label="Eccentricity" value={telemetry.elements.eccentricity.toFixed(5)} />
-              <Field label="Period" value={fmt(telemetry.elements.periodMinutes, 2, ' min')} />
-              <Field
-                label="Mean motion"
-                value={fmt(telemetry.elements.meanMotionRevPerDay, 4, ' rev/day')}
-              />
-              <Field label="Apogee" value={fmt(telemetry.elements.apogeeKm, 1, ' km')} />
-              <Field label="Perigee" value={fmt(telemetry.elements.perigeeKm, 1, ' km')} />
-              <Field label="RAAN" value={fmt(telemetry.elements.raanDeg, 2, '°')} />
-              <Field label="Arg. perigee" value={fmt(telemetry.elements.argPerigeeDeg, 2, '°')} />
+        {isCatalogOnly ? (
+          <div className="space-y-4 p-4 font-mono text-xs">
+            <div className="rounded-2xl border border-space-warn/25 bg-space-warn/8 px-4 py-3 text-space-dim">
+              This object is in the public catalog, but SpaceMap does not currently have a public
+              element set for it. That means we can show the record honestly, but we will not fake
+              a live position, orbit path, or conjunction result.
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               <Field
                 label="Object type"
-                value={CATALOG_OBJECT_TYPE_LABEL[telemetry.meta.objectType ?? 'unknown']}
+                value={CATALOG_OBJECT_TYPE_LABEL[catalogEntry?.objectType ?? 'unknown']}
               />
-              <Field label="Owner" value={telemetry.meta.country ?? '—'} />
-              <Field label="Sunlit" value={telemetry.sunlit ? 'Yes' : 'In shadow'} />
-              <Field
-                label="Δt (rel.)"
-                value={`${telemetry.relativisticOffsetSec.toExponential(3)} s`}
-              />
-            </>
-          )}
-          {live && (
-            <>
-              <Field label="ECI X" value={`${live.eci[0].toFixed(1)} km`} wide />
-              <Field label="ECI Y" value={`${live.eci[1].toFixed(1)} km`} wide />
-              <Field label="ECI Z" value={`${live.eci[2].toFixed(1)} km`} wide />
-              <Field
-                label="Sim time"
-                value={new Date(simTimeMs).toISOString().slice(11, 19) + ' UTC'}
-                wide
-              />
-            </>
-          )}
-        </div>
-        <ConjunctionPanel />
+              <Field label="Tracking status" value="Catalog only" />
+              <Field label="Owner" value={catalogEntry?.owner ?? '—'} />
+              <Field label="Launch date" value={catalogEntry?.launchDate ?? '—'} />
+              <Field label="Decay date" value={catalogEntry?.decayDate ?? '—'} />
+              <Field label="Live telemetry" value="Unavailable" />
+            </div>
+          </div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-4 font-mono text-xs">
+              <Field label="Latitude" value={live ? fmt(live.latDeg, 3, '°') : '—'} />
+              <Field label="Longitude" value={live ? fmt(live.lonDeg, 3, '°') : '—'} />
+              <Field label="Altitude" value={live ? fmt(live.altKm, 1, ' km') : '—'} />
+              <Field label="Speed" value={live ? fmt(live.speedKmS, 3, ' km/s') : '—'} />
+              {telemetry && (
+                <>
+                  <Field label="Inclination" value={fmt(telemetry.elements.inclinationDeg, 2, '°')} />
+                  <Field label="Eccentricity" value={telemetry.elements.eccentricity.toFixed(5)} />
+                  <Field label="Period" value={fmt(telemetry.elements.periodMinutes, 2, ' min')} />
+                  <Field
+                    label="Mean motion"
+                    value={fmt(telemetry.elements.meanMotionRevPerDay, 4, ' rev/day')}
+                  />
+                  <Field label="Apogee" value={fmt(telemetry.elements.apogeeKm, 1, ' km')} />
+                  <Field label="Perigee" value={fmt(telemetry.elements.perigeeKm, 1, ' km')} />
+                  <Field label="RAAN" value={fmt(telemetry.elements.raanDeg, 2, '°')} />
+                  <Field label="Arg. perigee" value={fmt(telemetry.elements.argPerigeeDeg, 2, '°')} />
+                  <Field
+                    label="Object type"
+                    value={CATALOG_OBJECT_TYPE_LABEL[telemetry.meta.objectType ?? 'unknown']}
+                  />
+                  <Field label="Owner" value={telemetry.meta.country ?? catalogEntry?.owner ?? '—'} />
+                  <Field label="Sunlit" value={telemetry.sunlit ? 'Yes' : 'In shadow'} />
+                  <Field
+                    label="Δt (rel.)"
+                    value={`${telemetry.relativisticOffsetSec.toExponential(3)} s`}
+                  />
+                </>
+              )}
+              {live && (
+                <>
+                  <Field label="ECI X" value={`${live.eci[0].toFixed(1)} km`} wide />
+                  <Field label="ECI Y" value={`${live.eci[1].toFixed(1)} km`} wide />
+                  <Field label="ECI Z" value={`${live.eci[2].toFixed(1)} km`} wide />
+                  <Field
+                    label="Sim time"
+                    value={new Date(simTimeMs).toISOString().slice(11, 19) + ' UTC'}
+                    wide
+                  />
+                </>
+              )}
+            </div>
+            <ConjunctionPanel />
+          </>
+        )}
       </div>
     </aside>
   );

@@ -41,11 +41,14 @@ export class Simulation {
           const propagatableObjects = objects.filter((t) => t.propagatable !== false);
           this.worker.postMessage({ type: 'load', tles: propagatableObjects, mode });
           setLocalCatalog(propagatableObjects, mode);
-          const indexEntries = propagatableObjects.map((t: Tle) => ({
+          const indexEntries = objects.map((t: Tle) => ({
             noradId: t.noradId,
             name: t.name,
             objectType: t.objectType ?? 'unknown',
             owner: t.owner,
+            launchDate: t.launchDate,
+            decayDate: t.decayDate,
+            propagatable: t.propagatable !== false,
             sourcePriority: t.sourcePriority,
           }));
           if (mode === 'replace') store.setIndex(indexEntries);

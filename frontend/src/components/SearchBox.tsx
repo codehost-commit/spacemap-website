@@ -11,6 +11,7 @@ const MAX_RESULTS = 12;
  */
 export function SearchBox() {
   const index = useStore((s) => s.index);
+  const entryByNorad = useStore((s) => s.catalogEntryByNorad);
   const select = useStore((s) => s.select);
   const [q, setQ] = useState('');
   const [open, setOpen] = useState(false);
@@ -19,12 +20,17 @@ export function SearchBox() {
     if (!q.trim()) return [];
     const needle = q.trim().toLowerCase();
     const asNum = Number(needle);
-    const out: { noradId: number; name: string; objectType: string }[] = [];
+    const out: { noradId: number; name: string; objectType: string; propagatable: boolean }[] = [];
     for (const e of index) {
       const nameMatch = e.name.toLowerCase().includes(needle);
       const idMatch = Number.isFinite(asNum) && e.noradId === asNum;
       if (nameMatch || idMatch) {
-        out.push(e);
+        out.push({
+          noradId: e.noradId,
+          name: e.name,
+          objectType: e.objectType,
+          propagatable: e.propagatable !== false,
+        });
         if (out.length >= MAX_RESULTS) break;
       }
     }
@@ -34,7 +40,9 @@ export function SearchBox() {
   const focus = (noradId: number, name: string) => {
     select(noradId);
     const w = window as unknown as { spacemapFocus?: (id: number) => void };
-    w.spacemapFocus?.(noradId);
+    if (entryByNorad.get(noradId)?.propagatable !== false) {
+      w.spacemapFocus?.(noradId);
+    }
     setQ(name);
     setOpen(false);
   };
@@ -64,9 +72,20 @@ export function SearchBox() {
               >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-space-text">{r.name}</div>
-                  <div className="mt-0.5 text-[10px] uppercase tracking-[0.18em] text-space-dim">
-                    {CATALOG_OBJECT_TYPE_LABEL[r.objectType as keyof typeof CATALOG_OBJECT_TYPE_LABEL] ??
-                      'Unknown'}
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-space-dim">
+                    <span>
+                      {CATALOG_OBJECT_TYPE_LABEL[r.objectType as keyof typeof CATALOG_OBJECT_TYPE_LABEL] ??
+                        'Unknown'}
+                    </span>
+                    <span
+                      className={`rounded-full border px-2 py-0.5 text-[9px] tracking-[0.22em] ${
+                        r.propagatable
+                          ? 'border-space-accent/30 bg-space-accent/10 text-space-accent'
+                          : 'border-space-warn/30 bg-space-warn/10 text-space-warn'
+                      }`}
+                    >
+                      {r.propagatable ? 'LIVE' : 'CATALOG ONLY'}
+                    </span>
                   </div>
                 </div>
                 <span className="ml-2 shrink-0 text-space-dim">#{r.noradId}</span>

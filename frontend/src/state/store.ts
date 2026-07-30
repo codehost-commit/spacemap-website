@@ -17,6 +17,9 @@ export interface SatelliteIndexEntry {
   objectType: CatalogObjectType;
   orbitClass?: OrbitClass;
   owner?: string;
+  launchDate?: string;
+  decayDate?: string;
+  propagatable?: boolean;
   sourcePriority?: number;
 }
 
@@ -33,6 +36,7 @@ interface StoreState {
   index: SatelliteIndexEntry[];
   indexByNorad: Map<number, string>;
   objectTypeByNorad: Map<number, CatalogObjectType>;
+  catalogEntryByNorad: Map<number, SatelliteIndexEntry>;
 
   snapshot: PropagationSnapshot | null;
   snapshotTick: number;
@@ -126,6 +130,7 @@ export const useStore = create<StoreState>((set) => ({
   index: [],
   indexByNorad: new Map(),
   objectTypeByNorad: new Map(),
+  catalogEntryByNorad: new Map(),
 
   snapshot: null,
   snapshotTick: 0,
@@ -169,6 +174,7 @@ export const useStore = create<StoreState>((set) => ({
       catalogSize: index.length,
       indexByNorad: new Map(index.map((e) => [e.noradId, e.name])),
       objectTypeByNorad: new Map(index.map((e) => [e.noradId, e.objectType])),
+      catalogEntryByNorad: new Map(index.map((e) => [e.noradId, e])),
     }),
   appendIndex: (incoming) =>
     set((s) => {
@@ -176,6 +182,7 @@ export const useStore = create<StoreState>((set) => ({
       const index = [...s.index];
       const indexByNorad = new Map(s.indexByNorad);
       const objectTypeByNorad = new Map(s.objectTypeByNorad);
+      const catalogEntryByNorad = new Map(s.catalogEntryByNorad);
       const byNorad = new Map(index.map((entry, idx) => [entry.noradId, idx]));
       for (const entry of incoming) {
         const existingIdx = byNorad.get(entry.noradId);
@@ -184,13 +191,16 @@ export const useStore = create<StoreState>((set) => ({
           index.push(entry);
           indexByNorad.set(entry.noradId, entry.name);
           objectTypeByNorad.set(entry.noradId, entry.objectType);
+          catalogEntryByNorad.set(entry.noradId, entry);
           continue;
         }
         const existing = index[existingIdx];
         if ((entry.sourcePriority ?? 0) >= (existing.sourcePriority ?? 0)) {
-          index[existingIdx] = { ...existing, ...entry };
+          const nextEntry = { ...existing, ...entry };
+          index[existingIdx] = nextEntry;
           indexByNorad.set(entry.noradId, entry.name);
           objectTypeByNorad.set(entry.noradId, entry.objectType);
+          catalogEntryByNorad.set(entry.noradId, nextEntry);
         }
       }
       return {
@@ -198,6 +208,7 @@ export const useStore = create<StoreState>((set) => ({
         catalogSize: index.length,
         indexByNorad,
         objectTypeByNorad,
+        catalogEntryByNorad,
       };
     }),
   setCatalogProgress: (
