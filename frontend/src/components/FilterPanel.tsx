@@ -93,7 +93,7 @@ export function FilterPanel() {
                 className="h-3 w-3 accent-space-accent"
               />
               <span
-                className="h-3 w-3 shrink-0"
+                className="h-4 w-4 shrink-0"
                 style={{
                   backgroundColor: CATALOG_OBJECT_TYPE_COLOR[kind],
                   WebkitMaskImage: `url(${OBJECT_MARKER_ICON[kind]})`,
@@ -104,7 +104,9 @@ export function FilterPanel() {
                   maskPosition: 'center',
                   WebkitMaskSize: 'contain',
                   maskSize: 'contain',
-                  filter: active ? `drop-shadow(0 0 6px ${CATALOG_OBJECT_TYPE_COLOR[kind]})` : 'none',
+                  filter: active
+                    ? `drop-shadow(0 0 4px ${CATALOG_OBJECT_TYPE_COLOR[kind]}) drop-shadow(0 0 10px ${CATALOG_OBJECT_TYPE_COLOR[kind]})`
+                    : 'none',
                   opacity: active ? 1 : 0.72,
                 }}
               />
