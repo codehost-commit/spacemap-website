@@ -13,6 +13,7 @@ import { SavedList } from '../components/SavedList.js';
 import { CatalogStatusBanner } from '../components/CatalogStatusBanner.js';
 import { ConjunctionLeaderboard } from '../components/ConjunctionLeaderboard.js';
 import { LaunchTracker } from '../components/LaunchTracker.js';
+import { PassPredictions } from '../components/PassPredictions.js';
 import { AdminConsole } from '../components/AdminConsole.js';
 import { TimelineScrubber } from '../components/TimelineScrubber.js';
 import { SystemPill } from '../components/SystemPill.js';
@@ -147,6 +148,7 @@ export function TrackerPage() {
       <IssCamera />
       <ConjunctionLeaderboard />
       <LaunchTracker />
+      <PassPredictions />
       <TimeControls />
       <TimelineScrubber />
       <CatalogStatusBanner />

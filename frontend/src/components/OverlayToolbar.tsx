@@ -52,6 +52,13 @@ export function OverlayToolbar() {
         onClick={() => toggleOverlay('sky')}
       />
       <ToolbarButton
+        icon="🔭"
+        label="Passes"
+        title="Visible pass predictions for next 24h"
+        active={openOverlays.has('passes')}
+        onClick={() => toggleOverlay('passes')}
+      />
+      <ToolbarButton
         icon="★"
         label="Saved"
         title="Your saved satellites"

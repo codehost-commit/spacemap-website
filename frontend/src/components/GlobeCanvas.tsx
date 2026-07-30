@@ -32,6 +32,7 @@ import { getClockControls } from '../simulation/clock-controls.js';
 
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -183,16 +184,43 @@ export function GlobeCanvas() {
 
     // Hover — throttled multi-pick + layer.setHovered so the nearest satellite
     // gets a visible ring. Users get a preview of what will be selected on click.
+    // Also shows a lightweight name tooltip next to the cursor.
     let lastHoverMs = 0;
     const HOVER_INTERVAL_MS = 40;
+    const tooltip = tooltipRef.current;
     handler.setInputAction((ev: { endPosition: Cesium.Cartesian2 }) => {
-      if (cameraMoving) return;
+      if (cameraMoving) {
+        if (tooltip) tooltip.style.display = 'none';
+        return;
+      }
       const now = performance.now();
       if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
       lastHoverMs = now;
       const id = pickForHover(ev.endPosition);
       layer.setHovered(id);
       viewer.scene.canvas.style.cursor = id != null ? 'pointer' : '';
+
+      if (tooltip) {
+        if (id != null) {
+          const state = useStore.getState();
+          const name = state.indexByNorad.get(id);
+          const entry = state.catalogEntryByNorad.get(id);
+          const label = name ?? `#${id}`;
+          const typeBadge = entry?.objectType
+            ? entry.objectType.replace('-', ' ').replace(/^\w/, (c) => c.toUpperCase())
+            : '';
+          tooltip.innerHTML = `<span style="font-weight:600">${label}</span>${
+            typeBadge
+              ? `<span style="opacity:0.5;margin-left:6px;font-size:10px">${typeBadge}</span>`
+              : ''
+          }`;
+          tooltip.style.display = 'block';
+          tooltip.style.left = `${ev.endPosition.x + 16}px`;
+          tooltip.style.top = `${ev.endPosition.y - 12}px`;
+        } else {
+          tooltip.style.display = 'none';
+        }
+      }
     }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
     // Snapshot → render loop. Camera position is passed into the layer so
@@ -331,7 +359,15 @@ export function GlobeCanvas() {
     };
   }, []);
 
-  return <div ref={containerRef} className="cesium-container" />;
+  return (
+    <div className="relative h-full w-full">
+      <div ref={containerRef} className="cesium-container" />
+      <div
+        ref={tooltipRef}
+        className="pointer-events-none absolute z-50 hidden whitespace-nowrap rounded-lg border border-white/15 bg-[#0a1625]/92 px-2.5 py-1.5 font-mono text-xs text-white shadow-lg backdrop-blur-md"
+      />
+    </div>
+  );
 }
 
 function applyCameraMode(

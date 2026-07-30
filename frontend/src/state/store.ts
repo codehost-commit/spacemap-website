@@ -23,7 +23,7 @@ export interface SatelliteIndexEntry {
   sourcePriority?: number;
 }
 
-export type OverlayId = 'iss' | 'sky' | 'saved' | 'leaderboard' | 'launches';
+export type OverlayId = 'iss' | 'sky' | 'saved' | 'leaderboard' | 'launches' | 'passes';
 
 interface StoreState {
   catalogStatus: CatalogStatus;
