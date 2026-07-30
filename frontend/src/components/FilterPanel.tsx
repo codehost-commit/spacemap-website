@@ -7,6 +7,7 @@ import {
   type CatalogObjectType,
   type OrbitClass,
 } from '@spacemap/shared';
+import { buildObjectMarkerIcon } from '../cesium/satellite-icon.js';
 import { useStore, type TrailMode } from '../state/store.js';
 import { ImageryPicker } from './ImageryPicker.js';
 
@@ -24,6 +25,13 @@ const TRAIL_LABEL: Record<TrailMode, string> = {
   off: 'Off',
   selected: 'Selected',
   visible: 'Visible',
+};
+
+const OBJECT_MARKER_ICON: Record<CatalogObjectType, string> = {
+  payload: buildObjectMarkerIcon('payload'),
+  'rocket-body': buildObjectMarkerIcon('rocket-body'),
+  debris: buildObjectMarkerIcon('debris'),
+  unknown: buildObjectMarkerIcon('unknown'),
 };
 
 export function FilterPanel() {
@@ -85,10 +93,19 @@ export function FilterPanel() {
                 className="h-3 w-3 accent-space-accent"
               />
               <span
-                className="h-2 w-2 rounded-full"
+                className="h-3 w-3 shrink-0"
                 style={{
-                  background: CATALOG_OBJECT_TYPE_COLOR[kind],
-                  boxShadow: active ? `0 0 6px ${CATALOG_OBJECT_TYPE_COLOR[kind]}` : 'none',
+                  backgroundColor: CATALOG_OBJECT_TYPE_COLOR[kind],
+                  WebkitMaskImage: `url(${OBJECT_MARKER_ICON[kind]})`,
+                  maskImage: `url(${OBJECT_MARKER_ICON[kind]})`,
+                  WebkitMaskRepeat: 'no-repeat',
+                  maskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                  maskPosition: 'center',
+                  WebkitMaskSize: 'contain',
+                  maskSize: 'contain',
+                  filter: active ? `drop-shadow(0 0 6px ${CATALOG_OBJECT_TYPE_COLOR[kind]})` : 'none',
+                  opacity: active ? 1 : 0.72,
                 }}
               />
               <span>{CATALOG_OBJECT_TYPE_LABEL[kind]}</span>
