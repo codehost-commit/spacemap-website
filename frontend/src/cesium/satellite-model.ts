@@ -18,32 +18,63 @@ import { useStore } from '../state/store.js';
  */
 const MODEL_URL = (name: string) => `${import.meta.env.BASE_URL}models/${name}`;
 
-const SPECIFIC_MODELS: Record<number, string> = {
-  25544: MODEL_URL('iss.glb'), // ISS (ZARYA)
-  20580: MODEL_URL('hubble.glb'), // HUBBLE SPACE TELESCOPE
-  50463: MODEL_URL('jwst.glb'), // JAMES WEBB SPACE TELESCOPE (L2 halo)
+/**
+ * Per-model render tuning. Different GLBs come out of Blender/nasa3d/Sketchfab
+ * with wildly different intrinsic dimensions — some are modelled at ~10 m
+ * (Starlink, hand-scanned), some at hundreds or thousands of metres (NASA
+ * science instruments). We give each family its own `minimumPixelSize` +
+ * `maximumScale` so nothing balloons when zoomed out.
+ */
+interface ModelSpec {
+  url: string;
+  /** On-screen pixel floor. Smaller = model shrinks more when far away. */
+  minimumPixelSize: number;
+  /** Cap on the auto-scale multiplier. Smaller = less inflation at distance. */
+  maximumScale: number;
+}
+
+// The generic + big-natural-size models (payload, rocket body, debris,
+// starlink) come from external sources with unpredictable base dimensions,
+// so we give them tighter caps to prevent giant-sphere-in-space renders.
+const TIGHT_TUNING = { minimumPixelSize: 96, maximumScale: 20_000 };
+// The hand-tuned famous spacecraft assets (ISS/Hubble/JWST/Voyager) are known
+// to be near real-world scale, so they get the traditional loose tuning that
+// keeps them visible at any zoom.
+const LOOSE_TUNING = { minimumPixelSize: 220, maximumScale: 800_000 };
+
+const SPECIFIC_MODELS: Record<number, ModelSpec> = {
+  25544: { url: MODEL_URL('iss.glb'), ...LOOSE_TUNING }, // ISS (ZARYA)
+  20580: { url: MODEL_URL('hubble.glb'), ...LOOSE_TUNING }, // HUBBLE
+  50463: { url: MODEL_URL('jwst.glb'), ...LOOSE_TUNING }, // JWST (L2 halo)
 };
 
-const NAME_PATTERN_MODELS: Array<{ test: (name: string) => boolean; url: string }> = [
+const NAME_PATTERN_MODELS: Array<{ test: (name: string) => boolean; spec: ModelSpec }> = [
   {
     test: (name) => name.startsWith('STARLINK'),
-    url: MODEL_URL('starlink.glb'),
+    spec: { url: MODEL_URL('starlink.glb'), ...TIGHT_TUNING },
   },
 ];
 
-const TYPE_MODELS: Record<CatalogObjectType, string> = {
-  payload: MODEL_URL('payload.glb'),
-  'rocket-body': MODEL_URL('rocket-body.glb'),
-  debris: MODEL_URL('debris.glb'),
-  unknown: MODEL_URL('voyager.glb'),
+const TYPE_MODELS: Record<CatalogObjectType, ModelSpec> = {
+  payload: { url: MODEL_URL('payload.glb'), ...TIGHT_TUNING },
+  'rocket-body': { url: MODEL_URL('rocket-body.glb'), ...TIGHT_TUNING },
+  debris: { url: MODEL_URL('debris.glb'), ...TIGHT_TUNING },
+  unknown: { url: MODEL_URL('voyager.glb'), ...LOOSE_TUNING },
 };
 
-const GENERIC_MODEL = MODEL_URL('voyager.glb');
+const GENERIC_SPEC: ModelSpec = { url: MODEL_URL('voyager.glb'), ...LOOSE_TUNING };
 
-export function modelUrlFor(noradId: number): string {
+/**
+ * URLs that have failed to load (shader compile errors, missing textures, etc.)
+ * — we blacklist them so we don't keep retrying the same broken GLB every
+ * time the user clicks another satellite of that type.
+ */
+const brokenModelUrls = new Set<string>();
+
+export function modelSpecFor(noradId: number): ModelSpec {
   // Level 1 — hand-curated famous satellites.
   const specific = SPECIFIC_MODELS[noradId];
-  if (specific) return specific;
+  if (specific && !brokenModelUrls.has(specific.url)) return specific;
 
   // Look up the catalog entry for name + type so we can match families and
   // categories. The store carries this via catalogEntryByNorad + indexByNorad.
@@ -53,16 +84,24 @@ export function modelUrlFor(noradId: number): string {
   const objectType = entry?.objectType ?? state.objectTypeByNorad.get(noradId);
 
   // Level 2 — name-pattern families (Starlink, and easily extensible).
-  for (const { test, url } of NAME_PATTERN_MODELS) {
-    if (test(name)) return url;
+  for (const { test, spec } of NAME_PATTERN_MODELS) {
+    if (test(name) && !brokenModelUrls.has(spec.url)) return spec;
   }
 
   // Level 3 — per-object-type fallback so a Falcon 9 upper stage never
   // renders as a Voyager probe.
-  if (objectType && TYPE_MODELS[objectType]) return TYPE_MODELS[objectType];
+  if (objectType) {
+    const typeSpec = TYPE_MODELS[objectType];
+    if (typeSpec && !brokenModelUrls.has(typeSpec.url)) return typeSpec;
+  }
 
   // Level 4 — final fallback.
-  return GENERIC_MODEL;
+  return GENERIC_SPEC;
+}
+
+/** Back-compat: URL-only accessor. */
+export function modelUrlFor(noradId: number): string {
+  return modelSpecFor(noradId).url;
 }
 
 export function isSpecificModel(noradId: number): boolean {
@@ -112,38 +151,73 @@ export class SatelliteModel {
     this.clearModel();
     if (noradId == null) return;
 
-    const url = modelUrlFor(noradId);
+    await this.tryLoadModelFor(noradId, 0);
+  }
+
+  /**
+   * Attempt to load the resolved model. If Cesium fails to compile the GLB
+   * shader (which happens with GLBs that reference undeclared varyings like
+   * `v_texCoord_0` when the mesh lacks UVs), blacklist the URL and try the
+   * next fallback in the resolution chain. Prevents one bad asset from
+   * breaking selection for an entire object type.
+   */
+  private async tryLoadModelFor(noradId: number, depth: number): Promise<void> {
+    if (depth > 3) return; // guard against infinite fallback loops
+    const spec = modelSpecFor(noradId);
+    const url = spec.url;
     this.loadingUrl = url;
+    let model: Cesium.Model | null = null;
     try {
-      // Real satellite sizes (ISS ~100 m, cubesat ~0.3 m) are invisible dots
-      // at typical camera distances (500+ km). `minimumPixelSize: 220` clamps
-      // the on-screen footprint so you actually see the model shape. It still
-      // shrinks nicely when you fly close and cross the natural-scale
-      // threshold.
-      const model = await Cesium.Model.fromGltfAsync({
+      // Per-model tuning: ISS/Hubble/JWST get the loose "always visible"
+      // treatment; the type-fallback GLBs get tighter caps so they don't
+      // balloon at high altitudes.
+      model = await Cesium.Model.fromGltfAsync({
         url,
         modelMatrix: Cesium.Matrix4.IDENTITY,
-        minimumPixelSize: 220,
-        maximumScale: 800_000,
+        minimumPixelSize: spec.minimumPixelSize,
+        maximumScale: spec.maximumScale,
         scale: 1,
-        // Hide until first transform update so the model doesn't flash at the
-        // origin.
         show: false,
       });
-      // Bail if the selection changed while the glTF was downloading.
-      if (this.loadingUrl !== url || this.noradId !== noradId) {
-        model.destroy?.();
-        return;
-      }
-      this.viewer.scene.primitives.add(model);
-      this.model = model;
-      // Kick one immediate transform so it appears at the satellite, not the
-      // origin.
-      this.updateTransform();
-      model.show = !this.hidden;
     } catch (err) {
       console.warn('[satellite-model] failed to load', url, err);
+      brokenModelUrls.add(url);
+      // Try the next fallback (Voyager is the terminal generic).
+      if (this.noradId === noradId) {
+        await this.tryLoadModelFor(noradId, depth + 1);
+      }
+      return;
     }
+
+    // Bail if the selection changed while the glTF was downloading.
+    if (this.loadingUrl !== url || this.noradId !== noradId) {
+      model.destroy?.();
+      return;
+    }
+
+    // Cesium reports shader-compile failures asynchronously via the model's
+    // `errorEvent` — a synchronous `fromGltfAsync` resolve does NOT catch them.
+    // Hook the error event so a broken GLB is blacklisted and we transparently
+    // fall back to the Voyager silhouette instead of crashing the render.
+    const brokenUrl = url;
+    const failedNoradId = noradId;
+    model.errorEvent?.addEventListener?.((error: unknown) => {
+      console.warn('[satellite-model] runtime error on', brokenUrl, error);
+      brokenModelUrls.add(brokenUrl);
+      if (this.model === model) {
+        this.clearModel();
+        // Retry with the next fallback if the user is still viewing this sat.
+        if (this.noradId === failedNoradId) {
+          void this.tryLoadModelFor(failedNoradId, depth + 1);
+        }
+      }
+    });
+
+    this.viewer.scene.primitives.add(model);
+    this.model = model;
+    // Kick one immediate transform so it appears at the satellite, not origin.
+    this.updateTransform();
+    model.show = !this.hidden;
   }
 
   /** POV of self hides the model to avoid rendering the inside of the mesh. */
