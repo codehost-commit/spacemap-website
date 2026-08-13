@@ -470,6 +470,47 @@ export function LegalPage() {
                 affiliation with SpaceMap, Rahul Awasthi, or spacemap.earth.
               </p>
             </Clause>
+
+            <Clause title="Homepage second slide video">
+              <p>
+                SpaceMap&apos;s second homepage hero slide uses a modified excerpt from{' '}
+                <a
+                  href="https://archive.org/details/NASATimeLapseVideos/jsc2015m000146.mp4"
+                  className="text-space-accent transition-colors hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  jsc2015m000146.mp4
+                </a>{' '}
+                in the Internet Archive collection{' '}
+                <a
+                  href="https://archive.org/details/NASATimeLapseVideos"
+                  className="text-space-accent transition-colors hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  NASA Time Lapse Videos
+                </a>
+                .
+              </p>
+              <ul className="list-disc space-y-2 pl-5">
+                <li>Source collection: NASA Time Lapse Videos.</li>
+                <li>Source file: jsc2015m000146.mp4.</li>
+                <li>Source topic listing: NASA.</li>
+                <li>Usage marking listed on the source page: Public Domain Mark 1.0.</li>
+                <li>Source page Addeddate: May 6, 2015 at 17:02:25.</li>
+                <li>Source identifier: NASATimeLapseVideos.</li>
+                <li>Scanner credit listed on the source page: Internet Archive HTML5 Uploader 1.6.1.</li>
+                <li>Accessed by SpaceMap: August 13, 2026.</li>
+                <li>Modified by SpaceMap on August 13, 2026.</li>
+              </ul>
+              <p>
+                This material is presented as a modified public-domain source for educational and
+                informational context on SpaceMap. NASA and the Internet Archive do not sponsor,
+                support, endorse, approve, or have any affiliation with SpaceMap, Rahul Awasthi,
+                or spacemap.earth.
+              </p>
+            </Clause>
           </Section>
         </div>
       </section>
