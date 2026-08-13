@@ -27,8 +27,9 @@ export function SystemPill({
 }) {
   return (
     <span
+      data-tone={tone}
       style={style}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${TONE_STYLES[tone]} ${className}`.trim()}
+      className={`system-pill inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] ${TONE_STYLES[tone]} ${className}`.trim()}
     >
       {pulse && <span className="h-2 w-2 rounded-full bg-current animate-pulse" />}
       {Icon && <Icon size={13} className="shrink-0" />}

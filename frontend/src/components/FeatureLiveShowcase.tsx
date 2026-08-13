@@ -642,11 +642,13 @@ function LaunchFeatureCard({
                   </span>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3">
-                  <div className={`text-2xl font-semibold ${tone.textClass}`}>
-                    {formatLaunchCountdown(deltaMs)}
+                <div className="mt-4 grid gap-4 md:grid-cols-[minmax(0,1fr)_10.5rem] md:items-center">
+                  <div className="flex min-h-[4.5rem] items-center">
+                    <div className={`text-2xl font-semibold ${tone.textClass}`}>
+                      {formatLaunchCountdown(deltaMs)}
+                    </div>
                   </div>
-                  <div className="text-right text-xs text-space-dim">
+                  <div className="flex min-h-[4.5rem] flex-col justify-center text-left text-xs text-space-dim md:text-right">
                     <div>{launch.pad?.name ?? 'Pad TBD'}</div>
                     <div>{launch.pad?.location?.name ?? launch.status?.name ?? 'Pending'}</div>
                   </div>
@@ -983,14 +985,14 @@ function getConjunctionTone(severity: number, pc: number) {
   if (severity >= 40 || pc >= 1e-6) {
     return {
       label: 'Caution',
-      textClass: 'text-[#ffd166]',
-      dotClass: 'border-[#ffd166]/35 bg-[#ffd166]/12 text-[#ffe19a]',
+      textClass: 'text-[#a87717]',
+      dotClass: 'border-[#a87717]/35 bg-[#a87717]/12 text-[#a87717]',
     };
   }
   return {
     label: 'Watch',
-    textClass: 'text-[#8ed8ff]',
-    dotClass: 'border-[#8ed8ff]/35 bg-[#8ed8ff]/12 text-[#c7efff]',
+    textClass: 'text-[#4f8db4]',
+    dotClass: 'border-[#4f8db4]/35 bg-[#4f8db4]/12 text-[#4f8db4]',
   };
 }
 
@@ -1005,14 +1007,14 @@ function getRangeTone(rangeMiles: number) {
   if (rangeMiles <= 1200) {
     return {
       label: 'Close',
-      textClass: 'text-[#ffd166]',
-      dotClass: 'border-[#ffd166]/35 bg-[#ffd166]/12 text-[#ffe19a]',
+      textClass: 'text-[#a87717]',
+      dotClass: 'border-[#a87717]/35 bg-[#a87717]/12 text-[#a87717]',
     };
   }
   return {
     label: 'On watch',
-    textClass: 'text-[#8ed8ff]',
-    dotClass: 'border-[#8ed8ff]/35 bg-[#8ed8ff]/12 text-[#c7efff]',
+    textClass: 'text-[#4f8db4]',
+    dotClass: 'border-[#4f8db4]/35 bg-[#4f8db4]/12 text-[#4f8db4]',
   };
 }
 

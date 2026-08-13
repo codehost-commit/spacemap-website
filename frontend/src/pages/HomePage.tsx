@@ -24,25 +24,40 @@ import {
 const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
 const HERO_VIDEO_MP4_SRC = `${import.meta.env.BASE_URL || '/'}brand/HeroVideo.mp4`;
 const HERO_VIDEO_2_MP4_SRC = `${import.meta.env.BASE_URL || '/'}brand/HeroVideo2.mp4`;
-const HERO_SLIDE_INTERVAL_MS = 9082;
+const HERO_SLIDE_INTERVAL_MS = 8000;
 const GAME_LAUNCH_TARGET_MS = new Date('2026-08-21T16:30:00-05:00').getTime();
 const GAME_NAME = 'Orbital';
 
 function HeroVideoBackground({
   src = HERO_VIDEO_MP4_SRC,
-  overlayClassName = 'bg-[linear-gradient(90deg,rgba(6,16,26,0.9),rgba(6,16,26,0.46)_42%,rgba(6,16,26,0.12)_72%,rgba(6,16,26,0.52))]',
-  topGradientClassName = 'from-[#06101a]/80 to-transparent',
-  bottomGradientClassName = 'from-[#06101a] via-[#06101a]/88 to-transparent',
+  overlayClassName = 'bg-[#07131f]/56',
+  topGradientClassName = 'bg-[#06101a]/30',
+  bottomGradientClassName = 'bg-[#06101a]/72',
+  active = true,
+  restartOnActivate = false,
 }: {
   src?: string;
   overlayClassName?: string;
   topGradientClassName?: string;
   bottomGradientClassName?: string;
+  active?: boolean;
+  restartOnActivate?: boolean;
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const loopTimerRef = useRef<number | null>(null);
   const revealTimerRef = useRef<number | null>(null);
+  const previousActiveRef = useRef(active);
   const [isFading, setIsFading] = useState(false);
+
+  useEffect(() => {
+    const wasActive = previousActiveRef.current;
+    previousActiveRef.current = active;
+    if (!restartOnActivate || !active || wasActive) return;
+    const video = videoRef.current;
+    if (!video) return;
+    video.currentTime = 0;
+    void video.play();
+  }, [active, restartOnActivate]);
 
   useEffect(() => {
     return () => {
@@ -80,8 +95,8 @@ function HeroVideoBackground({
       </video>
       <div className={`absolute inset-0 ${overlayClassName}`} />
       <div className="absolute inset-x-0 bottom-[-3.5rem] h-32 bg-[#06101a] blur-3xl" />
-      <div className={`absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t ${bottomGradientClassName}`} />
-      <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${topGradientClassName}`} />
+      <div className={`absolute inset-x-0 bottom-0 h-40 ${bottomGradientClassName}`} />
+      <div className={`absolute inset-x-0 top-0 h-32 ${topGradientClassName}`} />
     </div>
   );
 }
@@ -171,14 +186,16 @@ function LaunchCountdown({ deltaMs }: { deltaMs: number }) {
   );
 }
 
-function HeroGameSlideBackground() {
+function HeroGameSlideBackground({ active }: { active: boolean }) {
   return (
     <div className="absolute inset-0 overflow-hidden bg-[#070d18]" aria-hidden="true">
       <HeroVideoBackground
         src={HERO_VIDEO_2_MP4_SRC}
-        overlayClassName="bg-[linear-gradient(90deg,rgba(9,12,24,0.88),rgba(9,12,24,0.56)_42%,rgba(22,17,37,0.18)_72%,rgba(9,12,24,0.76))]"
-        topGradientClassName="from-[#090c18]/88 to-transparent"
-        bottomGradientClassName="from-[#06101a] via-[#06101a]/90 to-transparent"
+        overlayClassName="bg-[#090c18]/60"
+        topGradientClassName="bg-[#090c18]/34"
+        bottomGradientClassName="bg-[#06101a]/74"
+        active={active}
+        restartOnActivate
       />
       <div className="spacemap-grain absolute inset-0 opacity-30" />
     </div>
@@ -241,20 +258,20 @@ export function HomePage() {
   return (
     <div className="relative">
       {/* Hero Section: video spans full section behind text */}
-      <section className="relative flex min-h-[82svh] items-center justify-center overflow-hidden pb-24 pt-20">
+      <section className="site-dark-hero relative flex min-h-[82svh] items-center justify-center overflow-hidden pb-24 pt-20">
         <div
           className={`absolute inset-0 z-0 transition-opacity duration-1000 ${
             heroSlideIndex === 0 ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
         >
-          <HeroVideoBackground />
+          <HeroVideoBackground active={heroSlideIndex === 0} />
         </div>
         <div
           className={`absolute inset-0 z-0 transition-opacity duration-1000 ${
             heroSlideIndex === 1 ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
         >
-          <HeroGameSlideBackground />
+          <HeroGameSlideBackground active={heroSlideIndex === 1} />
         </div>
 
         {/* Content overlay */}
@@ -568,26 +585,6 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* CTA banner */}
-      <section className="relative z-10 py-24">
-        <div className="mx-auto max-w-4xl px-6 text-center">
-          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#4d96e8]/10 to-[#8ed8ff]/5 p-12 backdrop-blur-sm md:p-16">
-            <h2 className="spacemap-heading-display text-3xl text-white md:text-4xl">
-              Ready to explore <AccentWord className="text-space-accent">orbit</AccentWord>?
-            </h2>
-            <p className="mx-auto mt-4 max-w-lg text-space-dim">
-              No account needed. No downloads. Just open the tracker and start exploring.
-            </p>
-            <Link
-              to="/tracker/"
-              className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
-            >
-              <Globe size={18} />
-              Open SpaceMap
-            </Link>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

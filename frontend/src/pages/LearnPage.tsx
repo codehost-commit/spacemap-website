@@ -51,7 +51,7 @@ const ORBIT_REGIMES = [
     altitudeLatex: String.raw`2000\,\text{km} < h < 35786\,\text{km}`,
     periodLatex: String.raw`2\,\text{h} \le T \le 24\,\text{h}`,
     examples: 'GPS, GLONASS, Galileo',
-    color: '#8ed8ff',
+    color: '#4f8db4',
     desc: 'Home to navigation constellations. Higher altitude means each satellite sees a larger slice of Earth, so fewer birds cover the whole globe.',
   },
   {
@@ -60,7 +60,7 @@ const ORBIT_REGIMES = [
     altitudeLatex: String.raw`h = 35786\,\text{km}`,
     periodLatex: String.raw`T = 23\,\text{h}\ 56\,\text{m}\ 4\,\text{s}`,
     examples: 'Communications, weather satellites',
-    color: '#ffd166',
+    color: '#a87717',
     desc: 'Locked over one longitude. From the ground the satellite appears motionless in the sky, which is why TV dishes never have to move.',
   },
   {
@@ -218,9 +218,9 @@ function useCatalogStats(): CatalogStats | null {
 
 const CONSTELLATION_ESTIMATES = [
   { name: 'Starlink', count: 6432, operator: 'SpaceX', color: '#4d96e8' },
-  { name: 'OneWeb', count: 648, operator: 'Eutelsat', color: '#8ed8ff' },
-  { name: 'Iridium NEXT', count: 66, operator: 'Iridium', color: '#ffd166' },
-  { name: 'GPS III', count: 31, operator: 'US Space Force', color: '#8ed8ff' },
+  { name: 'OneWeb', count: 648, operator: 'Eutelsat', color: '#4f8db4' },
+  { name: 'Iridium NEXT', count: 66, operator: 'Iridium', color: '#a87717' },
+  { name: 'GPS III', count: 31, operator: 'US Space Force', color: '#4f8db4' },
   { name: 'Planet SkySat', count: 21, operator: 'Planet Labs', color: '#ff6b6b' },
 ];
 
@@ -337,7 +337,7 @@ function LiveGlobalStats() {
                       <span className="text-sm font-semibold text-white">{c.name}</span>
                       <span className="text-xs text-space-dim">{c.operator}</span>
                     </div>
-                    <div className="h-2 overflow-hidden rounded-full bg-white/5">
+                    <div className="h-2 overflow-hidden rounded-full bg-[#e3ddd2]">
                       <div
                         className="h-full rounded-full transition-all duration-700"
                         style={{
@@ -746,35 +746,6 @@ export function LearnPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24">
-        <div className="mx-auto max-w-4xl px-6">
-          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#4d96e8]/10 to-[#8ed8ff]/5 p-12 backdrop-blur-sm md:p-16">
-            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-              Ready to look up?
-            </p>
-            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-4xl">
-              Every idea on this page is one click away in the <AccentWord className="text-space-accent">tracker</AccentWord>.
-            </h2>
-            <div className="mt-8 flex flex-wrap gap-4">
-              <Link
-                to="/tracker/"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-8 py-4 text-base font-semibold text-[#06101a] transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#4d96e8]/30"
-              >
-                <Globe size={18} />
-                Open SpaceMap
-              </Link>
-              <Link
-                to="/features"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-base font-medium text-white transition-all hover:border-space-accent/30 hover:bg-white/10"
-              >
-                See all features
-                <ArrowRight size={18} />
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
   );
 }

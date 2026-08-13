@@ -261,28 +261,6 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-24">
-        <div className="mx-auto max-w-3xl px-6 text-center">
-          <img
-            src={emblemSrc}
-            alt="SpaceMap"
-            className="mx-auto h-16 w-16 mb-8"
-            draggable={false}
-          />
-          <h2 className="spacemap-heading-display text-3xl text-white">
-            Start tracking <AccentWord className="text-space-accent">now</AccentWord>
-          </h2>
-          <p className="mt-4 text-space-dim">No sign-up. No install. Just open the tracker.</p>
-          <Link
-            to="/tracker/"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
-          >
-            <Globe size={18} />
-            Open SpaceMap
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }

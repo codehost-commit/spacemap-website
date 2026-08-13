@@ -219,14 +219,14 @@ export function getLaunchTone(deltaMs: number) {
   if (deltaMs <= 24 * 60 * 60 * 1000) {
     return {
       label: 'Soon',
-      textClass: 'text-[#ffd166]',
-      dotClass: 'border-[#ffd166]/35 bg-[#ffd166]/12 text-[#ffe19a]',
+      textClass: 'text-[#a87717]',
+      dotClass: 'border-[#a87717]/35 bg-[#a87717]/12 text-[#a87717]',
     };
   }
   return {
     label: 'Tracked',
-    textClass: 'text-[#8ed8ff]',
-    dotClass: 'border-[#8ed8ff]/35 bg-[#8ed8ff]/12 text-[#c7efff]',
+    textClass: 'text-[#4f8db4]',
+    dotClass: 'border-[#4f8db4]/35 bg-[#4f8db4]/12 text-[#4f8db4]',
   };
 }
 

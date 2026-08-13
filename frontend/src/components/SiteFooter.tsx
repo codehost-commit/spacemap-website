@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import emblemSrc from '../assets/brand-emblem.png';
 import { ArrowRight, Eye, Globe, Radio, Shield } from 'lucide-react';
-import { SystemPill } from './SystemPill.js';
 
 /** Scroll to top then navigate */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -19,7 +18,7 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
         // Small delay so scroll starts before route change
         setTimeout(() => navigate(to), 50);
       }}
-      className="text-sm text-space-dim hover:text-white transition-colors"
+      className="text-sm text-[#93a9bd] transition-colors hover:text-[#e8f6ff]"
     >
       {children}
     </a>
@@ -27,160 +26,176 @@ function FooterLink({ to, children }: { to: string; children: React.ReactNode })
 }
 
 export function SiteFooter() {
+  const footerBannerSrc = `${import.meta.env.BASE_URL || '/'}brand/footer-orbit-banner.png`;
+
   return (
-    <footer className="relative z-10 border-t border-white/10">
-      <div className="mx-auto max-w-7xl px-6 py-16">
-        <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(8,15,25,0.96)_60%,rgba(77,150,232,0.14))] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-10">
-          <div className="absolute right-[-4rem] top-[-3rem] h-32 w-32 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
-          <div className="absolute bottom-[-3rem] left-[-2rem] h-28 w-28 rounded-full bg-[#ff6b6b]/8 blur-3xl" />
+    <footer className="relative z-10 mt-8">
+      <div className="mx-auto max-w-[120rem] px-4 pb-4 md:px-6">
+        <div className="overflow-hidden rounded-[2.35rem] bg-[#07111b] shadow-[0_28px_90px_rgba(7,17,27,0.26)]">
+          <div className="p-4 md:p-5">
+            <div className="relative min-h-[22rem] overflow-hidden rounded-[1.9rem] md:min-h-[28rem]">
+              <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: `url(${footerBannerSrc})` }}
+              />
+              <div
+                className="absolute inset-0"
+                style={{
+                  background:
+                    'linear-gradient(90deg, rgba(6, 16, 26, 0.92) 0%, rgba(6, 16, 26, 0.72) 35%, rgba(6, 16, 26, 0.16) 62%, rgba(6, 16, 26, 0.56) 100%)',
+                }}
+              />
+              <div className="spacemap-grain absolute inset-0 opacity-30" />
+              <div className="relative z-10 p-8 md:p-10 lg:p-12">
+                <div className="max-w-[38rem]">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(142,216,255,0.18)] bg-[rgba(142,216,255,0.08)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d5ebff]">
+                    <Radio size={12} />
+                    Live orbital surface
+                  </div>
+                  <h2 className="spacemap-heading-display mt-6 max-w-[34rem] text-[3rem] leading-[0.9] text-[#f7f2ff] sm:text-[4rem] md:text-[5rem]">
+                    Keep the live sky in <span className="spacemap-heading-accent text-[#8ed8ff]">view</span>.
+                  </h2>
+                  <p className="mt-5 max-w-[32rem] text-sm leading-relaxed text-[#d0c9de] md:text-base">
+                    SpaceMap closes on the same idea it opens with: Earth in motion, objects in
+                    context, and the tracker sitting one click away when you want the full globe.
+                  </p>
 
-          <div className="relative grid gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
-            <div>
-              <div className="flex flex-wrap gap-3">
-                <SystemPill tone="live" icon={Radio} pulse>
-                  Live orbital map
-                </SystemPill>
-                <SystemPill tone="accent" icon={Shield}>
-                  Browser-side compute
-                </SystemPill>
+                  <div className="mt-8 flex flex-wrap gap-3">
+                    <Link
+                      to="/tracker/"
+                      className="site-gradient-button inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-all hover:scale-[1.02]"
+                    >
+                      <Globe size={16} />
+                      Open Tracker
+                    </Link>
+                    <Link
+                      to="/features"
+                      className="inline-flex items-center gap-2 rounded-xl border border-[rgba(142,216,255,0.16)] bg-[rgba(142,216,255,0.06)] px-6 py-3 text-sm font-semibold text-[#e8f6ff] transition-colors hover:bg-[rgba(142,216,255,0.12)]"
+                    >
+                      <Eye size={16} />
+                      Explore Features
+                    </Link>
+                  </div>
+
+                  <div className="mt-8 grid gap-3 sm:grid-cols-3">
+                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
+                        Live stack
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-[#f4efff]">
+                        ISS feed, launches, risk
+                      </div>
+                    </div>
+                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
+                        Engine
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-[#f4efff]">
+                        Browser-side propagation
+                      </div>
+                    </div>
+                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                      <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
+                        Surface
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-[#f4efff]">
+                        One tab, no install
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <h2 className="mt-5 max-w-3xl text-3xl font-semibold leading-tight text-white md:text-4xl">
-                SpaceMap ends the same way it starts: with the live sky still in view.
-              </h2>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-space-dim md:text-base">
-                Track satellites, watch the ISS feed, monitor conjunctions, and move through time
-                from one browser-based control surface built by Rahul Awasthi.
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-12 px-6 pb-10 pt-8 md:grid-cols-4 md:px-10">
+            {/* Brand column */}
+            <div className="md:col-span-1">
+              <Link to="/" className="mb-4 flex items-center gap-3">
+                <img src={emblemSrc} alt="SpaceMap" className="h-10 w-10" draggable={false} />
+                <span className="text-lg font-semibold text-[#e8f6ff] font-sans">SpaceMap</span>
+              </Link>
+              <p className="text-sm leading-relaxed text-[#93a9bd]">
+                Real-time orbital intelligence, running entirely in your browser. Track every object
+                above Earth.
               </p>
-            </div>
-
-            <div className="flex flex-wrap gap-3 lg:justify-end">
-              <Link
-                to="/tracker/"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-[#4d96e8]/30"
-              >
-                <Globe size={16} />
-                Open Tracker
-              </Link>
-              <Link
-                to="/features"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition-all hover:border-space-accent/30 hover:bg-white/10"
-              >
-                <Eye size={16} />
-                Explore Features
-              </Link>
-            </div>
-          </div>
-
-          <div className="relative mt-7 grid gap-3 md:grid-cols-3">
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
-                Live stack
-              </div>
-              <div className="mt-2 text-sm font-semibold text-white">ISS feed, launches, risk, local sky</div>
-            </div>
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
-                Engine
-              </div>
-              <div className="mt-2 text-sm font-semibold text-white">3D globe plus browser-based propagation</div>
-            </div>
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/5 p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-space-dim">
-                Surface
-              </div>
-              <div className="mt-2 text-sm font-semibold text-white">No install, no account, one tab</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-12 grid grid-cols-1 gap-12 md:grid-cols-4">
-          {/* Brand column */}
-          <div className="md:col-span-1">
-            <Link to="/" className="flex items-center gap-3 mb-4">
-              <img src={emblemSrc} alt="SpaceMap" className="h-10 w-10" draggable={false} />
-              <span className="text-lg font-semibold text-white font-sans">SpaceMap</span>
-            </Link>
-            <p className="text-sm text-space-dim leading-relaxed">
-              Real-time orbital intelligence, running entirely in your browser. Track every object
-              above Earth.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              <SystemPill tone="neutral" icon={Radio}>
+              <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(142,216,255,0.14)] bg-[rgba(142,216,255,0.06)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d5ebff]">
+                <Shield size={13} />
                 spacemap.earth
-              </SystemPill>
+              </div>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#8ed8ff]">
+                Product
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <FooterLink to="/tracker/">Tracker</FooterLink>
+                </li>
+                <li>
+                  <FooterLink to="/features">Features</FooterLink>
+                </li>
+                <li>
+                  <FooterLink to="/learn">Learn</FooterLink>
+                </li>
+              </ul>
+            </div>
+
+            {/* Company */}
+            <div>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#8ed8ff]">
+                Company
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <FooterLink to="/about">About</FooterLink>
+                </li>
+                <li>
+                  <FooterLink to="/contact">Contact</FooterLink>
+                </li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="mb-4 text-xs font-semibold uppercase tracking-wider text-[#8ed8ff]">
+                Legal
+              </h4>
+              <ul className="space-y-3">
+                <li>
+                  <FooterLink to="/legal#privacy">
+                    Privacy
+                  </FooterLink>
+                </li>
+                <li>
+                  <FooterLink to="/legal#terms">
+                    Terms
+                  </FooterLink>
+                </li>
+                <li>
+                  <FooterLink to="/legal#attributions">
+                    Attributions
+                  </FooterLink>
+                </li>
+              </ul>
             </div>
           </div>
 
-          {/* Product */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-space-accent mb-4">
-              Product
-            </h4>
-            <ul className="space-y-3">
-              <li>
-                <FooterLink to="/tracker/">Tracker</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/features">Features</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/learn">Learn</FooterLink>
-              </li>
-            </ul>
+          {/* Bottom bar */}
+          <div className="mx-6 flex flex-col items-center justify-between gap-4 border-t border-[rgba(142,216,255,0.1)] px-0 pb-8 pt-8 md:mx-10 md:flex-row">
+            <p className="text-xs text-[#7f96aa]">
+              &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
+            </p>
+            <Link
+              to="/tracker/"
+              className="inline-flex items-center gap-2 text-xs text-[#9fb8cc] transition-colors hover:text-[#e8f6ff]"
+            >
+              Enter live orbit
+              <ArrowRight size={14} />
+            </Link>
           </div>
-
-          {/* Company */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-space-accent mb-4">
-              Company
-            </h4>
-            <ul className="space-y-3">
-              <li>
-                <FooterLink to="/about">About</FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/contact">Contact</FooterLink>
-              </li>
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <h4 className="text-xs font-semibold uppercase tracking-wider text-space-accent mb-4">
-              Legal
-            </h4>
-            <ul className="space-y-3">
-              <li>
-                <FooterLink to="/legal#privacy">
-                  Privacy
-                </FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/legal#terms">
-                  Terms
-                </FooterLink>
-              </li>
-              <li>
-                <FooterLink to="/legal#attributions">
-                  Attributions
-                </FooterLink>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        {/* Bottom bar */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 md:flex-row">
-          <p className="text-xs text-space-dim">
-            &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
-          </p>
-          <Link
-            to="/tracker/"
-            className="inline-flex items-center gap-2 text-xs text-space-dim transition-colors hover:text-white"
-          >
-            Enter live orbit
-            <ArrowRight size={14} />
-          </Link>
         </div>
       </div>
     </footer>

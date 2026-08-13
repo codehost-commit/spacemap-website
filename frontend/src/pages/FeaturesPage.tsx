@@ -347,27 +347,6 @@ export function FeaturesPage() {
 
       <ComparisonSection />
 
-      <section className="relative px-6 py-24">
-        <div className="mx-auto max-w-4xl rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,rgba(77,150,232,0.18),rgba(8,15,25,0.94)_55%,rgba(142,216,255,0.12))] p-10 text-center shadow-[0_30px_90px_rgba(0,0,0,0.3)] backdrop-blur-xl md:p-14">
-          <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-            Start Exploring
-          </p>
-          <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-4xl">
-            Open the tracker and carry the same live <AccentWord className="text-space-accent">surfaces</AccentWord> into the full globe.
-          </h2>
-          <p className="mx-auto mt-4 max-w-2xl text-space-dim">
-            No account needed. No downloads. The feature page now previews the product honestly, and
-            the tracker is still where the full mission-control view opens up.
-          </p>
-          <Link
-            to="/tracker/"
-            className="mt-8 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-10 py-4 text-base font-semibold text-[#06101a] transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#4d96e8]/30"
-          >
-            <Zap size={18} />
-            Launch Tracker
-          </Link>
-        </div>
-      </section>
     </div>
   );
 }
