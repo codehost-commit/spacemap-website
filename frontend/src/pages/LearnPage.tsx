@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import 'katex/dist/katex.min.css';
+import katex from 'katex';
 import {
   Activity,
   ArrowRight,
@@ -27,14 +29,18 @@ import {
 } from 'lucide-react';
 import { SystemPill } from '../components/SystemPill.js';
 
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
+}
+
 // ─── Content ────────────────────────────────────────────────────────────────
 
 const ORBIT_REGIMES = [
   {
     tag: 'LEO',
     name: 'Low Earth Orbit',
-    altitude: '160 – 2,000 km',
-    period: '~90 minutes',
+    altitudeLatex: String.raw`160\,\text{km} \le h \le 2000\,\text{km}`,
+    periodLatex: String.raw`T \approx 90\,\text{min}`,
     examples: 'ISS, Starlink, Hubble',
     color: '#4d96e8',
     desc: 'The busiest neighbourhood in space. Fast orbital periods, strong drag, short pass windows. Almost every human spacecraft is here.',
@@ -42,8 +48,8 @@ const ORBIT_REGIMES = [
   {
     tag: 'MEO',
     name: 'Medium Earth Orbit',
-    altitude: '2,000 – 35,786 km',
-    period: '2 – 24 hours',
+    altitudeLatex: String.raw`2000\,\text{km} < h < 35786\,\text{km}`,
+    periodLatex: String.raw`2\,\text{h} \le T \le 24\,\text{h}`,
     examples: 'GPS, GLONASS, Galileo',
     color: '#8ed8ff',
     desc: 'Home to navigation constellations. Higher altitude means each satellite sees a larger slice of Earth, so fewer birds cover the whole globe.',
@@ -51,17 +57,17 @@ const ORBIT_REGIMES = [
   {
     tag: 'GEO',
     name: 'Geostationary',
-    altitude: '35,786 km',
-    period: '23h 56m 4s',
-    examples: 'Comms, weather sats',
+    altitudeLatex: String.raw`h = 35786\,\text{km}`,
+    periodLatex: String.raw`T = 23\,\text{h}\ 56\,\text{m}\ 4\,\text{s}`,
+    examples: 'Communications, weather satellites',
     color: '#ffd166',
     desc: 'Locked over one longitude. From the ground the satellite appears motionless in the sky, which is why TV dishes never have to move.',
   },
   {
     tag: 'HEO',
     name: 'Highly Elliptical',
-    altitude: 'up to ~40,000 km',
-    period: '4 – 24 hours',
+    altitudeLatex: String.raw`h_{\max} \lesssim 40000\,\text{km}`,
+    periodLatex: String.raw`4\,\text{h} \le T \le 24\,\text{h}`,
     examples: 'Molniya, TESS',
     color: '#ff6b6b',
     desc: 'Stretched elliptical orbits that dwell over one hemisphere. Useful for high-latitude coverage that GEO satellites can\'t reach.',
@@ -73,37 +79,40 @@ const CONCEPTS = [
     icon: Binary,
     title: 'What is a TLE?',
     body: 'A Two-Line Element set is 138 characters that encode a satellite\'s position and velocity at a specific moment (the epoch). Given a TLE and a time, SGP4 can predict where the object will be. Every satellite you see on the tracker started as a TLE.',
-    detail: '1 25544U 98067A   26210.58333333 …\n2 25544  51.6416 247.4622 …',
+    detailLatex: String.raw`\begin{aligned}
+\texttt{1\ 25544U\ 98067A\ \ 26210.58333333\ \ldots}\\
+\texttt{2\ 25544\ \ 51.6416\ 247.4622\ \ldots}
+\end{aligned}`,
   },
   {
     icon: Sigma,
-    title: 'SGP4 — the propagator',
+    title: 'SGP4, the propagator',
     body: 'Simplified General Perturbations 4 is the algorithm that turns a TLE into a position at any past or future time. It models Earth\'s oblateness, atmospheric drag, and lunar/solar gravity. It\'s the same math NORAD uses.',
-    detail: 'Accuracy: ~1 km RMS on fresh TLEs. Degrades over days.',
+    detailLatex: String.raw`\text{accuracy} \approx 1\,\text{km RMS on fresh TLEs}`,
   },
   {
     icon: Orbit,
     title: 'Keplerian elements',
-    body: 'Six numbers that fully describe an orbit shape and orientation: semi-major axis, eccentricity, inclination, argument of perigee, RAAN, and mean anomaly. Everything else — period, altitude, ground track — is derived from these.',
-    detail: 'a · e · i · ω · Ω · M',
+    body: 'Six numbers that fully describe an orbit shape and orientation: semi-major axis, eccentricity, inclination, argument of perigee, RAAN, and mean anomaly. Everything else, period, altitude, and ground track, is derived from these.',
+    detailLatex: String.raw`a,\ e,\ i,\ \omega,\ \Omega,\ M`,
   },
   {
     icon: Target,
     title: 'Conjunctions',
     body: 'A conjunction is a close approach between two objects. SpaceMap sweeps every pair of nearby satellites, refines the time-of-closest-approach, and estimates collision probability using a Gaussian miss-distance model.',
-    detail: 'Pc = probability of collision within uncertainty ellipsoid',
+    detailLatex: String.raw`P_c = \Pr(\text{collision within the uncertainty ellipsoid})`,
   },
   {
     icon: Compass,
     title: 'Ground track',
     body: 'The path directly below a satellite as it orbits. Because Earth rotates, the track shifts west with each orbit. Sun-synchronous satellites keep the same local sun angle by rotating their orbit plane too.',
-    detail: 'ISS crosses your latitude ~15 times per day.',
+    detailLatex: String.raw`\text{ISS crosses a given latitude } \approx 15\ \text{times/day}`,
   },
   {
     icon: Sparkles,
     title: 'Visible passes',
-    body: 'You can see a satellite from the ground when it\'s in sunlight but you\'re in twilight or darkness. The satellite reflects sunlight; the sky is dark enough to see it. Best passes: 1 – 2 hours after sunset or before sunrise.',
-    detail: 'Magnitude scale: brighter = more negative number.',
+    body: 'You can see a satellite from the ground when it\'s in sunlight but you\'re in twilight or darkness. The satellite reflects sunlight; the sky is dark enough to see it. Best passes: 1 to 2 hours after sunset or before sunrise.',
+    detailLatex: String.raw`\text{apparent magnitude: brighter} \iff m \text{ is more negative}`,
   },
 ];
 
@@ -140,7 +149,7 @@ const TUTORIALS = [
     title: 'Track your first satellite',
     steps: [
       'Open the Tracker and let the catalog load',
-      'Use search — type "ISS" or a NORAD ID',
+      'Use search, type "ISS" or a NORAD ID',
       'Click the result to select and follow',
       'Open the telemetry panel to see altitude, velocity, RAAN, inclination',
     ],
@@ -152,7 +161,7 @@ const TUTORIALS = [
       'Grant location access when prompted',
       'Open the "Local sky" overlay',
       'The panel lists upcoming passes with elevation and azimuth',
-      'Best viewing: 1 – 2 hours after sunset in clear sky',
+      'Best viewing: 1 to 2 hours after sunset in clear sky',
     ],
   },
   {
@@ -243,12 +252,12 @@ function LiveGlobalStats() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Live Global Stats
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              What&apos;s above Earth, right now.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              What&apos;s above <AccentWord className="text-space-accent">Earth</AccentWord>, right now.
             </h2>
             <p className="mt-3 max-w-2xl text-space-dim">
               Numbers refresh from the same catalog that powers the tracker. No server, no cache
-              layer — this is the actual public catalog SpaceMap propagates.
+              layer. This is the actual public catalog SpaceMap propagates.
             </p>
           </div>
           <SystemPill tone="live" icon={Radio} pulse>
@@ -259,43 +268,43 @@ function LiveGlobalStats() {
         <div className="grid gap-4 md:grid-cols-3">
           <StatCard
             label="Total tracked objects"
-            value={totalObjects.toLocaleString()}
+            valueLatex={formatIntegerLatex(totalObjects)}
             sub={`${metadataOnly.toLocaleString()} historical · ${trackable.toLocaleString()} live`}
             icon={Satellite}
             gradient="from-[#4d96e8]/25 to-[#8ed8ff]/10"
           />
           <StatCard
             label="Actively propagated"
-            value={trackable.toLocaleString()}
-            sub="Every one gets an ECEF position each tick"
+            valueLatex={formatIntegerLatex(trackable)}
+            sub="Every object gets an ECEF position each tick"
             icon={Zap}
             gradient="from-[#8ed8ff]/25 to-[#4d96e8]/10"
           />
           <StatCard
             label="Constellation objects"
-            value={constellationsCount.toLocaleString()}
-            sub="Starlink, OneWeb, Iridium, Planet, Kuiper…"
+            valueLatex={formatIntegerLatex(constellationsCount)}
+            sub="Starlink, OneWeb, Iridium, Planet, Kuiper"
             icon={Layers}
             gradient="from-[#ffd166]/22 to-[#4d96e8]/10"
           />
           <StatCard
             label="Tracked debris pieces"
-            value={debrisCount.toLocaleString()}
+            valueLatex={formatIntegerLatex(debrisCount)}
             sub="Cosmos-1408, Fengyun-1C, Iridium-33, Cosmos-2251"
             icon={Target}
             gradient="from-[#ff6b6b]/22 to-[#8ed8ff]/10"
           />
           <StatCard
             label="Navigation satellites"
-            value={navCount.toLocaleString()}
+            valueLatex={formatIntegerLatex(navCount)}
             sub="GPS · GLONASS · Galileo · BeiDou"
             icon={Compass}
             gradient="from-[#8ed8ff]/25 to-[#ffd166]/10"
           />
           <StatCard
             label="Propagation frequency"
-            value="~12 Hz"
-            sub="Every satellite advances 80 ms per tick"
+            valueLatex={String.raw`12\,\mathrm{Hz}`}
+            sub="About 80 ms per tick"
             icon={Activity}
             gradient="from-[#4d96e8]/22 to-[#ff6b6b]/10"
           />
@@ -339,8 +348,8 @@ function LiveGlobalStats() {
                       />
                     </div>
                   </div>
-                  <div className="w-16 text-right font-mono text-sm font-semibold text-white">
-                    {c.count.toLocaleString()}
+                  <div className="w-20 overflow-x-auto text-right text-sm font-semibold text-white">
+                    <LatexInline math={formatIntegerLatex(c.count)} />
                   </div>
                 </div>
               );
@@ -354,13 +363,13 @@ function LiveGlobalStats() {
 
 function StatCard({
   label,
-  value,
+  valueLatex,
   sub,
   icon: Icon,
   gradient,
 }: {
   label: string;
-  value: string;
+  valueLatex: string;
   sub: string;
   icon: React.ComponentType<{ size?: number | string }>;
   gradient: string;
@@ -375,9 +384,55 @@ function StatCard({
       <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-space-dim">
         {label}
       </div>
-      <div className="mt-2 font-mono text-3xl font-bold text-white md:text-4xl">{value}</div>
+      <div className="mt-2 overflow-hidden text-3xl font-bold text-white md:text-4xl">
+        <LatexInline math={valueLatex} />
+      </div>
       <div className="mt-2 text-xs text-space-dim">{sub}</div>
     </div>
+  );
+}
+
+function formatIntegerLatex(value: number) {
+  return value.toLocaleString('en-US').replaceAll(',', '{,}');
+}
+
+function LatexInline({ math, className = '' }: { math: string; className?: string }) {
+  return (
+    <span
+      className={`spacemap-latex-inline ${className}`.trim()}
+      dangerouslySetInnerHTML={{
+        __html: katex.renderToString(math, {
+          displayMode: false,
+          throwOnError: false,
+          strict: false,
+          output: 'html',
+        }),
+      }}
+    />
+  );
+}
+
+function LatexBlock({
+  math,
+  className = '',
+  displayMode = true,
+}: {
+  math: string;
+  className?: string;
+  displayMode?: boolean;
+}) {
+  return (
+    <div
+      className={`spacemap-latex-block ${className}`.trim()}
+      dangerouslySetInnerHTML={{
+        __html: katex.renderToString(math, {
+          displayMode,
+          throwOnError: false,
+          strict: false,
+          output: 'html',
+        }),
+      }}
+    />
   );
 }
 
@@ -398,8 +453,8 @@ export function LearnPage() {
                 No prerequisites
               </SystemPill>
             </div>
-            <h1 className="mt-6 text-4xl font-bold leading-tight text-white md:text-6xl">
-              Everything above Earth,{' '}
+            <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
+              Everything above <AccentWord className="text-space-accent">Earth</AccentWord>,{' '}
               <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
                 explained plainly.
               </span>
@@ -436,7 +491,7 @@ export function LearnPage() {
               </div>
               <ul className="mt-4 space-y-3 text-sm">
                 {[
-                  { icon: Orbit, label: 'Orbital regimes — LEO, MEO, GEO, HEO' },
+                  { icon: Orbit, label: 'Orbital regimes: LEO, MEO, GEO, HEO' },
                   { icon: Binary, label: 'How TLEs encode an entire orbit' },
                   { icon: Sigma, label: 'SGP4 propagation, in plain English' },
                   { icon: Target, label: 'Conjunctions and collision probability' },
@@ -463,8 +518,8 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Orbital regimes
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              Four altitudes, four totally different orbits.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              Four altitudes, four totally different <AccentWord className="text-space-accent">orbits</AccentWord>.
             </h2>
             <p className="mt-3 max-w-3xl text-space-dim">
               Where a satellite sits determines almost everything about it: how fast it moves, how
@@ -497,13 +552,17 @@ export function LearnPage() {
                       <div className="text-[9px] font-semibold uppercase tracking-widest text-space-dim">
                         Altitude
                       </div>
-                      <div className="mt-1 font-mono text-xs text-white">{r.altitude}</div>
+                      <div className="mt-1 overflow-x-auto text-xs text-white">
+                        <LatexInline math={r.altitudeLatex} />
+                      </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-semibold uppercase tracking-widest text-space-dim">
                         Period
                       </div>
-                      <div className="mt-1 font-mono text-xs text-white">{r.period}</div>
+                      <div className="mt-1 overflow-x-auto text-xs text-white">
+                        <LatexInline math={r.periodLatex} />
+                      </div>
                     </div>
                     <div>
                       <div className="text-[9px] font-semibold uppercase tracking-widest text-space-dim">
@@ -526,8 +585,8 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Core concepts
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              The six things worth actually knowing.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              The six things worth actually <AccentWord className="text-space-accent">knowing</AccentWord>.
             </h2>
             <p className="mt-3 max-w-3xl text-space-dim">
               You don&apos;t need to be a flight dynamicist to use SpaceMap, but these ideas make
@@ -538,15 +597,19 @@ export function LearnPage() {
             {CONCEPTS.map((c) => (
               <div
                 key={c.title}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-space-accent/30 hover:bg-white/10"
+                className="group flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all hover:border-space-accent/30 hover:bg-white/10"
               >
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/25 to-[#8ed8ff]/15 text-space-accent transition-transform group-hover:scale-110">
                   <c.icon size={20} />
                 </div>
                 <h3 className="text-base font-semibold text-white">{c.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-space-dim">{c.body}</p>
-                <div className="mt-4 rounded-lg border border-white/10 bg-black/30 p-3 font-mono text-[11px] leading-relaxed text-space-accent whitespace-pre-wrap">
-                  {c.detail}
+                <p className="mt-2 min-h-[10.5rem] text-sm leading-relaxed text-space-dim">{c.body}</p>
+                <div className="mt-auto rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-space-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+                  <LatexBlock
+                    math={c.detailLatex}
+                    className="spacemap-latex-tight text-[12px]"
+                    displayMode={c.title !== 'Keplerian elements'}
+                  />
                 </div>
               </div>
             ))}
@@ -561,8 +624,8 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Under the hood
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              How SpaceMap turns raw data into a globe.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              How <AccentWord className="text-space-accent">SpaceMap</AccentWord> turns raw data into a globe.
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
@@ -599,8 +662,8 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Try it now
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              Four things to do in the tracker.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              Four things to do in the <AccentWord className="text-space-accent">tracker</AccentWord>.
             </h2>
           </div>
           <div className="grid gap-5 md:grid-cols-2">
@@ -638,46 +701,46 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Cheatsheet
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-              The formulas that matter.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+              The formulas that <AccentWord className="text-space-accent">matter</AccentWord>.
             </h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <FormulaCard
               icon={Calculator}
               label="Orbital period (Kepler)"
-              formula="T = 2π · √(a³ / μ)"
-              note="μ = 3.986 × 10¹⁴ m³/s². a = semi-major axis."
+              formula={String.raw`T = 2\pi\sqrt{\frac{a^3}{\mu}}`}
+              note="mu = 3.986 × 10^14 m^3/s^2. a = semi-major axis."
             />
             <FormulaCard
               icon={Calculator}
               label="Circular orbital velocity"
-              formula="v = √(μ / r)"
-              note="At 400 km altitude (ISS): ~7.66 km/s."
+              formula={String.raw`v = \sqrt{\frac{\mu}{r}}`}
+              note="At about 400 km altitude, the ISS travels around 7.66 km/s."
             />
             <FormulaCard
               icon={Calculator}
               label="Escape velocity"
-              formula="v_esc = √(2μ / r)"
-              note="From Earth&apos;s surface: ~11.2 km/s."
+              formula={String.raw`v_{\mathrm{esc}} = \sqrt{\frac{2\mu}{r}}`}
+              note="From Earth’s surface, escape velocity is about 11.2 km/s."
             />
             <FormulaCard
               icon={Calculator}
               label="Apogee / perigee radius"
-              formula="rₐ = a(1 + e)   r_p = a(1 − e)"
-              note="e = eccentricity. Circle when e = 0."
+              formula={String.raw`r_a = a(1 + e),\qquad r_p = a(1 - e)`}
+              note="e is eccentricity. When e = 0, the orbit is circular."
             />
             <FormulaCard
               icon={Calculator}
               label="Mean motion (revs/day)"
-              formula="n = 86400 / T_seconds"
-              note="What the second line of a TLE encodes."
+              formula={String.raw`n = \frac{86400}{T_{\text{seconds}}}`}
+              note="This is the mean motion encoded on line 2 of a TLE."
             />
             <FormulaCard
               icon={Calculator}
               label="Look angles (approx)"
-              formula="el = 90° − arccos(cos(Δlat) · cos(Δlon))"
-              note="Rough elevation from observer to satellite."
+              formula={String.raw`el \approx 90^{\circ} - \arccos\!\left(\cos(\Delta\phi)\cos(\Delta\lambda)\right)`}
+              note="A rough elevation estimate from an observer to a satellite."
             />
           </div>
         </div>
@@ -690,8 +753,8 @@ export function LearnPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Ready to look up?
             </p>
-            <h2 className="mt-3 text-3xl font-bold text-white md:text-4xl">
-              Every idea on this page is one click away in the tracker.
+            <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-4xl">
+              Every idea on this page is one click away in the <AccentWord className="text-space-accent">tracker</AccentWord>.
             </h2>
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
@@ -728,17 +791,20 @@ function FormulaCard({
   note: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
+    <div className="flex h-full flex-col rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm">
       <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/25 to-[#8ed8ff]/15 text-space-accent">
         <Icon size={18} />
       </div>
       <div className="text-[10px] font-semibold uppercase tracking-[0.28em] text-space-dim">
         {label}
       </div>
-      <div className="mt-3 rounded-lg border border-white/10 bg-black/30 p-3 font-mono text-sm text-space-accent">
-        {formula}
+      <div className="mt-3 rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-space-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
+        <LatexBlock
+          math={String.raw`\displaystyle ${formula}`}
+          className="spacemap-latex-tight text-sm md:text-base"
+        />
       </div>
-      <div className="mt-3 text-xs text-space-dim">{note}</div>
+      <div className="mt-3 text-xs leading-relaxed text-space-dim">{note}</div>
     </div>
   );
 }

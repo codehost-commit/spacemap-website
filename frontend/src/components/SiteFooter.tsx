@@ -160,6 +160,11 @@ export function SiteFooter() {
                   Terms
                 </FooterLink>
               </li>
+              <li>
+                <FooterLink to="/legal#attributions">
+                  Attributions
+                </FooterLink>
+              </li>
             </ul>
           </div>
         </div>

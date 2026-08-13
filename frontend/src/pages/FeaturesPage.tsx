@@ -23,6 +23,10 @@ import {
 } from '../hooks/useUpcomingLaunches.js';
 import { SystemPill } from '../components/SystemPill.js';
 
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
+}
+
 const BASE_HERO_METRICS = [
   { value: 'Live', label: 'ISS video embedded in-page', valueClass: 'text-white' },
   { value: '0.1s', label: 'risk board display tick', valueClass: 'text-white' },
@@ -104,8 +108,8 @@ export function FeaturesPage() {
             <p className="mb-4 text-xs font-semibold uppercase tracking-[0.32em] text-space-accent">
               Live Feature Surface
             </p>
-            <h1 className="max-w-4xl text-4xl font-bold leading-tight text-white md:text-6xl">
-              Real product modules, not filler orbit art.
+            <h1 className="spacemap-heading-display max-w-4xl text-4xl text-white md:text-6xl">
+              Real product <AccentWord className="text-space-accent">modules</AccentWord>, not filler orbit art.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-relaxed text-space-dim">
               The features page now shows what SpaceMap actually does: live ISS video, ranked
@@ -137,8 +141,8 @@ export function FeaturesPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
                     Mission Deck
                   </p>
-                  <h2 className="mt-3 text-2xl font-semibold text-white">
-                    The page behaves like a live preview of the tracker.
+                  <h2 className="spacemap-heading-display mt-3 text-2xl text-white">
+                    The page behaves like a live preview of the <AccentWord className="text-space-accent">tracker</AccentWord>.
                   </h2>
                 </div>
                 <div className="feature-float flex h-12 w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/10 text-space-accent">
@@ -216,8 +220,8 @@ export function FeaturesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
             Live Modules
           </p>
-          <h2 className="mt-4 text-3xl font-bold text-white md:text-5xl">
-            The strongest parts of the product now show up here as actual working panels.
+          <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-5xl">
+            The strongest parts of the product now show up here as actual working <AccentWord className="text-space-accent">panels</AccentWord>.
           </h2>
           <p className="mt-4 text-space-dim">
             Instead of repeating the same box pattern with abstract visuals, this section exposes the
@@ -233,8 +237,8 @@ export function FeaturesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
             Workflow
           </p>
-          <h2 className="mt-4 text-3xl font-bold text-white md:text-5xl">
-            The page now mirrors how SpaceMap is actually used.
+          <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-5xl">
+            The page now mirrors how <AccentWord className="text-space-accent">SpaceMap</AccentWord> is actually used.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-space-dim">
             Search, rank, localize, and track what comes next. The features page should feel like a
@@ -272,8 +276,8 @@ export function FeaturesPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
               Support Systems
             </p>
-            <h2 className="mt-4 text-3xl font-bold text-white">
-              The surrounding surfaces still matter and now make more sense beside the live cards.
+            <h2 className="spacemap-heading-display mt-4 text-3xl text-white">
+              The surrounding surfaces still matter and now make more sense beside the live <AccentWord className="text-space-accent">cards</AccentWord>.
             </h2>
             <div className="mt-8 grid gap-4">
               {SUPPORT_SYSTEMS.map((item) => (
@@ -348,8 +352,8 @@ export function FeaturesPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
             Start Exploring
           </p>
-          <h2 className="mt-4 text-3xl font-bold text-white md:text-4xl">
-            Open the tracker and carry the same live surfaces into the full globe.
+          <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-4xl">
+            Open the tracker and carry the same live <AccentWord className="text-space-accent">surfaces</AccentWord> into the full globe.
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-space-dim">
             No account needed. No downloads. The feature page now previews the product honestly, and
@@ -487,8 +491,8 @@ function ComparisonSection() {
           <p className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
             How SpaceMap compares
           </p>
-          <h2 className="mt-3 text-3xl font-bold text-white md:text-5xl">
-            Every other satellite tracker,{' '}
+          <h2 className="spacemap-heading-display mt-3 text-3xl text-white md:text-5xl">
+            Every other satellite <AccentWord className="text-space-accent">tracker</AccentWord>,{' '}
             <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
               side by side.
             </span>

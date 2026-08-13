@@ -14,6 +14,10 @@ import {
 import { Link } from 'react-router-dom';
 import { SystemPill } from '../components/SystemPill.js';
 
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
+}
+
 /**
  * Contact page — form submissions stored to localStorage.
  * The admin console reads them via /contactread.
@@ -77,14 +81,14 @@ export function ContactPage() {
             Get in touch
           </SystemPill>
         </div>
-        <h1 className="mt-6 text-4xl font-bold text-white md:text-6xl">
+        <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
           We'd love to{' '}
-          <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
+          <span className="spacemap-heading-accent bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
             hear from you.
           </span>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-space-dim">
-          Questions, feature requests, bug reports, or a simple hello — drop us a line
+          Questions, feature requests, bug reports, or a simple hello, drop us a line
           and we'll get back to you.
         </p>
       </section>
@@ -282,7 +286,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'How often is satellite data updated?',
-    a: 'The live catalog is pulled from CelesTrak on load. New TLE data is typically published every 4–12 hours; SpaceMap picks up the latest set automatically.',
+    a: 'The live catalog is pulled from CelesTrak on load. New TLE data is typically published every 4 to 12 hours; SpaceMap picks up the latest set automatically.',
   },
   {
     q: 'How accurate is the tracking?',
@@ -298,7 +302,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'Can I embed the tracker on my own site?',
-    a: 'Not officially yet — a public embed is on the roadmap. For now you can link to spacemap.earth/tracker with a satellite pre-selected via URL parameters.',
+    a: 'Not officially yet. A public embed is on the roadmap. For now you can link to spacemap.earth/tracker with a satellite pre-selected via URL parameters.',
   },
   {
     q: 'The globe is slow. How can I improve performance?',
@@ -310,7 +314,7 @@ const FAQS: Array<{ q: string; a: string }> = [
   },
   {
     q: 'Who runs SpaceMap?',
-    a: 'Rahul Awasthi — solo developer and designer. See the About page for the full story.',
+    a: 'Rahul Awasthi, solo developer and designer. See the About page for the full story.',
   },
 ];
 
@@ -326,8 +330,8 @@ function FaqSection() {
               FAQ
             </SystemPill>
           </div>
-          <h2 className="mt-4 text-3xl font-bold text-white md:text-5xl">
-            Common questions,{' '}
+          <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-5xl">
+            Common <AccentWord className="text-space-accent">questions</AccentWord>,{' '}
             <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
               straight answers.
             </span>

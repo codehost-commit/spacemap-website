@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom';
 
-const UPDATED = 'July 29, 2026';
+const UPDATED = 'August 13, 2026';
+
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
+}
 
 function Section({
   id,
@@ -16,7 +20,7 @@ function Section({
       id={id}
       className="scroll-mt-32 rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8"
     >
-      <h2 className="text-2xl font-bold text-white md:text-3xl">{title}</h2>
+      <h2 className="spacemap-heading-display text-2xl text-white md:text-3xl">{title}</h2>
       <div className="mt-6 space-y-6 text-sm leading-relaxed text-space-dim">{children}</div>
     </section>
   );
@@ -36,15 +40,16 @@ export function LegalPage() {
     <div className="relative pt-24">
       <section className="mx-auto max-w-5xl px-6 py-16">
         <p className="mb-4 text-xs font-semibold uppercase tracking-[0.32em] text-space-accent">
-          Privacy & Terms
+          Privacy, Terms & Attributions
         </p>
-        <h1 className="max-w-4xl text-4xl font-bold leading-tight text-white md:text-6xl">
-          Privacy first. Terms that match how SpaceMap actually works.
+        <h1 className="spacemap-heading-display max-w-4xl text-4xl text-white md:text-6xl">
+          <AccentWord className="text-space-accent">Privacy</AccentWord> first. Terms that match how SpaceMap actually works.
         </h1>
         <p className="mt-6 max-w-3xl text-base leading-relaxed text-space-dim md:text-lg">
-          This page combines SpaceMap&apos;s Privacy Policy and Terms of Use. It is written for the
-          current product at <span className="text-white">spacemap.earth</span>, including the
-          live tracker, overlays, saved lists, contact flow, and related site pages.
+          This page combines SpaceMap&apos;s Privacy Policy, Terms of Use, and media
+          attributions. It is written for the current product at{' '}
+          <span className="text-white">spacemap.earth</span>, including the live tracker,
+          overlays, saved lists, contact flow, and related site pages.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium">
@@ -59,6 +64,12 @@ export function LegalPage() {
             className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim transition-colors hover:border-space-accent/30 hover:text-white"
           >
             Terms
+          </a>
+          <a
+            href="#attributions"
+            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim transition-colors hover:border-space-accent/30 hover:text-white"
+          >
+            Attributions
           </a>
           <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim">
             Last updated {UPDATED}
@@ -413,6 +424,50 @@ export function LegalPage() {
                   about SpaceMap
                 </Link>
                 .
+              </p>
+            </Clause>
+          </Section>
+
+          <Section id="attributions" title="Attributions">
+            <Clause title="Homepage hero video">
+              <p>
+                SpaceMap&apos;s homepage hero uses a trimmed excerpt from{' '}
+                <a
+                  href="https://www.youtube.com/watch?v=s96R57qEb_c"
+                  className="text-space-accent transition-colors hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  ISS Timelapse - 45min revolution (21 Aug 2023)
+                </a>
+                , uploaded by{' '}
+                <a
+                  href="https://www.youtube.com/@astronauticast"
+                  className="text-space-accent transition-colors hover:text-white"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  AstronautiCAST
+                </a>
+                .
+              </p>
+              <ul className="list-disc space-y-2 pl-5">
+                <li>Source upload: AstronautiCAST on YouTube.</li>
+                <li>Source title: ISS Timelapse - 45min revolution (21 Aug 2023).</li>
+                <li>Camera setup credit in the source description: Sultan Al Neyadi.</li>
+                <li>
+                  Original timelapse credit in the source description: Riccardo Rossi, ISAA
+                  (Italian Space and Astronautics Association).
+                </li>
+                <li>Original timelapse licence in the source description: CC BY 4.0.</li>
+                <li>Accessed by SpaceMap: August 13, 2026.</li>
+                <li>Modified by SpaceMap on August 13, 2026: trimmed only.</li>
+              </ul>
+              <p>
+                This excerpt is used for educational and informational context on SpaceMap, a
+                free-to-access orbital tracking website. AstronautiCAST, Sultan Al Neyadi,
+                Riccardo Rossi, and ISAA do not sponsor, support, endorse, approve, or have any
+                affiliation with SpaceMap, Rahul Awasthi, or spacemap.earth.
               </p>
             </Clause>
           </Section>

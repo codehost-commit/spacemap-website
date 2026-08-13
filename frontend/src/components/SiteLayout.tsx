@@ -11,7 +11,7 @@ const PAGE_TITLES: Record<string, string> = {
   '/features': 'Features',
   '/learn': 'Learn',
   '/contact': 'Contact',
-  '/legal': 'Privacy & Terms',
+  '/legal': 'Privacy, Terms & Attributions',
 };
 
 export function SiteLayout() {

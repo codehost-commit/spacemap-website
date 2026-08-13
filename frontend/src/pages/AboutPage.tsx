@@ -20,6 +20,10 @@ import {
 import emblemSrc from '../assets/brand-emblem.png';
 import { SystemPill } from '../components/SystemPill.js';
 
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
+}
+
 const founderImg = (import.meta.env.BASE_URL || '/') + 'brand/founder.jpeg';
 
 const HOW_IT_WORKS = [
@@ -73,8 +77,8 @@ export function AboutPage() {
                 Live orbital surface
               </SystemPill>
             </div>
-            <h1 className="mt-6 text-4xl font-bold leading-tight text-white md:text-6xl">
-              Built so tracking orbit{' '}
+            <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
+              Built so tracking <AccentWord className="text-space-accent">orbit</AccentWord>{' '}
               <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
                 never requires a clearance.
               </span>
@@ -138,8 +142,8 @@ export function AboutPage() {
         <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3 text-center">
           Meet the Founder
         </p>
-        <h2 className="text-3xl font-bold text-white text-center mb-12">
-          The person behind SpaceMap
+        <h2 className="spacemap-heading-display mb-12 text-center text-3xl text-white">
+          The person behind <AccentWord className="text-space-accent">SpaceMap</AccentWord>
         </h2>
 
         <div className="flex flex-col items-center">
@@ -178,7 +182,9 @@ export function AboutPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3 text-center">
             Under the Hood
           </p>
-          <h2 className="text-3xl font-bold text-white text-center mb-4">How it works</h2>
+          <h2 className="spacemap-heading-display mb-4 text-center text-3xl text-white">
+            How it <AccentWord className="text-space-accent">works</AccentWord>
+          </h2>
           <p className="text-center text-space-dim mb-16">
             Our own engine, running entirely on your machine.
           </p>
@@ -264,7 +270,9 @@ export function AboutPage() {
             className="mx-auto h-16 w-16 mb-8"
             draggable={false}
           />
-          <h2 className="text-3xl font-bold text-white">Start tracking now</h2>
+          <h2 className="spacemap-heading-display text-3xl text-white">
+            Start tracking <AccentWord className="text-space-accent">now</AccentWord>
+          </h2>
           <p className="mt-4 text-space-dim">No sign-up. No install. Just open the tracker.</p>
           <Link
             to="/tracker/"

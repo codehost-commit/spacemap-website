@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { HeroGlobe } from '../components/HeroGlobe.js';
 import { SystemPill } from '../components/SystemPill.js';
 import {
   Activity,
@@ -23,6 +22,168 @@ import {
 } from '../hooks/useUpcomingLaunches.js';
 
 const ISS_LIVE_EMBED = 'https://www.youtube.com/embed/awQzjn72bI0?autoplay=1&mute=1&controls=0';
+const HERO_VIDEO_MP4_SRC = `${import.meta.env.BASE_URL || '/'}brand/HeroVideo.mp4`;
+const HERO_VIDEO_2_MP4_SRC = `${import.meta.env.BASE_URL || '/'}brand/HeroVideo2.mp4`;
+const HERO_SLIDE_INTERVAL_MS = 9082;
+const GAME_LAUNCH_TARGET_MS = new Date('2026-08-21T16:30:00-05:00').getTime();
+const GAME_NAME = 'Orbital';
+
+function HeroVideoBackground({
+  src = HERO_VIDEO_MP4_SRC,
+  overlayClassName = 'bg-[linear-gradient(90deg,rgba(6,16,26,0.9),rgba(6,16,26,0.46)_42%,rgba(6,16,26,0.12)_72%,rgba(6,16,26,0.52))]',
+  topGradientClassName = 'from-[#06101a]/80 to-transparent',
+  bottomGradientClassName = 'from-[#06101a] via-[#06101a]/88 to-transparent',
+}: {
+  src?: string;
+  overlayClassName?: string;
+  topGradientClassName?: string;
+  bottomGradientClassName?: string;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const loopTimerRef = useRef<number | null>(null);
+  const revealTimerRef = useRef<number | null>(null);
+  const [isFading, setIsFading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (loopTimerRef.current != null) window.clearTimeout(loopTimerRef.current);
+      if (revealTimerRef.current != null) window.clearTimeout(revealTimerRef.current);
+    };
+  }, []);
+
+  const handleEnded = () => {
+    setIsFading(true);
+    loopTimerRef.current = window.setTimeout(() => {
+      const video = videoRef.current;
+      if (video) {
+        video.currentTime = 0;
+        void video.play();
+      }
+      revealTimerRef.current = window.setTimeout(() => setIsFading(false), 100);
+    }, 700);
+  };
+
+  return (
+    <div className="absolute inset-0 bg-black" aria-hidden="true">
+      <video
+        ref={videoRef}
+        className={`h-full w-full object-cover transition-opacity duration-700 ease-in-out ${
+          isFading ? 'opacity-0' : 'opacity-100'
+        }`}
+        autoPlay
+        muted
+        playsInline
+        preload="auto"
+        onEnded={handleEnded}
+      >
+        <source src={src} type="video/mp4" />
+      </video>
+      <div className={`absolute inset-0 ${overlayClassName}`} />
+      <div className="absolute inset-x-0 bottom-[-3.5rem] h-32 bg-[#06101a] blur-3xl" />
+      <div className={`absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t ${bottomGradientClassName}`} />
+      <div className={`absolute inset-x-0 top-0 h-32 bg-gradient-to-b ${topGradientClassName}`} />
+    </div>
+  );
+}
+
+function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
+  return (
+    <span className={`spacemap-heading-accent ${className}`.trim()}>
+      {children}
+    </span>
+  );
+}
+
+function HeroSlideShell({
+  active,
+  children,
+}: {
+  active: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className={`absolute inset-0 transition-all duration-1000 ease-out ${
+        active ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
+      }`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function HeroActions() {
+  return (
+    <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
+      <Link
+        to="/tracker/"
+        className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-8 py-4 text-base font-semibold text-[#06101a] transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#4d96e8]/30"
+      >
+        <Zap size={18} />
+        Launch Tracker
+      </Link>
+      <Link
+        to="/about"
+        className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 px-8 py-4 text-base font-medium text-white backdrop-blur-sm transition-all hover:bg-white/10"
+      >
+        <Eye size={18} />
+        Learn More
+      </Link>
+    </div>
+  );
+}
+
+function LaunchCountdown({ deltaMs }: { deltaMs: number }) {
+  const clamped = Math.max(0, deltaMs);
+  const totalSeconds = Math.floor(clamped / 1000);
+  const days = Math.floor(totalSeconds / 86_400);
+  const hours = Math.floor((totalSeconds % 86_400) / 3_600);
+  const minutes = Math.floor((totalSeconds % 3_600) / 60);
+  const seconds = totalSeconds % 60;
+  const units = [
+    { label: 'Days', value: days },
+    { label: 'Hours', value: hours },
+    { label: 'Minutes', value: minutes },
+    { label: 'Seconds', value: seconds },
+  ];
+
+  return (
+    <div className="mt-6">
+      <div className="text-xs font-semibold uppercase tracking-[0.28em] text-white/65">
+        Countdown to 4:30 PM CDT
+      </div>
+      <div className="mt-4 grid max-w-[30rem] grid-cols-4 gap-3">
+        {units.map((unit) => (
+          <div
+            key={unit.label}
+            className="rounded-[1.15rem] border border-white/14 bg-white/[0.07] px-3 py-4 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] backdrop-blur-sm"
+          >
+            <div className="font-mono text-2xl font-semibold text-white md:text-[2rem]">
+              {unit.value.toString().padStart(2, '0')}
+            </div>
+            <div className="mt-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/60">
+              {unit.label}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function HeroGameSlideBackground() {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-[#070d18]" aria-hidden="true">
+      <HeroVideoBackground
+        src={HERO_VIDEO_2_MP4_SRC}
+        overlayClassName="bg-[linear-gradient(90deg,rgba(9,12,24,0.88),rgba(9,12,24,0.56)_42%,rgba(22,17,37,0.18)_72%,rgba(9,12,24,0.76))]"
+        topGradientClassName="from-[#090c18]/88 to-transparent"
+        bottomGradientClassName="from-[#06101a] via-[#06101a]/90 to-transparent"
+      />
+      <div className="spacemap-grain absolute inset-0 opacity-30" />
+    </div>
+  );
+}
 
 const FEATURE_SUPPORT = [
   {
@@ -57,29 +218,48 @@ const STATS = [
 export function HomePage() {
   const launchFeed = useUpcomingLaunches();
   const [clockMs, setClockMs] = useState(() => Date.now());
+  const [heroSlideIndex, setHeroSlideIndex] = useState(0);
 
   useEffect(() => {
     const id = window.setInterval(() => setClockMs(Date.now()), 1000);
     return () => window.clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    const id = window.setInterval(
+      () => setHeroSlideIndex((current) => (current + 1) % 2),
+      HERO_SLIDE_INTERVAL_MS,
+    );
+    return () => window.clearInterval(id);
+  }, []);
+
   const nextLaunch = launchFeed.launches?.[0] ?? null;
   const nextLaunchDeltaMs = nextLaunch ? new Date(nextLaunch.net).getTime() - clockMs : null;
   const nextLaunchTone = nextLaunchDeltaMs == null ? null : getLaunchTone(nextLaunchDeltaMs);
+  const gameLaunchDeltaMs = GAME_LAUNCH_TARGET_MS - clockMs;
 
   return (
     <div className="relative">
-      {/* Hero Section — Globe spans FULL section behind text */}
-      <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-20">
-        {/* Full-bleed globe background */}
-        <div className="absolute inset-0 z-0">
-          <HeroGlobe className="w-full h-full" />
+      {/* Hero Section: video spans full section behind text */}
+      <section className="relative flex min-h-[82svh] items-center justify-center overflow-hidden pb-24 pt-20">
+        <div
+          className={`absolute inset-0 z-0 transition-opacity duration-1000 ${
+            heroSlideIndex === 0 ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <HeroVideoBackground />
+        </div>
+        <div
+          className={`absolute inset-0 z-0 transition-opacity duration-1000 ${
+            heroSlideIndex === 1 ? 'opacity-100' : 'pointer-events-none opacity-0'
+          }`}
+        >
+          <HeroGameSlideBackground />
         </div>
 
         {/* Content overlay */}
-        <div className="relative z-10 mx-auto max-w-7xl px-6 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          {/* Left: text */}
-          <div className="text-center lg:text-left">
+        <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
+          <div className="min-w-0 max-w-[22rem] text-center sm:max-w-[40rem] lg:max-w-[46rem] lg:text-left">
             <div className="mb-8 flex justify-center lg:justify-start">
               <img
                 src={emblemSrc}
@@ -88,37 +268,62 @@ export function HomePage() {
                 draggable={false}
               />
             </div>
-            <h1 className="text-5xl font-bold leading-tight tracking-tight text-white md:text-7xl drop-shadow-lg">
-              See everything
-              <br />
-              <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
-                above Earth.
-              </span>
-            </h1>
-            <p className="mt-6 max-w-xl text-lg text-white/80 md:text-xl drop-shadow-md">
-              Real-time orbital tracking for every satellite, piece of debris, and spacecraft,
-              rendered on a 3D globe and powered entirely by your browser.
-            </p>
-            <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row lg:justify-start sm:justify-center">
-              <Link
-                to="/tracker/"
-                className="group flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-8 py-4 text-base font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-105"
-              >
-                <Zap size={18} />
-                Launch Tracker
-              </Link>
-              <Link
-                to="/about"
-                className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/5 backdrop-blur-sm px-8 py-4 text-base font-medium text-white transition-all hover:bg-white/10"
-              >
-                <Eye size={18} />
-                Learn More
-              </Link>
+            <div className="relative min-h-[37rem] sm:min-h-[39rem] lg:min-h-[35rem]">
+              <HeroSlideShell active={heroSlideIndex === 0}>
+                <div className="max-w-[44rem]">
+                  <h1 className="spacemap-hero-display max-w-full text-[3rem] leading-[0.87] tracking-[0.01em] text-white sm:text-[4.15rem] md:text-[5.45rem] drop-shadow-lg">
+                    <span className="block">See</span>
+                    <span className="block">Everything</span>
+                    <span className="block bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
+                      Above Earth.
+                    </span>
+                  </h1>
+                  <p className="mx-auto mt-6 max-w-full text-base text-white/80 drop-shadow-md md:max-w-xl md:text-xl lg:mx-0">
+                    Real-time orbital tracking for every satellite, piece of debris, and spacecraft,
+                    rendered on a 3D globe and powered entirely by your browser.
+                  </p>
+                  <HeroActions />
+                </div>
+              </HeroSlideShell>
+
+              <HeroSlideShell active={heroSlideIndex === 1}>
+                <div className="max-w-[38rem]">
+                  <div className="inline-flex items-center rounded-full border border-white/14 bg-white/8 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] text-white/72 backdrop-blur-sm">
+                    Flight Game Preview
+                  </div>
+                  <div className="mt-6 text-xs font-semibold uppercase tracking-[0.32em] text-[#c8efff]">
+                    Introducing
+                  </div>
+                  <h2 className="spacemap-hero-display mt-4 text-[2.85rem] leading-[0.9] text-white sm:text-[4.2rem] md:text-[5rem]">
+                    {GAME_NAME}.
+                  </h2>
+                  <p className="mt-5 max-w-[31rem] text-base leading-relaxed text-white/78 md:text-lg">
+                    A mission-based flight game about timing burns, reaching stable orbits, and
+                    navigating cleanly through the geometry of space.
+                  </p>
+                  <div className="mt-6 text-sm font-semibold uppercase tracking-[0.24em] text-[#bfe7ff]">
+                    Launching August 21, 2026
+                  </div>
+                  <LaunchCountdown deltaMs={gameLaunchDeltaMs} />
+                  <HeroActions />
+                </div>
+              </HeroSlideShell>
             </div>
           </div>
+        </div>
 
-          {/* Right: empty space — globe continues underneath */}
-          <div className="hidden lg:block" />
+        <div className="absolute bottom-10 right-6 z-10 flex gap-2">
+          {[0, 1].map((slide) => (
+            <button
+              key={slide}
+              type="button"
+              aria-label={`Show hero slide ${slide + 1}`}
+              onClick={() => setHeroSlideIndex(slide)}
+              className={`h-2.5 rounded-full transition-all duration-300 ${
+                heroSlideIndex === slide ? 'w-10 bg-white/85' : 'w-4 bg-white/30 hover:bg-white/45'
+              }`}
+            />
+          ))}
         </div>
 
         {/* Scroll hint */}
@@ -129,7 +334,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="relative z-10 -mt-10 pb-10">
+      <section className="relative z-10 bg-[linear-gradient(180deg,#06101a_0%,rgba(6,16,26,0.98)_22%,transparent_100%)] pb-10 pt-8">
         <div className="mx-auto max-w-7xl px-6">
           <div className="overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(8,15,25,0.96)_58%,rgba(77,150,232,0.16))] shadow-[0_26px_75px_rgba(0,0,0,0.32)] backdrop-blur-xl">
             <div className="grid gap-0 lg:grid-cols-[minmax(0,0.95fr)_minmax(360px,0.85fr)]">
@@ -144,10 +349,10 @@ export function HomePage() {
                       In tracker now
                     </SystemPill>
                   </div>
-                  <h2 className="mt-5 max-w-2xl text-2xl font-semibold leading-tight text-white md:text-3xl">
-                    Watch the ISS feed without leaving the SpaceMap surface.
+                  <h2 className="spacemap-heading-display mt-5 max-w-[18rem] text-[1.65rem] text-white sm:max-w-2xl md:text-[2.6rem]">
+                    Watch the <AccentWord className="text-space-accent">ISS</AccentWord> feed without leaving the SpaceMap surface.
                   </h2>
-                  <p className="mt-4 max-w-2xl text-sm leading-relaxed text-space-dim md:text-base">
+                  <p className="mt-4 max-w-[18rem] text-sm leading-relaxed text-space-dim sm:max-w-2xl md:text-base">
                     One of the best proof points in the product is already live. The station feed
                     is embedded directly in the tracker and stays connected to the rest of the
                     orbital view instead of living on some separate page.
@@ -213,8 +418,8 @@ export function HomePage() {
             <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-space-accent">
               Features
             </p>
-            <h2 className="text-3xl font-bold text-white md:text-5xl">
-              A cleaner preview of what SpaceMap actually gives you
+            <h2 className="spacemap-heading-display text-3xl text-white md:text-5xl">
+              A cleaner preview of what <AccentWord className="text-space-accent">SpaceMap</AccentWord> actually gives you
             </h2>
             <p className="mx-auto mt-4 max-w-2xl text-space-dim">
               Track live satellites and debris, monitor close approaches, watch the ISS camera,
@@ -234,8 +439,8 @@ export function HomePage() {
                     <SystemPill tone="accent" icon={Activity}>
                       Mission surface
                     </SystemPill>
-                    <h3 className="mt-4 max-w-2xl text-2xl font-semibold leading-tight text-white md:text-3xl">
-                      The strongest product moments are visible here before you ever open the full
+                    <h3 className="spacemap-heading-display mt-4 max-w-2xl text-[1.85rem] text-white md:text-[2.45rem]">
+                      The strongest product <AccentWord className="text-space-accent">moments</AccentWord> are visible here before you ever open the full
                       feature stack.
                     </h3>
                     <p className="mt-4 max-w-2xl text-sm leading-relaxed text-space-dim">
@@ -367,7 +572,9 @@ export function HomePage() {
       <section className="relative z-10 py-24">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#4d96e8]/10 to-[#8ed8ff]/5 p-12 backdrop-blur-sm md:p-16">
-            <h2 className="text-3xl font-bold text-white md:text-4xl">Ready to explore orbit?</h2>
+            <h2 className="spacemap-heading-display text-3xl text-white md:text-4xl">
+              Ready to explore <AccentWord className="text-space-accent">orbit</AccentWord>?
+            </h2>
             <p className="mx-auto mt-4 max-w-lg text-space-dim">
               No account needed. No downloads. Just open the tracker and start exploring.
             </p>
