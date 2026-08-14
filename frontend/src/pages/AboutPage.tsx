@@ -2,23 +2,16 @@ import { Link } from 'react-router-dom';
 import {
   Activity,
   Camera,
-  Clock,
   Cpu,
   Crosshair,
   Globe,
-  Eye,
   Layers,
-  Orbit,
   Radio,
   Rocket,
   Satellite,
-  Search,
   ShieldCheck,
-  AlertTriangle,
-  BarChart3,
 } from 'lucide-react';
 import emblemSrc from '../assets/brand-emblem.png';
-import { SystemPill } from '../components/SystemPill.js';
 
 function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
@@ -47,21 +40,6 @@ const HOW_IT_WORKS = [
   },
 ];
 
-const CAPABILITIES = [
-  { icon: Search, label: 'Instant search' },
-  { icon: Activity, label: 'Conjunction detection' },
-  { icon: Clock, label: 'Time travel' },
-  { icon: Eye, label: 'Live ISS feed' },
-  { icon: AlertTriangle, label: 'Risk scoring' },
-  { icon: Radio, label: 'Signal tracking' },
-  { icon: Orbit, label: 'Orbit visualization' },
-  { icon: Crosshair, label: 'Local sky view' },
-  { icon: BarChart3, label: 'Telemetry panels' },
-  { icon: Layers, label: 'Multi-layer overlays' },
-  { icon: ShieldCheck, label: '100% client-side' },
-  { icon: Rocket, label: 'Launch tracker' },
-];
-
 export function AboutPage() {
   return (
     <div className="relative pt-24">
@@ -69,14 +47,6 @@ export function AboutPage() {
       <section className="mx-auto max-w-6xl px-6 py-16">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)] lg:items-center">
           <div>
-            <div className="flex flex-wrap gap-3">
-              <SystemPill tone="accent" icon={Globe}>
-                About SpaceMap
-              </SystemPill>
-              <SystemPill tone="live" icon={Radio} pulse>
-                Live orbital surface
-              </SystemPill>
-            </div>
             <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
               Built so tracking <AccentWord className="text-space-accent">orbit</AccentWord>{' '}
               <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
@@ -90,15 +60,12 @@ export function AboutPage() {
             </p>
           </div>
 
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.08),rgba(8,15,25,0.96)_58%,rgba(77,150,232,0.15))] p-7 shadow-[0_24px_70px_rgba(0,0,0,0.26)] backdrop-blur-xl">
-            <div className="absolute right-[-3rem] top-[-2rem] h-28 w-28 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
-            <div className="absolute bottom-[-3rem] left-[-2rem] h-32 w-32 rounded-full bg-[#ff6b6b]/8 blur-3xl" />
-
+          <div className="rounded-[1.5rem] border border-white/10 bg-[#0d1520]/88 p-7">
             <div className="relative">
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-                    Open Signal
+                    In practice
                   </div>
                   <div className="mt-3 text-2xl font-semibold text-white">What the product is built around</div>
                 </div>
@@ -124,13 +91,9 @@ export function AboutPage() {
                 ))}
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <SystemPill tone="neutral" icon={Cpu}>
-                  Client-side propagation
-                </SystemPill>
-                <SystemPill tone="neutral" icon={Layers}>
-                  Layered 3D globe
-                </SystemPill>
+              <div className="mt-6 grid gap-2 text-sm text-space-dim">
+                <div>Client-side propagation in the browser.</div>
+                <div>Layered 3D globe for seeing tracks and position together.</div>
               </div>
             </div>
           </div>
@@ -138,7 +101,7 @@ export function AboutPage() {
       </section>
 
       {/* Founder */}
-      <section className="mx-auto max-w-4xl px-6 py-16" style={{ perspective: '1000px' }}>
+      <section className="mx-auto max-w-4xl px-6 py-16">
         <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3 text-center">
           Meet the Founder
         </p>
@@ -147,14 +110,11 @@ export function AboutPage() {
         </h2>
 
         <div className="flex flex-col items-center">
-          <div className="relative group" style={{ transformStyle: 'preserve-3d' }}>
-            <div className="absolute -inset-3 rounded-full bg-gradient-to-br from-[#4d96e8] to-[#8ed8ff] opacity-20 blur-2xl transition-opacity group-hover:opacity-40" />
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-[#4d96e8] to-[#8ed8ff] opacity-50 blur-lg" />
+          <div className="relative">
             <img
               src={founderImg}
               alt="Rahul Awasthi"
-              className="relative h-56 w-56 rounded-full border-4 border-white/10 object-cover shadow-[0_24px_70px_rgba(5,16,26,0.45)] transition-transform duration-500 group-hover:scale-[1.02] md:h-64 md:w-64"
-              style={{ transform: 'translateZ(20px)' }}
+              className="h-56 w-56 rounded-full border-4 border-white/10 object-cover shadow-[0_18px_40px_rgba(5,16,26,0.32)] md:h-64 md:w-64"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
@@ -176,7 +136,7 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* How it works with 3D card tilt */}
+      {/* How it works */}
       <section className="py-24">
         <div className="mx-auto max-w-5xl px-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3 text-center">
@@ -186,31 +146,16 @@ export function AboutPage() {
             How it <AccentWord className="text-space-accent">works</AccentWord>
           </h2>
           <p className="text-center text-space-dim mb-16">
-            Our own engine, running entirely on your machine.
+            SpaceMap runs in the browser and computes positions on your machine.
           </p>
 
-          <div className="grid gap-6 md:grid-cols-3" style={{ perspective: '800px' }}>
-            {HOW_IT_WORKS.map((item, i) => (
+          <div className="grid gap-6 md:grid-cols-3">
+            {HOW_IT_WORKS.map((item) => (
               <div
                 key={item.step}
-                className="group rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-all duration-500 hover:border-space-accent/30 hover:bg-white/10 hover:shadow-xl hover:shadow-[#4d96e8]/10"
-                style={{
-                  transformStyle: 'preserve-3d',
-                  transform: `rotateY(${(i - 1) * 3}deg)`,
-                  transition: 'transform 0.5s ease',
-                }}
-                onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform =
-                    'rotateY(0deg) translateZ(20px) scale(1.03)';
-                }}
-                onMouseLeave={(e) => {
-                  (e.currentTarget as HTMLElement).style.transform = `rotateY(${(i - 1) * 3}deg)`;
-                }}
+                className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm"
               >
-                <div
-                  className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/30 to-[#8ed8ff]/30 text-space-accent shadow-lg shadow-[#4d96e8]/10"
-                  style={{ transform: 'translateZ(15px)' }}
-                >
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/30 to-[#8ed8ff]/30 text-space-accent shadow-lg shadow-[#4d96e8]/10">
                   <span className="text-lg font-bold">{item.step}</span>
                 </div>
                 <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
@@ -221,41 +166,31 @@ export function AboutPage() {
         </div>
       </section>
 
-      {/* Capabilities with 3D floating effect */}
+      {/* Founder note */}
       <section className="py-24">
-        <div className="mx-auto max-w-5xl px-6">
+        <div className="mx-auto max-w-4xl px-6">
           <div
-            className="rounded-2xl border border-white/10 bg-white/5 p-10 backdrop-blur-sm relative overflow-hidden"
-            style={{ transformStyle: 'preserve-3d', perspective: '600px' }}
+            className="rounded-[1.5rem] border border-white/10 bg-[#0d1520]/88 p-10"
           >
-            {/* Decorative depth layers */}
-            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-[#4d96e8]/10 blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-[#8ed8ff]/10 blur-3xl" />
-
-            <div className="relative flex items-center gap-3 mb-6">
+            <div className="flex items-center gap-3 mb-6">
               <ShieldCheck size={20} className="text-space-accent" />
               <h3 className="text-lg font-semibold text-white">
-                Full feature set, checked every frame
+                Why I kept building it this way
               </h3>
             </div>
-            <p className="relative text-sm text-space-dim mb-8">
-              SpaceMap doesn't cut corners. Every feature runs in real time, updating with each
-              frame of the simulation. Here's what's packed into a single browser tab:
-            </p>
-            <div className="relative flex flex-wrap gap-3">
-              {CAPABILITIES.map((cap, i) => (
-                <SystemPill
-                  key={cap.label}
-                  tone="neutral"
-                  icon={cap.icon}
-                  className="transition-all duration-300 hover:scale-105 hover:border-space-accent/30 hover:bg-white/15 hover:text-white"
-                  style={{
-                    transform: `translateZ(${5 + (i % 3) * 5}px)`,
-                  }}
-                >
-                  {cap.label}
-                </SystemPill>
-              ))}
+            <div className="space-y-5 text-sm leading-relaxed text-space-dim md:text-[15px]">
+              <p>
+                Most space software feels like it was built either for specialists already inside
+                the system or for organizations shopping through procurement. I wanted SpaceMap to
+                feel different from the start: immediate, legible, and open to anyone curious
+                enough to look up.
+              </p>
+              <p>
+                That is why the heavy lifting runs locally, why the interface tries to show rather
+                than overwhelm, and why the product keeps pushing toward public understanding
+                instead of institutional gatekeeping. If orbit is part of our world now, then
+                seeing it should not require expensive software or a technical clearance.
+              </p>
             </div>
           </div>
         </div>

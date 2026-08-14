@@ -88,7 +88,7 @@ export function HeaderHUD() {
                 fps >= 55 ? 'text-emerald-400' : fps >= 30 ? 'text-space-warn' : 'text-space-bad'
               }
             >
-              {fps || '—'}
+              {fps || 'N/A'}
             </span>
           }
         />

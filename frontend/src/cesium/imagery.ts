@@ -49,7 +49,7 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
     id: 'arcgis',
     label: 'ArcGIS World Imagery',
-    description: "ESRI's composite Bing / Maxar / USGS aerial imagery — best default quality.",
+    description: "ESRI's composite Bing / Maxar / USGS aerial imagery, best default quality.",
     create: async () =>
       Cesium.ArcGisMapServerImageryProvider.fromUrl(
         'https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer',
@@ -74,7 +74,7 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
     id: 'modis-terra',
     label: 'MODIS Terra (recent)',
-    description: 'Real satellite photo from two days ago — actual cloud cover, sea ice, wildfires.',
+    description: 'Real satellite photo from two days ago, with actual cloud cover, sea ice, and wildfires.',
     create: () =>
       gibs({
         layer: 'MODIS_Terra_CorrectedReflectance_TrueColor',
@@ -88,7 +88,7 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
     id: 'black-marble',
     label: 'Black Marble (night)',
-    description: 'VIIRS Black Marble city lights — humanity glowing from orbit.',
+    description: 'VIIRS Black Marble city lights, humanity glowing from orbit.',
     create: () =>
       gibs({
         layer: 'VIIRS_Black_Marble',
@@ -101,7 +101,7 @@ export const IMAGERY_LAYERS: readonly ImageryDef[] = [
   {
     id: 'naturalearth',
     label: 'Natural Earth (offline)',
-    description: 'Bundled Cesium fallback — works with no network.',
+    description: 'Bundled Cesium fallback that works with no network.',
     create: async () =>
       Cesium.TileMapServiceImageryProvider.fromUrl(
         Cesium.buildModuleUrl('Assets/Textures/NaturalEarthII'),

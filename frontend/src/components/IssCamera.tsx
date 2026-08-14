@@ -173,12 +173,12 @@ export function IssCamera() {
         />
       </div>
       <div className="grid grid-cols-3 gap-x-3 gap-y-1 px-3 py-2 font-mono text-xs">
-        <Cell label="Altitude" value={row ? `${row.altKm.toFixed(1)} km` : '—'} />
-        <Cell label="Speed" value={row ? `${row.speedKmS.toFixed(3)} km/s` : '—'} />
-        <Cell label="Period" value={tel ? `${tel.elements.periodMinutes.toFixed(2)} min` : '—'} />
-        <Cell label="Latitude" value={row ? `${row.latDeg.toFixed(2)}°` : '—'} />
-        <Cell label="Longitude" value={row ? `${row.lonDeg.toFixed(2)}°` : '—'} />
-        <Cell label="Sunlit" value={tel ? (tel.sunlit ? 'Yes' : 'Shadow') : '—'} />
+        <Cell label="Altitude" value={row ? `${row.altKm.toFixed(1)} km` : 'N/A'} />
+        <Cell label="Speed" value={row ? `${row.speedKmS.toFixed(3)} km/s` : 'N/A'} />
+        <Cell label="Period" value={tel ? `${tel.elements.periodMinutes.toFixed(2)} min` : 'N/A'} />
+        <Cell label="Latitude" value={row ? `${row.latDeg.toFixed(2)}°` : 'N/A'} />
+        <Cell label="Longitude" value={row ? `${row.lonDeg.toFixed(2)}°` : 'N/A'} />
+        <Cell label="Sunlit" value={tel ? (tel.sunlit ? 'Yes' : 'Shadow') : 'N/A'} />
       </div>
 
       <div className="flex-1 overflow-auto border-t border-space-border/60 px-3 py-2 font-mono text-xs">

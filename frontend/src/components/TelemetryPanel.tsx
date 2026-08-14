@@ -122,19 +122,19 @@ export function TelemetryPanel() {
                 value={CATALOG_OBJECT_TYPE_LABEL[catalogEntry?.objectType ?? 'unknown']}
               />
               <Field label="Tracking status" value="Catalog only" />
-              <Field label="Owner" value={catalogEntry?.owner ?? '—'} />
-              <Field label="Launch date" value={catalogEntry?.launchDate ?? '—'} />
-              <Field label="Decay date" value={catalogEntry?.decayDate ?? '—'} />
+              <Field label="Owner" value={catalogEntry?.owner ?? 'N/A'} />
+              <Field label="Launch date" value={catalogEntry?.launchDate ?? 'N/A'} />
+              <Field label="Decay date" value={catalogEntry?.decayDate ?? 'N/A'} />
               <Field label="Live telemetry" value="Unavailable" />
             </div>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 p-4 font-mono text-xs">
-              <Field label="Latitude" value={live ? fmt(live.latDeg, 3, '°') : '—'} />
-              <Field label="Longitude" value={live ? fmt(live.lonDeg, 3, '°') : '—'} />
-              <Field label="Altitude" value={live ? fmt(live.altKm, 1, ' km') : '—'} />
-              <Field label="Speed" value={live ? fmt(live.speedKmS, 3, ' km/s') : '—'} />
+              <Field label="Latitude" value={live ? fmt(live.latDeg, 3, '°') : 'N/A'} />
+              <Field label="Longitude" value={live ? fmt(live.lonDeg, 3, '°') : 'N/A'} />
+              <Field label="Altitude" value={live ? fmt(live.altKm, 1, ' km') : 'N/A'} />
+              <Field label="Speed" value={live ? fmt(live.speedKmS, 3, ' km/s') : 'N/A'} />
               {telemetry && (
                 <>
                   <Field label="Inclination" value={fmt(telemetry.elements.inclinationDeg, 2, '°')} />
@@ -152,7 +152,7 @@ export function TelemetryPanel() {
                     label="Object type"
                     value={CATALOG_OBJECT_TYPE_LABEL[telemetry.meta.objectType ?? 'unknown']}
                   />
-                  <Field label="Owner" value={telemetry.meta.country ?? catalogEntry?.owner ?? '—'} />
+                  <Field label="Owner" value={telemetry.meta.country ?? catalogEntry?.owner ?? 'N/A'} />
                   <Field label="Sunlit" value={telemetry.sunlit ? 'Yes' : 'In shadow'} />
                   <Field
                     label="Δt (rel.)"
@@ -191,6 +191,6 @@ function Field({ label, value, wide }: { label: string; value: string; wide?: bo
 }
 
 function fmt(n: number, digits: number, unit: string): string {
-  if (!Number.isFinite(n)) return '—';
+  if (!Number.isFinite(n)) return 'N/A';
   return n.toFixed(digits) + unit;
 }

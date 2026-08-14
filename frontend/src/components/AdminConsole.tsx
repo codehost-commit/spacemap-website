@@ -72,7 +72,7 @@ export function AdminConsole() {
         adminLog.push('diag', {
           channel: 'out',
           severity: 'info',
-          text: 'starting self-diagnose (~3 min) — do not touch the app',
+          text: 'starting self-diagnose (~3 min). Do not touch the app',
         });
         try {
           await runSelfDiagnose('diag');
