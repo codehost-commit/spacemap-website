@@ -1,18 +1,13 @@
 import { useState } from 'react';
 import {
-  Bug,
   CheckCircle,
   ChevronDown,
   Code,
   ExternalLink,
-  HelpCircle,
-  LifeBuoy,
   Mail,
-  MessageSquare,
   Send,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { SystemPill } from '../components/SystemPill.js';
 
 function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
@@ -26,6 +21,7 @@ function AccentWord({ children, className = '' }: { children: React.ReactNode; c
 interface ContactEntry {
   name: string;
   email: string;
+  subject: string;
   question: string;
   timestamp: string;
 }
@@ -51,6 +47,7 @@ export { getContacts };
 export function ContactPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
+  const [subject, setSubject] = useState('');
   const [question, setQuestion] = useState('');
   const [submitted, setSubmitted] = useState(false);
 
@@ -61,6 +58,7 @@ export function ContactPage() {
     saveContact({
       name: name.trim(),
       email: email.trim(),
+      subject: subject.trim(),
       question: question.trim(),
       timestamp: new Date().toISOString(),
     });
@@ -68,6 +66,7 @@ export function ContactPage() {
     setSubmitted(true);
     setName('');
     setEmail('');
+    setSubject('');
     setQuestion('');
     setTimeout(() => setSubmitted(false), 4000);
   };
@@ -76,20 +75,12 @@ export function ContactPage() {
     <div className="relative pt-24">
       {/* ── Hero ─────────────────────────────────────────────── */}
       <section className="mx-auto max-w-4xl px-6 pt-16 pb-12 text-center">
-        <div className="flex justify-center gap-3">
-          <SystemPill tone="accent" icon={Send}>
-            Get in touch
-          </SystemPill>
-        </div>
         <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
-          We'd love to{' '}
-          <span className="spacemap-heading-accent bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
-            hear from you.
-          </span>
+          Contact <AccentWord className="text-space-accent">SpaceMap</AccentWord>
         </h1>
         <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-space-dim">
-          Questions, feature requests, bug reports, or a simple hello, drop us a line
-          and we'll get back to you.
+          Use the form for questions, bug reports, feature requests, or anything else about the
+          project. If email is easier, you can also write directly to hello@spacemap.earth.
         </p>
       </section>
 
@@ -97,13 +88,9 @@ export function ContactPage() {
       <section className="mx-auto max-w-2xl px-6 pb-20">
         <form
           onSubmit={handleSubmit}
-          className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(160deg,rgba(255,255,255,0.06),rgba(8,15,25,0.96)_58%,rgba(77,150,232,0.12))] p-8 shadow-[0_24px_70px_rgba(0,0,0,0.24)] backdrop-blur-xl md:p-10"
+          className="rounded-[1.75rem] border border-white/10 bg-white/[0.03] p-8 backdrop-blur-sm md:p-10"
         >
-          {/* decorative glows */}
-          <div className="pointer-events-none absolute right-[-3rem] top-[-2rem] h-28 w-28 rounded-full bg-[#8ed8ff]/12 blur-3xl" />
-          <div className="pointer-events-none absolute bottom-[-3rem] left-[-2rem] h-28 w-28 rounded-full bg-[#4d96e8]/8 blur-3xl" />
-
-          <div className="relative space-y-6">
+          <div className="space-y-6">
             {/* Name + Email row */}
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
@@ -144,6 +131,8 @@ export function ContactPage() {
               <input
                 id="contact-subject"
                 type="text"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
                 placeholder="Feature request, bug report, general question..."
                 className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder-space-dim/50 outline-none transition-all focus:border-space-accent/50 focus:bg-white/8 focus:shadow-[0_0_0_3px_rgba(77,150,232,0.15)]"
               />
@@ -171,28 +160,28 @@ export function ContactPage() {
               disabled={submitted}
               className={`w-full flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all ${
                 submitted
-                  ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                  : 'bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] text-[#06101a] hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-[1.02]'
+                  ? 'border border-emerald-500/30 bg-emerald-500/14 text-emerald-300'
+                  : 'bg-white text-[#06101a] hover:bg-[#dfe9f2]'
               }`}
             >
               {submitted ? (
                 <>
                   <CheckCircle size={18} />
-                  Sent! We'll be in touch.
+                  Message saved on this device.
                 </>
               ) : (
                 <>
                   <Send size={18} />
-                  Send Message
+                  Send
                 </>
               )}
             </button>
 
-            <p className="text-center text-xs text-space-dim">
-              Or email us directly at{' '}
+            <p className="text-center text-sm text-space-dim">
+              For a direct reply, email{' '}
               <a
                 href="mailto:hello@spacemap.earth"
-                className="text-space-accent hover:text-white transition-colors"
+                className="font-semibold text-space-accent hover:text-white transition-colors"
               >
                 hello@spacemap.earth
               </a>
@@ -202,34 +191,20 @@ export function ContactPage() {
       </section>
 
       {/* ── Quick links ──────────────────────────────────────── */}
-      <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className="mx-auto max-w-4xl px-6 pb-20">
+        <div className="grid gap-4 sm:grid-cols-2">
           <QuickLinkCard
             icon={Mail}
             title="Email"
-            desc="Fastest for questions and partnerships."
+            desc="Best for questions, feedback, and direct replies."
             action="hello@spacemap.earth"
             href="mailto:hello@spacemap.earth"
           />
           <QuickLinkCard
-            icon={Bug}
-            title="Bug reports"
-            desc="Include browser, OS, and steps to reproduce."
-            action="Report a bug"
-            href="mailto:hello@spacemap.earth?subject=Bug%20report"
-          />
-          <QuickLinkCard
-            icon={MessageSquare}
-            title="Feature requests"
-            desc="Tell us what would make SpaceMap better."
-            action="Request a feature"
-            href="mailto:hello@spacemap.earth?subject=Feature%20request"
-          />
-          <QuickLinkCard
             icon={Code}
-            title="Source & issues"
-            desc="SpaceMap is open by design."
-            action="View on GitHub"
+            title="Code and issues"
+            desc="Browse the project or open an issue on GitHub."
+            action="Open GitHub"
             href="https://github.com/codehost-commit/spacemap-website"
           />
         </div>
@@ -262,14 +237,14 @@ function QuickLinkCard({
       href={href}
       target={isExternal ? '_blank' : undefined}
       rel={isExternal ? 'noreferrer' : undefined}
-      className="group flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-all hover:border-space-accent/30 hover:bg-white/[0.06]"
+      className="group flex flex-col rounded-2xl border border-white/10 bg-white/[0.03] p-5 backdrop-blur-sm transition-colors hover:border-space-accent/30 hover:bg-white/[0.05]"
     >
-      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/20 to-[#8ed8ff]/10 text-space-accent transition-transform group-hover:scale-110">
-        <Icon size={18} />
+      <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-space-accent">
+        <Icon size={20} />
       </div>
-      <div className="text-sm font-semibold text-white">{title}</div>
-      <p className="mt-1 flex-1 text-xs leading-relaxed text-space-dim">{desc}</p>
-      <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-space-accent">
+      <div className="text-base font-semibold text-white">{title}</div>
+      <p className="mt-1 flex-1 text-sm leading-relaxed text-space-dim">{desc}</p>
+      <div className="mt-3 flex items-center gap-1 text-sm font-semibold text-space-accent">
         {action}
         <ExternalLink size={11} className="opacity-60" />
       </div>
@@ -282,39 +257,23 @@ function QuickLinkCard({
 const FAQS: Array<{ q: string; a: string }> = [
   {
     q: 'Is SpaceMap really free?',
-    a: 'Yes. No paywall, no signup, no trial. Every feature works in the browser without an account and there are no ads.',
-  },
-  {
-    q: 'How often is satellite data updated?',
-    a: 'The live catalog is pulled from CelesTrak on load. New TLE data is typically published every 4 to 12 hours; SpaceMap picks up the latest set automatically.',
+    a: 'Yes. There is no paywall, no account, and no trial period. The tracker works in the browser without signing in.',
   },
   {
     q: 'How accurate is the tracking?',
-    a: 'SGP4 propagation from a fresh TLE is accurate to roughly ±1 km at the epoch and drifts over days. SpaceMap propagates continuously in the browser using the same math NORAD uses.',
-  },
-  {
-    q: "Why can't I find a specific satellite?",
-    a: 'It may be classified (military assets aren\'t in the public catalog), decayed, or listed under a different name or NORAD ID. Try searching by international designator (e.g. "2020-100").',
+    a: 'It depends on how fresh the public TLE data is. SpaceMap uses standard SGP4 propagation, so it is generally reliable for public tracking, but older element sets drift over time.',
   },
   {
     q: 'Does SpaceMap send my location or data anywhere?',
-    a: 'No. All computation is client-side and no personal data leaves your device. Your coordinates are never transmitted.',
-  },
-  {
-    q: 'Can I embed the tracker on my own site?',
-    a: 'Not officially yet. A public embed is on the roadmap. For now you can link to spacemap.earth/tracker with a satellite pre-selected via URL parameters.',
-  },
-  {
-    q: 'The globe is slow. How can I improve performance?',
-    a: 'Reduce rendered objects using the orbit-class filters (LEO, MEO, GEO, HEO) or hide debris from the object-type filter. Closing background browser tabs also helps.',
-  },
-  {
-    q: 'Is there an API?',
-    a: "A public JSON API for TLE data is on the roadmap. Until then, all the raw data feeding SpaceMap comes from CelesTrak's free public endpoints.",
+    a: 'No. The tracker runs locally in your browser, and your coordinates are not sent anywhere just to use the site.',
   },
   {
     q: 'Who runs SpaceMap?',
-    a: 'Rahul Awasthi, solo developer and designer. See the About page for the full story.',
+    a: 'Rahul Awasthi. SpaceMap is an independent project, and the About page explains more about why it was built.',
+  },
+  {
+    q: 'Where should I report bugs or request features?',
+    a: 'Email is the simplest option right now. If it is a bug, include your browser, device, and the steps that caused it. GitHub issues also work.',
   },
 ];
 
@@ -325,16 +284,8 @@ function FaqSection() {
     <section id="faq" className="scroll-mt-32 relative px-6 py-24">
       <div className="mx-auto max-w-3xl">
         <div className="mb-10 text-center">
-          <div className="flex justify-center">
-            <SystemPill tone="accent" icon={HelpCircle}>
-              FAQ
-            </SystemPill>
-          </div>
           <h2 className="spacemap-heading-display mt-4 text-3xl text-white md:text-5xl">
-            Common <AccentWord className="text-space-accent">questions</AccentWord>,{' '}
-            <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
-              straight answers.
-            </span>
+            A few common <AccentWord className="text-space-accent">questions</AccentWord>
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-space-dim">
             Something not covered? Reach out using the form above.
@@ -353,12 +304,10 @@ function FaqSection() {
           ))}
         </div>
 
-        {/* CTA */}
-        <div className="mt-16 text-center">
-          <p className="text-sm text-space-dim">Ready to explore?</p>
+        <div className="mt-14 text-center">
           <Link
             to="/tracker/"
-            className="mt-4 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-all hover:shadow-xl hover:shadow-[#4d96e8]/30 hover:scale-[1.02]"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-sm font-semibold text-white transition-colors hover:border-space-accent/30 hover:bg-white/8"
           >
             Open the live tracker
           </Link>

@@ -1,23 +1,16 @@
-import { Link } from 'react-router-dom';
 import {
-  Activity,
-  Camera,
   Cpu,
-  Crosshair,
   Globe,
-  Layers,
-  Radio,
-  Rocket,
   Satellite,
   ShieldCheck,
 } from 'lucide-react';
-import emblemSrc from '../assets/brand-emblem.png';
 
 function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
 }
 
 const founderImg = (import.meta.env.BASE_URL || '/') + 'brand/founder.jpeg';
+const aboutImage = (import.meta.env.BASE_URL || '/') + 'brand/about-image.png';
 
 const HOW_IT_WORKS = [
   {
@@ -44,59 +37,25 @@ export function AboutPage() {
   return (
     <div className="relative pt-24">
       {/* Header */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-6xl px-6 py-14 md:py-16">
         <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.82fr)] lg:items-center">
           <div>
-            <h1 className="spacemap-heading-display mt-6 text-4xl text-white md:text-6xl">
-              Built so tracking <AccentWord className="text-space-accent">orbit</AccentWord>{' '}
-              <span className="bg-gradient-to-r from-[#8ed8ff] to-[#4d96e8] bg-clip-text text-transparent">
-                never requires a clearance.
-              </span>
+            <h1 className="spacemap-heading-display site-heading max-w-[10ch] text-5xl leading-[1.02] md:text-6xl lg:text-[4.9rem]">
+              Why I built <AccentWord className="text-space-accent">SpaceMap</AccentWord>
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-relaxed text-space-dim md:text-lg">
+            <p className="site-copy mt-6 max-w-2xl text-base leading-relaxed md:text-lg">
               SpaceMap turns raw orbital data into something readable, visual, and immediate:
               real-time tracking, conjunction analysis, live video, local sky ranking, and launch
               awareness, all inside one browser tab.
             </p>
           </div>
 
-          <div className="rounded-[1.5rem] border border-white/10 bg-[#0d1520]/88 p-7">
-            <div className="relative">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <div className="text-xs font-semibold uppercase tracking-[0.28em] text-space-accent">
-                    In practice
-                  </div>
-                  <div className="mt-3 text-2xl font-semibold text-white">What the product is built around</div>
-                </div>
-                <img src={emblemSrc} alt="SpaceMap" className="h-12 w-12" draggable={false} />
-              </div>
-
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                {[
-                  { icon: Activity, label: 'Collision watch' },
-                  { icon: Camera, label: 'ISS live feed' },
-                  { icon: Crosshair, label: 'Closest to you' },
-                  { icon: Rocket, label: 'Launch countdowns' },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-[1.35rem] border border-white/10 bg-white/5 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
-                  >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/10 text-space-accent">
-                      <item.icon size={18} />
-                    </div>
-                    <div className="mt-4 text-sm font-semibold text-white">{item.label}</div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 grid gap-2 text-sm text-space-dim">
-                <div>Client-side propagation in the browser.</div>
-                <div>Layered 3D globe for seeing tracks and position together.</div>
-              </div>
-            </div>
-          </div>
+          <img
+            src={aboutImage}
+            alt="SpaceMap globe view showing orbital tracks around Earth."
+            className="w-full h-auto rounded-[1.5rem]"
+            draggable={false}
+          />
         </div>
       </section>
 
@@ -126,12 +85,13 @@ export function AboutPage() {
 
         <div className="mt-10 mx-auto max-w-2xl">
           <p className="text-center text-space-dim leading-relaxed">
-            SpaceMap was built with a simple conviction: the ability to see what's orbiting above
-            you shouldn't require a government contract or a six-figure software license. After
-            watching researchers, educators, and space enthusiasts struggle with fragmented data and
-            clunky tools, I built SpaceMap to put a mission-control-grade experience into everyone's
-            browser, entirely free. Your data stays on your device. Every computation runs locally.
-            That transparency isn't a feature; it's the point.
+            I built SpaceMap because I kept coming back to the same frustration: it was oddly hard
+            to just see what was in orbit in a way that felt clear and usable. A lot of the tools I
+            found were fragmented, overly technical, or made for institutions instead of ordinary
+            people. I wanted something that felt more open and more immediate, where you could
+            explore orbit in a normal browser without expensive software or a wall of friction. The
+            decision to keep it local came from the same place. What you do here stays on your
+            device, and that feels like the right way to build it.
           </p>
         </div>
       </section>

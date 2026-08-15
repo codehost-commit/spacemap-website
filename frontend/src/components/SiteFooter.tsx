@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import emblemSrc from '../assets/brand-emblem.png';
-import { ArrowRight, Eye, Globe, Radio, Shield } from 'lucide-react';
+import { ArrowRight, Eye, Globe } from 'lucide-react';
 
 /** Scroll to top then navigate */
 function FooterLink({ to, children }: { to: string; children: React.ReactNode }) {
@@ -48,25 +48,21 @@ export function SiteFooter() {
               <div className="spacemap-grain absolute inset-0 opacity-30" />
               <div className="relative z-10 p-8 md:p-10 lg:p-12">
                 <div className="max-w-[38rem]">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[rgba(142,216,255,0.18)] bg-[rgba(142,216,255,0.08)] px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.28em] text-[#d5ebff]">
-                    <Radio size={12} />
-                    Live orbital surface
-                  </div>
-                  <h2 className="spacemap-heading-display mt-6 max-w-[34rem] text-[3rem] leading-[0.9] text-[#f7f2ff] sm:text-[4rem] md:text-[5rem]">
-                    Keep the live sky in <span className="spacemap-heading-accent text-[#8ed8ff]">view</span>.
+                  <h2 className="spacemap-heading-display max-w-[34rem] text-[3rem] leading-[0.9] text-[#f7f2ff] sm:text-[4rem] md:text-[5rem]">
+                    See what&apos;s <span className="spacemap-heading-accent text-[#8ed8ff]">in orbit</span>.
                   </h2>
                   <p className="mt-5 max-w-[32rem] text-sm leading-relaxed text-[#d0c9de] md:text-base">
-                    SpaceMap closes on the same idea it opens with: Earth in motion, objects in
-                    context, and the tracker sitting one click away when you want the full globe.
+                    I built SpaceMap because I wanted a simpler way to see what is actually in
+                    orbit. The tracker is where you can explore it.
                   </p>
 
                   <div className="mt-8 flex flex-wrap gap-3">
                     <Link
                       to="/tracker/"
-                      className="site-gradient-button inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-all hover:scale-[1.02]"
+                      className="inline-flex items-center gap-2 rounded-lg bg-[#8ed8ff] px-6 py-3 text-sm font-semibold text-[#06101a] transition-colors hover:bg-[#b6e8ff]"
                     >
                       <Globe size={16} />
-                      Open Tracker
+                      Open tracker
                     </Link>
                     <Link
                       to="/features"
@@ -78,30 +74,41 @@ export function SiteFooter() {
                   </div>
 
                   <div className="mt-8 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                    <Link
+                      to="/about"
+                      className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4 transition-colors hover:border-[rgba(142,216,255,0.28)] hover:bg-[rgba(6,16,26,0.62)]"
+                    >
                       <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
-                        Live stack
+                        Built by Rahul
                       </div>
                       <div className="mt-2 text-sm font-semibold text-[#f4efff]">
-                        ISS feed, launches, risk
+                        Why I built SpaceMap.
                       </div>
-                    </div>
-                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                    </Link>
+                    <a
+                      href="https://github.com/codehost-commit/spacemap-website"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4 transition-colors hover:border-[rgba(142,216,255,0.28)] hover:bg-[rgba(6,16,26,0.62)]"
+                    >
                       <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
-                        Engine
+                        Code and issues
                       </div>
                       <div className="mt-2 text-sm font-semibold text-[#f4efff]">
-                        Browser-side propagation
+                        Browse the repo or file a bug.
                       </div>
-                    </div>
-                    <div className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4">
+                    </a>
+                    <Link
+                      to="/tracker/"
+                      className="rounded-[1.2rem] border border-[rgba(142,216,255,0.12)] bg-[rgba(6,16,26,0.48)] px-4 py-4 transition-colors hover:border-[rgba(142,216,255,0.28)] hover:bg-[rgba(6,16,26,0.62)]"
+                    >
                       <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#8ed8ff]">
-                        Surface
+                        No account/install
                       </div>
                       <div className="mt-2 text-sm font-semibold text-[#f4efff]">
-                        One tab, no install
+                        Open tracker now.
                       </div>
-                    </div>
+                    </Link>
                   </div>
                 </div>
               </div>
@@ -119,10 +126,6 @@ export function SiteFooter() {
                 Real-time orbital intelligence, running entirely in your browser. Track every object
                 above Earth.
               </p>
-              <div className="mt-5 inline-flex items-center gap-2 rounded-full border border-[rgba(142,216,255,0.14)] bg-[rgba(142,216,255,0.06)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[#d5ebff]">
-                <Shield size={13} />
-                spacemap.earth
-              </div>
             </div>
 
             {/* Product */}
@@ -185,9 +188,17 @@ export function SiteFooter() {
 
           {/* Bottom bar */}
           <div className="mx-6 flex flex-col items-center justify-between gap-4 border-t border-[rgba(142,216,255,0.1)] px-0 pb-8 pt-8 md:mx-10 md:flex-row">
-            <p className="text-xs text-[#7f96aa]">
-              &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
-            </p>
+            <div className="flex flex-col items-center gap-1 md:items-start">
+              <p className="text-xs text-[#7f96aa]">
+                &copy; {new Date().getFullYear()} SpaceMap. All rights reserved.
+              </p>
+              <a
+                href="https://spacemap.earth"
+                className="text-xs text-[#7f96aa] transition-colors hover:text-[#e8f6ff]"
+              >
+                spacemap.earth
+              </a>
+            </div>
             <Link
               to="/tracker/"
               className="inline-flex items-center gap-2 text-xs text-[#9fb8cc] transition-colors hover:text-[#e8f6ff]"

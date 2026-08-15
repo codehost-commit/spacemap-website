@@ -87,9 +87,9 @@ export function SiteHeader() {
           ))}
           <Link
             to="/tracker/"
-            className="site-gradient-button ml-3 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-5 py-2 text-sm font-semibold text-[#06101a] transition-all hover:scale-105 hover:shadow-xl hover:shadow-[#4d96e8]/25"
+            className="ml-3 rounded-lg bg-[#8ed8ff] px-5 py-2 text-sm font-semibold text-[#06101a] transition-colors hover:bg-[#b6e8ff]"
           >
-            Launch Tracker
+            Open tracker
           </Link>
         </nav>
 
@@ -119,9 +119,9 @@ export function SiteHeader() {
             <Link
               to="/tracker/"
               onClick={() => setMobileOpen(false)}
-              className="site-gradient-button mt-2 rounded-xl bg-gradient-to-r from-[#4d96e8] to-[#8ed8ff] px-5 py-3 text-center text-sm font-semibold text-[#06101a]"
+              className="mt-2 rounded-lg bg-[#8ed8ff] px-5 py-3 text-center text-sm font-semibold text-[#06101a] transition-colors hover:bg-[#b6e8ff]"
             >
-              Launch Tracker
+              Open tracker
             </Link>
           </nav>
         </div>
