@@ -108,7 +108,12 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
         );
       })
       .catch((err) => {
-        console.warn(`[globe] terrain load failed for ${def.id} (asset ${assetId})`, err);
+        const msg = err instanceof Error ? err.message : String(err);
+        console.warn(
+          `[globe] terrain load failed for ${def.id} (asset ${assetId}): ${msg}. ` +
+            `If this is a 404 or "asset not found", visit ion.cesium.com/assetdepot, ` +
+            `add asset ${assetId} to your account, then redeploy.`,
+        );
       });
   } else if (!hasIonToken()) {
     console.info('[globe] no VITE_CESIUM_ION_TOKEN — falling back to smooth ellipsoid');

@@ -1,5 +1,4 @@
 import * as Cesium from 'cesium';
-import { sunDirectionInertial } from '../simulation/lunar-propagator.js';
 
 /**
  * Night-side dimming for the Moon.
@@ -24,16 +23,12 @@ import { sunDirectionInertial } from '../simulation/lunar-propagator.js';
  * line, and Cesium's own SunLight shading all in the same frame.
  */
 
-const REFRESH_MS = 250; // 4 Hz — smooth enough to track fast time-warp
 const MOON_R_M = 1_737_400;
 const SHELL_R_M = MOON_R_M + 8_000; // 8 km above surface — well clear of terrain
 
 export class LunarNightShade {
   private primitive: Cesium.Primitive | null = null;
-  private uniforms: { sunDirection: Cesium.Cartesian3 } | null = null;
-  private lastUpdateMs = 0;
   private enabled = false;
-  private tickDispose: (() => void) | null = null;
   private readonly scene: Cesium.Scene;
 
   constructor(private readonly viewer: Cesium.Viewer) {
@@ -48,13 +43,9 @@ export class LunarNightShade {
       return;
     }
     this.build();
-    this.tickDispose = this.scene.preRender.addEventListener(() => this.tick());
-    this.tick();
   }
 
   destroy(): void {
-    this.tickDispose?.();
-    this.tickDispose = null;
     this.clear();
   }
 
@@ -67,39 +58,30 @@ export class LunarNightShade {
       }
       this.primitive = null;
     }
-    this.uniforms = null;
   }
 
   private build(): void {
-    // Uniform holder — we mutate this object each frame and the shader reads
-    // its current values via the fabric uniform binding below.
-    const uniforms = { sunDirection: new Cesium.Cartesian3(1, 0, 0) };
-    this.uniforms = uniforms;
-
-    // Fabric material: shade based on angle between surface normal and sun.
-    // Positive dot = sunlit (transparent). Negative dot = night (opaque-ish
-    // black). The smoothstep gives a soft ~15° penumbra so the boundary
-    // feels physical, not like a hard clip.
+    // Fabric material: shade based on the angle between the surface normal
+    // and Cesium's sun direction, both already in eye space. `normalEC` is
+    // the vertex normal after view transform; `czm_lightDirectionEC` is the
+    // sun-toward-fragment unit vector Cesium uses for its own shading. That
+    // guarantees this shell darkens the same hemisphere Cesium considers
+    // "night" — no frame-mismatch drift, no uniform bookkeeping.
+    //
+    // shade = dot(normal, light).
+    //   > 0  → sunlit  (fully transparent)
+    //   < 0  → night   (opaque-ish black)
+    // smoothstep gives a soft ~15° penumbra so the boundary reads as a real
+    // dusk line, not a hard clip.
     const material = new Cesium.Material({
       fabric: {
         type: 'MoonNightShade',
-        uniforms: {
-          sunDirection: uniforms.sunDirection,
-        },
         source: `
           czm_material czm_getMaterial(czm_materialInput materialInput) {
             czm_material m = czm_getDefaultMaterial(materialInput);
-            vec3 n = normalize(materialInput.positionToEyeEC == vec3(0.0)
-              ? vec3(1.0, 0.0, 0.0)
-              : normalize(materialInput.normalEC));
-            // materialInput.normalEC is in eye space — we want a body-fixed
-            // comparison instead. Use positionMC (model coords = world coords
-            // here since modelMatrix is identity) as an outward-pointing normal.
-            vec3 nWorld = normalize(materialInput.positionMC);
-            vec3 sun = normalize(sunDirection);
-            float shade = dot(nWorld, sun);
-            // shade > 0 sunlit, shade < 0 night. Soft ramp: fully transparent
-            // above +0.1, fully opaque below −0.1, blended in between.
+            vec3 nEC = normalize(materialInput.normalEC);
+            vec3 lightEC = normalize(czm_lightDirectionEC);
+            float shade = dot(nEC, lightEC);
             float night = smoothstep(0.15, -0.15, shade);
             m.diffuse = vec3(0.0);
             m.alpha = night * 0.78;
@@ -129,20 +111,5 @@ export class LunarNightShade {
     });
 
     this.primitive = this.scene.primitives.add(primitive);
-  }
-
-  private tick(): void {
-    if (!this.enabled || !this.uniforms) return;
-    const now = performance.now();
-    if (now - this.lastUpdateMs < REFRESH_MS) return;
-    this.lastUpdateMs = now;
-
-    const date = Cesium.JulianDate.toDate(this.viewer.clock.currentTime);
-    const sun = sunDirectionInertial(date);
-    // Mutate in place — the fabric uniform binding reads the same Cartesian3
-    // reference we handed it at build time, so no rebind is needed.
-    this.uniforms.sunDirection.x = sun.x;
-    this.uniforms.sunDirection.y = sun.y;
-    this.uniforms.sunDirection.z = sun.z;
   }
 }
