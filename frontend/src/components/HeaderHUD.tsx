@@ -5,6 +5,8 @@ import { adminLog } from '../admin/admin-log.js';
 import { BrandMark } from './BrandMark.js';
 import { LUNAR_ORBITERS } from '../simulation/lunar-catalog.js';
 import { LUNAR_SURFACE_SITES } from '../simulation/lunar-surface-catalog.js';
+import { MARS_ORBITERS } from '../simulation/mars-catalog.js';
+import { MARS_SURFACE_SITES } from '../simulation/mars-surface-catalog.js';
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -19,6 +21,7 @@ export function HeaderHUD() {
   const paused = useStore((s) => s.simPaused);
   const body = useStore((s) => s.body);
   const surfaceOn = useStore((s) => s.lunarSurfaceOn);
+  const marsSurfaceOn = useStore((s) => s.marsSurfaceOn);
   const isMoon = body === 'moon';
   const isMars = body === 'mars';
   const isPlanetaryOther = isMoon || isMars;
@@ -87,13 +90,12 @@ export function HeaderHUD() {
           </>
         ) : isMars ? (
           <>
-            {/*
-              Mars stats — Part 1 (foundation) shows the base numbers we
-              know now (a placeholder body label + Viking mosaic resolution).
-              Orbiter and surface counts drop in with Part 2.
-            */}
-            <Stat label="Body" value="Mars" />
-            <Stat label="Imagery" value="232 m/px" />
+            {/* Mars stats — same shape as Moon, swapped for the Mars catalogs. */}
+            <Stat label="Orbiters" value={MARS_ORBITERS.length.toString()} />
+            <Stat
+              label="Surface sites"
+              value={marsSurfaceOn ? MARS_SURFACE_SITES.length.toString() : 'off'}
+            />
           </>
         ) : (
           <>

@@ -19,6 +19,9 @@ import { Cities } from '../cesium/cities.js';
 import { GroundStations } from '../cesium/ground-stations.js';
 import { CloudOverlay } from '../cesium/clouds.js';
 import { LunarSatellites, type LunarPickTag } from '../cesium/lunar-satellites.js';
+import { MarsSatellites, type MarsPickTag } from '../cesium/mars-satellites.js';
+import { MarsOrbitTrail } from '../cesium/mars-orbit-trail.js';
+import { MarsSurfaceMarkers, type MarsSurfacePickTag } from '../cesium/mars-surface-markers.js';
 import { LunarOrbitTrail } from '../cesium/lunar-orbit-trail.js';
 import { LunarTerminator } from '../cesium/lunar-terminator.js';
 import { MarsTerminator } from '../cesium/mars-terminator.js';
@@ -89,8 +92,11 @@ export function GlobeCanvas() {
     const lunarSats = isMoon ? new LunarSatellites(viewer) : null;
     const lunarTrail = isMoon ? new LunarOrbitTrail(viewer) : null;
     const lunarTerminator = isMoon ? new LunarTerminator(viewer) : null;
-    // Mars-only systems (Part 1 = terminator only; orbiters + surface land in Part 2).
+    // Mars-only systems.
     const marsTerminator = isMars ? new MarsTerminator(viewer) : null;
+    const marsSats = isMars ? new MarsSatellites(viewer) : null;
+    const marsTrail = isMars ? new MarsOrbitTrail(viewer) : null;
+    const marsSurface = isMars ? new MarsSurfaceMarkers(viewer) : null;
     const lunarSurface = isMoon ? new LunarSurfaceMarkers(viewer) : null;
 
     const uninstallFocus = isEarth && layer ? installFocusApi(viewer, layer) : () => {};
@@ -196,6 +202,8 @@ export function GlobeCanvas() {
       | { kind: 'earth'; noradId: number }
       | { kind: 'moon-orbiter'; orbiterId: string }
       | { kind: 'moon-surface'; surfaceId: string }
+      | { kind: 'mars-orbiter'; orbiterId: string }
+      | { kind: 'mars-surface'; surfaceId: string }
       | null;
     const pickWithOffsets = (
       pos: Cesium.Cartesian2,
@@ -209,8 +217,6 @@ export function GlobeCanvas() {
         const rawId = picked.id ?? picked.primitive?.id;
         if (typeof rawId === 'number') return { kind: 'earth', noradId: rawId };
         if (rawId && typeof rawId === 'object' && (rawId as { lunar?: unknown }).lunar) {
-          // Orbiter and surface tags both carry `lunar: true` — branch on
-          // which optional ID field is present.
           const orbiterId = (rawId as LunarPickTag).orbiterId;
           if (typeof orbiterId === 'string') {
             return { kind: 'moon-orbiter', orbiterId };
@@ -218,6 +224,16 @@ export function GlobeCanvas() {
           const surfaceId = (rawId as LunarSurfacePickTag).surfaceId;
           if (typeof surfaceId === 'string') {
             return { kind: 'moon-surface', surfaceId };
+          }
+        }
+        if (rawId && typeof rawId === 'object' && (rawId as { mars?: unknown }).mars) {
+          const orbiterId = (rawId as MarsPickTag).orbiterId;
+          if (typeof orbiterId === 'string') {
+            return { kind: 'mars-orbiter', orbiterId };
+          }
+          const surfaceId = (rawId as MarsSurfacePickTag).surfaceId;
+          if (typeof surfaceId === 'string') {
+            return { kind: 'mars-surface', surfaceId };
           }
         }
       }
@@ -244,6 +260,10 @@ export function GlobeCanvas() {
         state.setLunarSelection(hit.orbiterId);
       } else if (hit.kind === 'moon-surface' && isMoon) {
         state.setLunarSurfaceSelection(hit.surfaceId);
+      } else if (hit.kind === 'mars-orbiter' && isMars) {
+        state.setMarsSelection(hit.orbiterId);
+      } else if (hit.kind === 'mars-surface' && isMars) {
+        state.setMarsSurfaceSelection(hit.surfaceId);
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -261,22 +281,30 @@ export function GlobeCanvas() {
       const hit = pickForHover(ev.endPosition);
 
       // Route the hover to the layer that owns the picked primitive.
+      const clearAll = () => {
+        layer?.setHovered(null);
+        lunarSats?.setHovered(null);
+        lunarSurface?.setHovered(null);
+        marsSats?.setHovered(null);
+        marsSurface?.setHovered(null);
+      };
       if (hit?.kind === 'earth' && isEarth) {
+        clearAll();
         layer?.setHovered(hit.noradId);
-        lunarSats?.setHovered(null);
-        lunarSurface?.setHovered(null);
       } else if (hit?.kind === 'moon-orbiter' && isMoon) {
+        clearAll();
         lunarSats?.setHovered(hit.orbiterId);
-        lunarSurface?.setHovered(null);
-        layer?.setHovered(null);
       } else if (hit?.kind === 'moon-surface' && isMoon) {
+        clearAll();
         lunarSurface?.setHovered(hit.surfaceId);
-        lunarSats?.setHovered(null);
-        layer?.setHovered(null);
+      } else if (hit?.kind === 'mars-orbiter' && isMars) {
+        clearAll();
+        marsSats?.setHovered(hit.orbiterId);
+      } else if (hit?.kind === 'mars-surface' && isMars) {
+        clearAll();
+        marsSurface?.setHovered(hit.surfaceId);
       } else {
-        layer?.setHovered(null);
-        lunarSats?.setHovered(null);
-        lunarSurface?.setHovered(null);
+        clearAll();
       }
       viewer.scene.canvas.style.cursor = hit != null ? 'pointer' : '';
 
@@ -350,6 +378,10 @@ export function GlobeCanvas() {
     let lastLunarSurfaceOn = useStore.getState().lunarSurfaceOn;
     let lastLunarSurfaceKindFilter = useStore.getState().lunarSurfaceKindFilter;
     let lastLunarSurfaceSelection: string | null = null;
+    let lastMarsSelection: string | null = null;
+    let lastMarsSurfaceOn = useStore.getState().marsSurfaceOn;
+    let lastMarsSurfaceKindFilter = useStore.getState().marsSurfaceKindFilter;
+    let lastMarsSurfaceSelection: string | null = null;
     let lastCameraMode = 'orbit';
     let lastTrailMode = '';
     let lastHeatmap = false;
@@ -374,7 +406,13 @@ export function GlobeCanvas() {
       lastLunarSelection = state0.selectedLunarId;
     }
     if (isMars) {
-      marsTerminator?.setEnabled(useStore.getState().terminatorOn);
+      const state0 = useStore.getState();
+      marsTerminator?.setEnabled(state0.terminatorOn);
+      marsSats?.setSelected(state0.selectedMarsId);
+      marsTrail?.setFromOrbiterId(state0.trailMode === 'off' ? null : state0.selectedMarsId);
+      marsSurface?.setEnabled(state0.marsSurfaceOn);
+      marsSurface?.setKindFilter(state0.marsSurfaceKindFilter);
+      marsSurface?.setSelected(state0.selectedMarsSurfaceId);
     }
 
     const unsubUi = useStore.subscribe((s) => {
@@ -389,6 +427,28 @@ export function GlobeCanvas() {
           lastTerminator = s.terminatorOn;
           marsTerminator?.setEnabled(s.terminatorOn);
         }
+        if (s.selectedMarsId !== lastMarsSelection || s.trailMode !== lastTrailMode) {
+          lastMarsSelection = s.selectedMarsId;
+          marsSats?.setSelected(s.selectedMarsId);
+          const showTrail = s.trailMode !== 'off';
+          marsTrail?.setFromOrbiterId(showTrail ? s.selectedMarsId : null);
+        }
+        if (s.trailMode !== lastTrailMode) {
+          lastTrailMode = s.trailMode;
+        }
+        if (s.marsSurfaceOn !== lastMarsSurfaceOn) {
+          lastMarsSurfaceOn = s.marsSurfaceOn;
+          marsSurface?.setEnabled(s.marsSurfaceOn);
+        }
+        if (s.marsSurfaceKindFilter !== lastMarsSurfaceKindFilter) {
+          lastMarsSurfaceKindFilter = s.marsSurfaceKindFilter;
+          marsSurface?.setKindFilter(s.marsSurfaceKindFilter);
+        }
+        if (s.selectedMarsSurfaceId !== lastMarsSurfaceSelection) {
+          lastMarsSurfaceSelection = s.selectedMarsSurfaceId;
+          marsSurface?.setSelected(s.selectedMarsSurfaceId);
+        }
+        return;
       }
 
       if (isMoon) {
@@ -524,6 +584,9 @@ export function GlobeCanvas() {
       lunarTrail?.destroy();
       lunarTerminator?.destroy();
       marsTerminator?.destroy();
+      marsSats?.destroy();
+      marsTrail?.destroy();
+      marsSurface?.destroy();
       lunarSurface?.destroy();
       lunarSats?.destroy();
       imagery.destroy();

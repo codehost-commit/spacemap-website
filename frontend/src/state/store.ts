@@ -9,6 +9,8 @@ import { CATALOG_OBJECT_TYPES, ORBIT_CLASSES } from '@spacemap/shared';
 import type { BodyId } from '../cesium/bodies.js';
 import type { LunarOrbiterKind } from '../simulation/lunar-catalog.js';
 import type { LunarSiteKind } from '../simulation/lunar-surface-catalog.js';
+import type { MarsOrbiterKind } from '../simulation/mars-catalog.js';
+import type { MarsSiteKind } from '../simulation/mars-surface-catalog.js';
 
 export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type TrailMode = 'off' | 'selected' | 'visible';
@@ -81,6 +83,15 @@ interface StoreState {
   lunarSurfaceKindFilter: Set<LunarSiteKind>;
   lunarSurfaceOn: boolean;
 
+  // Mars selection + filter (only meaningful when body === 'mars'). Same
+  // shape as the lunar state: separate namespaces so IDs, kinds, and
+  // surface toggles never collide across bodies.
+  selectedMarsId: string | null;
+  marsKindFilter: Set<MarsOrbiterKind>;
+  selectedMarsSurfaceId: string | null;
+  marsSurfaceKindFilter: Set<MarsSiteKind>;
+  marsSurfaceOn: boolean;
+
   savedIds: Set<number>;
   notifyEnabled: boolean;
   openOverlays: Set<OverlayId>;
@@ -131,6 +142,13 @@ interface StoreState {
   toggleLunarSurfaceKindFilter: (k: LunarSiteKind) => void;
   setLunarSurfaceKindFilter: (k: Iterable<LunarSiteKind>) => void;
   setLunarSurfaceOn: (v: boolean) => void;
+  setMarsSelection: (id: string | null) => void;
+  toggleMarsKindFilter: (k: MarsOrbiterKind) => void;
+  setMarsKindFilter: (k: Iterable<MarsOrbiterKind>) => void;
+  setMarsSurfaceSelection: (id: string | null) => void;
+  toggleMarsSurfaceKindFilter: (k: MarsSiteKind) => void;
+  setMarsSurfaceKindFilter: (k: Iterable<MarsSiteKind>) => void;
+  setMarsSurfaceOn: (v: boolean) => void;
 
   toggleSaved: (id: number) => void;
   loadSaved: (ids: Iterable<number>) => void;
@@ -150,6 +168,13 @@ const defaultLunarKindFilter = new Set<LunarOrbiterKind>([
   'nrho',
   'lander-support',
 ]);
+const defaultMarsKindFilter = new Set<MarsOrbiterKind>([
+  'science',
+  'weather',
+  'communications',
+  'crewed-precursor',
+]);
+const defaultMarsSurfaceKindFilter = new Set<MarsSiteKind>(['rover', 'lander', 'crash']);
 const defaultLunarSurfaceKindFilter = new Set<LunarSiteKind>([
   'crewed',
   'lander',
@@ -201,6 +226,12 @@ export const useStore = create<StoreState>((set) => ({
   selectedLunarSurfaceId: null,
   lunarSurfaceKindFilter: new Set(defaultLunarSurfaceKindFilter),
   lunarSurfaceOn: true,
+
+  selectedMarsId: null,
+  marsKindFilter: new Set(defaultMarsKindFilter),
+  selectedMarsSurfaceId: null,
+  marsSurfaceKindFilter: new Set(defaultMarsSurfaceKindFilter),
+  marsSurfaceOn: true,
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -327,6 +358,8 @@ export const useStore = create<StoreState>((set) => ({
       compareNoradId: body === s.body ? s.compareNoradId : null,
       selectedLunarId: body === s.body ? s.selectedLunarId : null,
       selectedLunarSurfaceId: body === s.body ? s.selectedLunarSurfaceId : null,
+      selectedMarsId: body === s.body ? s.selectedMarsId : null,
+      selectedMarsSurfaceId: body === s.body ? s.selectedMarsSurfaceId : null,
       cameraMode: body === s.body ? s.cameraMode : 'orbit',
       imageryReady: body === s.body ? s.imageryReady : false,
     })),
@@ -349,6 +382,26 @@ export const useStore = create<StoreState>((set) => ({
     }),
   setLunarSurfaceKindFilter: (kinds) => set({ lunarSurfaceKindFilter: new Set(kinds) }),
   setLunarSurfaceOn: (lunarSurfaceOn) => set({ lunarSurfaceOn }),
+
+  setMarsSelection: (id) => set({ selectedMarsId: id }),
+  toggleMarsKindFilter: (kind) =>
+    set((s) => {
+      const next = new Set(s.marsKindFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return { marsKindFilter: next };
+    }),
+  setMarsKindFilter: (kinds) => set({ marsKindFilter: new Set(kinds) }),
+  setMarsSurfaceSelection: (id) => set({ selectedMarsSurfaceId: id }),
+  toggleMarsSurfaceKindFilter: (kind) =>
+    set((s) => {
+      const next = new Set(s.marsSurfaceKindFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return { marsSurfaceKindFilter: next };
+    }),
+  setMarsSurfaceKindFilter: (kinds) => set({ marsSurfaceKindFilter: new Set(kinds) }),
+  setMarsSurfaceOn: (marsSurfaceOn) => set({ marsSurfaceOn }),
 
   toggleSaved: (id) =>
     set((s) => {

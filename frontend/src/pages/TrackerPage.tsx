@@ -21,12 +21,20 @@ import { BodySwitcher } from '../components/BodySwitcher.js';
 import { LunarFilterPanel } from '../components/LunarFilterPanel.js';
 import { LunarTelemetryPanel } from '../components/LunarTelemetryPanel.js';
 import { LunarSurfacePanel } from '../components/LunarSurfacePanel.js';
+import { MarsFilterPanel } from '../components/MarsFilterPanel.js';
+import { MarsTelemetryPanel } from '../components/MarsTelemetryPanel.js';
+import { MarsSurfacePanel } from '../components/MarsSurfacePanel.js';
 import { useStore } from '../state/store.js';
 import { LUNAR_ORBITERS, LUNAR_KIND_COLOR } from '../simulation/lunar-catalog.js';
 import {
   LUNAR_SITE_KIND_COLOR,
   LUNAR_SURFACE_SITES,
 } from '../simulation/lunar-surface-catalog.js';
+import { MARS_ORBITERS, MARS_KIND_COLOR } from '../simulation/mars-catalog.js';
+import {
+  MARS_SITE_KIND_COLOR,
+  MARS_SURFACE_SITES,
+} from '../simulation/mars-surface-catalog.js';
 
 const TRACKER_GUIDE_KEY = 'spacemap.tracker.onboarding.dismissed.v1';
 
@@ -185,20 +193,17 @@ export function TrackerPage() {
       {isMoon && <LunarTelemetryPanel />}
       {isMoon && <LunarSurfacePanel />}
 
-      {/*
-        Mars — Part 1 (foundation) ships imagery + terminator + switcher.
-        Orbiters, surface markers, and their panels land in Part 2. Until
-        then we show a small floating banner so it's clear more is on the
-        way rather than looking empty by accident.
-      */}
+      {/* Mars chrome — mirror the Moon layout: filter + rosters in the
+          right rail, telemetry + surface info panels on the left. */}
       {isMars && (
-        <div className="pointer-events-none absolute bottom-24 left-1/2 z-20 -translate-x-1/2">
-          <div className="pointer-events-auto rounded-full border border-space-border bg-space-panel/92 px-4 py-2 font-mono text-[11px] text-space-dim shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-            <span className="text-space-accent">Mars</span> — Viking MDIM 2.1 basemap live.
-            Orbiters &amp; surface sites arriving next.
-          </div>
+        <div className="spacemap-right-rail pointer-events-none absolute right-4 top-40 bottom-24 z-20 flex w-[19.25rem] flex-col gap-4">
+          <MarsFilterPanel />
+          <MarsOrbiterList />
+          <MarsSurfaceList />
         </div>
       )}
+      {isMars && <MarsTelemetryPanel />}
+      {isMars && <MarsSurfacePanel />}
 
       <TimeControls />
       <TimelineScrubber />
@@ -331,6 +336,132 @@ function LunarSurfaceList() {
                     <span className="text-[10px] text-space-dim">
                       {site.date.slice(0, 4)}
                     </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
+/** Mars roster — same shape as LunarOrbiterList, reading from Mars state. */
+function MarsOrbiterList() {
+  const selectedId = useStore((s) => s.selectedMarsId);
+  const setSelected = useStore((s) => s.setMarsSelection);
+  const kindFilter = useStore((s) => s.marsKindFilter);
+
+  const visible = MARS_ORBITERS.filter((o) => kindFilter.has(o.kind));
+
+  return (
+    <aside className="spacemap-filter pointer-events-auto shrink-0 rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center justify-between text-[9px] uppercase tracking-widest text-space-dim">
+        <span>Active Mars orbiters</span>
+        <span>{visible.length}</span>
+      </div>
+      <div className="space-y-1">
+        {visible.map((o) => {
+          const isSelected = selectedId === o.id;
+          const color = MARS_KIND_COLOR[o.kind];
+          return (
+            <button
+              key={o.id}
+              onClick={() => setSelected(isSelected ? null : o.id)}
+              className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition ${
+                isSelected
+                  ? 'bg-space-accent/15 text-space-text shadow-[inset_0_0_0_1px_rgba(141,216,255,0.35)]'
+                  : 'text-space-dim hover:bg-white/5 hover:text-space-text'
+              }`}
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  background: color,
+                  boxShadow: isSelected ? `0 0 8px ${color}` : 'none',
+                }}
+              />
+              <span className="min-w-0 flex-1 truncate">{o.name}</span>
+              <span className="text-[10px] text-space-dim">{o.agency}</span>
+            </button>
+          );
+        })}
+        {visible.length === 0 && (
+          <div className="rounded-lg border border-white/5 bg-white/5 px-2 py-3 text-center text-[10px] text-space-dim">
+            All mission types are hidden — enable at least one above.
+          </div>
+        )}
+      </div>
+    </aside>
+  );
+}
+
+/**
+ * Mars surface roster — grouped by decade the same way the lunar list is,
+ * so a user swapping bodies keeps the same "reads like an exploration
+ * timeline" mental model.
+ */
+function MarsSurfaceList() {
+  const selectedId = useStore((s) => s.selectedMarsSurfaceId);
+  const setSelected = useStore((s) => s.setMarsSurfaceSelection);
+  const surfaceOn = useStore((s) => s.marsSurfaceOn);
+  const kindFilter = useStore((s) => s.marsSurfaceKindFilter);
+
+  if (!surfaceOn) return null;
+
+  const visible = MARS_SURFACE_SITES.filter((s) => kindFilter.has(s.kind));
+
+  const byDecade = new Map<string, typeof MARS_SURFACE_SITES[number][]>();
+  for (const site of visible) {
+    const year = parseInt(site.date.slice(0, 4), 10);
+    const decade = `${Math.floor(year / 10) * 10}s`;
+    const bucket = byDecade.get(decade) ?? [];
+    bucket.push(site);
+    byDecade.set(decade, bucket);
+  }
+  const decades = [...byDecade.keys()].sort();
+
+  return (
+    <aside className="spacemap-filter pointer-events-auto flex min-h-0 flex-1 flex-col rounded-2xl border border-space-border bg-space-panel/92 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2 text-[9px] uppercase tracking-widest text-space-dim">
+        <span>Surface sites</span>
+        <span>{visible.length}</span>
+      </div>
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
+        {decades.length === 0 && (
+          <div className="rounded-lg border border-white/5 bg-white/5 px-2 py-3 text-center text-[10px] text-space-dim">
+            All site types are hidden — enable at least one above.
+          </div>
+        )}
+        {decades.map((decade) => (
+          <div key={decade} className="mb-2">
+            <div className="mb-1 px-1 text-[9px] uppercase tracking-widest text-space-accent/70">
+              {decade}
+            </div>
+            <div className="space-y-0.5">
+              {byDecade.get(decade)!.map((site) => {
+                const isSelected = selectedId === site.id;
+                const color = MARS_SITE_KIND_COLOR[site.kind];
+                return (
+                  <button
+                    key={site.id}
+                    onClick={() => setSelected(isSelected ? null : site.id)}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition ${
+                      isSelected
+                        ? 'bg-space-accent/15 text-space-text shadow-[inset_0_0_0_1px_rgba(141,216,255,0.35)]'
+                        : 'text-space-dim hover:bg-white/5 hover:text-space-text'
+                    }`}
+                  >
+                    <span
+                      className="h-2 w-2 shrink-0 rounded-full"
+                      style={{
+                        background: color,
+                        boxShadow: isSelected ? `0 0 8px ${color}` : 'none',
+                      }}
+                    />
+                    <span className="min-w-0 flex-1 truncate">{site.name}</span>
+                    <span className="text-[10px] text-space-dim">{site.date.slice(0, 4)}</span>
                   </button>
                 );
               })}
