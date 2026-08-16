@@ -18,7 +18,10 @@ import { AdminConsole } from '../components/AdminConsole.js';
 import { TimelineScrubber } from '../components/TimelineScrubber.js';
 import { SystemPill } from '../components/SystemPill.js';
 import { BodySwitcher } from '../components/BodySwitcher.js';
+import { LunarFilterPanel } from '../components/LunarFilterPanel.js';
+import { LunarTelemetryPanel } from '../components/LunarTelemetryPanel.js';
 import { useStore } from '../state/store.js';
+import { LUNAR_ORBITERS, LUNAR_KIND_COLOR } from '../simulation/lunar-catalog.js';
 
 const TRACKER_GUIDE_KEY = 'spacemap.tracker.onboarding.dismissed.v1';
 
@@ -27,8 +30,8 @@ export function TrackerPage() {
   const [showGuide, setShowGuide] = useState(false);
   const body = useStore((s) => s.body);
   const isEarth = body === 'earth';
+  const isMoon = body === 'moon';
 
-  // Lock body scrolling for the fullscreen tracker
   useEffect(() => {
     document.body.classList.add('tracker-mode');
     return () => document.body.classList.remove('tracker-mode');
@@ -61,8 +64,6 @@ export function TrackerPage() {
         key={body} — remount GlobeCanvas when the user swaps bodies. The
         cleanup path in GlobeCanvas fully tears down the Cesium viewer, and
         a fresh mount boots one against the new body's ellipsoid + imagery.
-        Cheaper to write than trying to hot-swap Cesium's globe in-place,
-        and gives us a clean slate for every body.
       */}
       <GlobeCanvas key={body} />
       <HeaderHUD />
@@ -149,7 +150,8 @@ export function TrackerPage() {
           </div>
         </div>
       )}
-      {!isEarth && <MoonModeBanner />}
+
+      {/* Earth-only chrome */}
       {isEarth && <SearchBox />}
       {isEarth && (
         <div className="spacemap-right-rail pointer-events-none absolute right-4 top-40 z-20 flex w-[19.25rem] flex-col gap-4">
@@ -164,45 +166,75 @@ export function TrackerPage() {
       {isEarth && <ConjunctionLeaderboard />}
       {isEarth && <LaunchTracker />}
       {isEarth && <PassPredictions />}
+      {isEarth && <CatalogStatusBanner />}
+
+      {/* Moon-only chrome */}
+      {isMoon && (
+        <div className="spacemap-right-rail pointer-events-none absolute right-4 top-40 z-20 flex w-[19.25rem] flex-col gap-4">
+          <LunarFilterPanel />
+          <LunarOrbiterList />
+        </div>
+      )}
+      {isMoon && <LunarTelemetryPanel />}
+
       <TimeControls />
       <TimelineScrubber />
-      {isEarth && <CatalogStatusBanner />}
       <AdminConsole />
     </div>
   );
 }
 
 /**
- * "You're on the Moon now" primer — replaces the Earth right-rail while
- * Beyond-Earth Part 1 is active. Explains what's live (detailed terrain)
- * and what's still coming (orbiters, surface markers).
+ * Compact roster of every lunar orbiter — clicking a row selects it,
+ * exactly as clicking the dot on the globe does. Lives in the right rail
+ * beneath the filter panel; small enough that we can just render the full
+ * list instead of virtualising.
  */
-function MoonModeBanner() {
+function LunarOrbiterList() {
+  const selectedId = useStore((s) => s.selectedLunarId);
+  const setSelected = useStore((s) => s.setLunarSelection);
+  const kindFilter = useStore((s) => s.lunarKindFilter);
+
+  const visible = LUNAR_ORBITERS.filter((o) => kindFilter.has(o.kind));
+
   return (
-    <div className="pointer-events-auto absolute right-4 top-40 z-20 w-[19.25rem] rounded-2xl border border-space-border bg-space-panel/92 p-4 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-      <div className="text-[9px] uppercase tracking-widest text-space-accent">Beyond Earth · Part 1</div>
-      <div className="mt-2 text-sm font-semibold text-white">Welcome to the Moon.</div>
-      <p className="mt-2 leading-relaxed text-space-dim">
-        You're looking at NASA's LRO WAC global mosaic — 100 m per pixel of real lunar
-        surface, streamed live from Moon Trek. Every crater below 100 m across is here.
-      </p>
-      <ul className="mt-3 space-y-1.5 text-[11px] text-space-dim">
-        <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400 shadow-[0_0_6px] shadow-emerald-400" />
-          <span>Detailed lunar terrain — <span className="text-space-text">live</span></span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-space-warn/70" />
-          <span>Lunar orbiters (LRO, Danuri, Chandrayaan) — <span className="text-space-text">Part 2</span></span>
-        </li>
-        <li className="flex items-start gap-2">
-          <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-space-warn/40" />
-          <span>Surface markers: landers, Apollo sites, crash sites — <span className="text-space-text">Part 3</span></span>
-        </li>
-      </ul>
-      <p className="mt-3 border-t border-white/5 pt-3 text-[10px] leading-relaxed text-space-dim">
-        Drag to rotate · scroll to zoom · switch back to Earth any time above.
-      </p>
-    </div>
+    <aside className="spacemap-filter pointer-events-auto rounded-2xl border border-space-border bg-space-panel/92 p-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+      <div className="mb-2 flex items-center justify-between text-[9px] uppercase tracking-widest text-space-dim">
+        <span>Active lunar orbiters</span>
+        <span>{visible.length}</span>
+      </div>
+      <div className="space-y-1">
+        {visible.map((o) => {
+          const isSelected = selectedId === o.id;
+          const color = LUNAR_KIND_COLOR[o.kind];
+          return (
+            <button
+              key={o.id}
+              onClick={() => setSelected(isSelected ? null : o.id)}
+              className={`flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition ${
+                isSelected
+                  ? 'bg-space-accent/15 text-space-text shadow-[inset_0_0_0_1px_rgba(141,216,255,0.35)]'
+                  : 'text-space-dim hover:bg-white/5 hover:text-space-text'
+              }`}
+            >
+              <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                  background: color,
+                  boxShadow: isSelected ? `0 0 8px ${color}` : 'none',
+                }}
+              />
+              <span className="min-w-0 flex-1 truncate">{o.name}</span>
+              <span className="text-[10px] text-space-dim">{o.agency}</span>
+            </button>
+          );
+        })}
+        {visible.length === 0 && (
+          <div className="rounded-lg border border-white/5 bg-white/5 px-2 py-3 text-center text-[10px] text-space-dim">
+            All mission types are hidden — enable at least one above.
+          </div>
+        )}
+      </div>
+    </aside>
   );
 }

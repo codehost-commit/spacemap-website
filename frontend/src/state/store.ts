@@ -7,6 +7,7 @@ import type {
 } from '@spacemap/shared';
 import { CATALOG_OBJECT_TYPES, ORBIT_CLASSES } from '@spacemap/shared';
 import type { BodyId } from '../cesium/bodies.js';
+import type { LunarOrbiterKind } from '../simulation/lunar-catalog.js';
 
 export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type TrailMode = 'off' | 'selected' | 'visible';
@@ -64,11 +65,15 @@ interface StoreState {
   cloudsOn: boolean;
   imageryId: string;
 
-  // Beyond Earth — which body is the globe currently rendering. Earth is the
-  // default and behaves exactly like the original tracker; Moon swaps the
-  // globe for a Moon-radius sphere textured with LRO WAC imagery and hides
-  // every Earth-specific overlay while it's active.
+  // Beyond Earth — which body is the globe currently rendering.
   body: BodyId;
+
+  // Lunar selection + filter (only meaningful when body === 'moon').
+  // Keeping these separate from the Earth NORAD IDs avoids collisions and
+  // makes it obvious at the type level which catalogue a piece of UI is
+  // reading from.
+  selectedLunarId: string | null;
+  lunarKindFilter: Set<LunarOrbiterKind>;
 
   savedIds: Set<number>;
   notifyEnabled: boolean;
@@ -113,6 +118,9 @@ interface StoreState {
   setClouds: (v: boolean) => void;
   setImagery: (id: string) => void;
   setBody: (b: BodyId) => void;
+  setLunarSelection: (id: string | null) => void;
+  toggleLunarKindFilter: (k: LunarOrbiterKind) => void;
+  setLunarKindFilter: (k: Iterable<LunarOrbiterKind>) => void;
 
   toggleSaved: (id: number) => void;
   loadSaved: (ids: Iterable<number>) => void;
@@ -126,6 +134,12 @@ interface StoreState {
 
 const defaultFilter = new Set<OrbitClass>(ORBIT_CLASSES);
 const defaultObjectFilter = new Set<CatalogObjectType>(CATALOG_OBJECT_TYPES);
+const defaultLunarKindFilter = new Set<LunarOrbiterKind>([
+  'science',
+  'relay',
+  'nrho',
+  'lander-support',
+]);
 
 export const useStore = create<StoreState>((set) => ({
   catalogStatus: 'idle',
@@ -156,8 +170,6 @@ export const useStore = create<StoreState>((set) => ({
   objectFilter: new Set(defaultObjectFilter),
   trailMode: 'selected',
   heatmapOn: false,
-  // Cartographic overlays default ON — they read as "professional map" and
-  // users can flick them off from the filter panel if they want a clean look.
   terminatorOn: true,
   graticuleOn: true,
   countriesOn: true,
@@ -166,6 +178,9 @@ export const useStore = create<StoreState>((set) => ({
   cloudsOn: true,
   imageryId: 'arcgis',
   body: 'earth',
+
+  selectedLunarId: null,
+  lunarKindFilter: new Set(defaultLunarKindFilter),
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -288,15 +303,21 @@ export const useStore = create<StoreState>((set) => ({
   setBody: (body) =>
     set((s) => ({
       body,
-      // Switching bodies drops the current selection — the selected NORAD ID
-      // belongs to an Earth catalog and would be meaningless in Moon view.
       selectedNoradId: body === s.body ? s.selectedNoradId : null,
       compareNoradId: body === s.body ? s.compareNoradId : null,
+      selectedLunarId: body === s.body ? s.selectedLunarId : null,
       cameraMode: body === s.body ? s.cameraMode : 'orbit',
-      // Force re-detection of the "first tiles rendered" moment so the
-      // loading screen dismisses cleanly for the new imagery layer.
       imageryReady: body === s.body ? s.imageryReady : false,
     })),
+  setLunarSelection: (id) => set({ selectedLunarId: id }),
+  toggleLunarKindFilter: (kind) =>
+    set((s) => {
+      const next = new Set(s.lunarKindFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return { lunarKindFilter: next };
+    }),
+  setLunarKindFilter: (kinds) => set({ lunarKindFilter: new Set(kinds) }),
 
   toggleSaved: (id) =>
     set((s) => {
@@ -309,9 +330,6 @@ export const useStore = create<StoreState>((set) => ({
   setNotifyEnabled: (notifyEnabled) => set({ notifyEnabled }),
   toggleOverlay: (id) =>
     set((s) => {
-      // Only one right-rail overlay open at a time — opening a new one
-      // implicitly closes whatever was open before, so panels never stack
-      // on top of each other.
       if (s.openOverlays.has(id)) return { openOverlays: new Set() };
       return { openOverlays: new Set([id]) };
     }),

@@ -18,6 +18,9 @@ import { Countries } from '../cesium/countries.js';
 import { Cities } from '../cesium/cities.js';
 import { GroundStations } from '../cesium/ground-stations.js';
 import { CloudOverlay } from '../cesium/clouds.js';
+import { LunarSatellites, type LunarPickTag } from '../cesium/lunar-satellites.js';
+import { LunarOrbitTrail } from '../cesium/lunar-orbit-trail.js';
+import { LunarTerminator } from '../cesium/lunar-terminator.js';
 import { Simulation, installSimulation } from '../simulation/simulation.js';
 import { useStore } from '../state/store.js';
 import { installFocusApi } from '../cesium/focus.js';
@@ -30,14 +33,19 @@ import { installUrlState } from '../state/url-state.js';
 import { registerInstruments } from '../admin/registry.js';
 import { installInstrumentation } from '../admin/instrumentation.js';
 import { getClockControls } from '../simulation/clock-controls.js';
+import { findLunarOrbiter } from '../simulation/lunar-catalog.js';
 
 /**
- * The Cesium canvas. Everything Earth-specific — satellite layer, orbit
- * trails, follow / POV camera modes, countries, cities, clouds, ground
- * stations, terminator — only spins up when the active body is Earth. When
- * the store's `body` flips to 'moon' the whole component is remounted (via
- * a React `key={body}` on the parent), which triggers this effect's cleanup
- * and boots a fresh viewer against the Moon ellipsoid + LRO WAC imagery.
+ * The Cesium canvas. Two personalities, chosen by the store's `body`:
+ *
+ *   Earth — satellite layer, orbit trails, follow / POV, countries, cities,
+ *           clouds, ground stations, terminator, ISS cam, launches.
+ *   Moon  — lunar orbiter layer, lunar orbit trail, lunar terminator, plus
+ *           the star + planet backdrop and the graticule.
+ *
+ * When the store's `body` flips, TrackerPage remounts this component (via
+ * a React key), which triggers the cleanup path in this effect and boots
+ * a fresh viewer against the new body's ellipsoid + imagery + overlays.
  */
 export function GlobeCanvas() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,17 +55,14 @@ export function GlobeCanvas() {
     if (!containerRef.current) return;
     const body = useStore.getState().body;
     const isEarth = body === 'earth';
+    const isMoon = body === 'moon';
     const viewer = createViewer(containerRef.current, body);
     const imagery = new BaseImageryController(viewer);
     const stars = new StarCatalog(viewer);
     const planets = new Planets(viewer);
-    // Graticule works for any spherical body — the equator/prime-meridian
-    // idea is universal, so we keep it available on the Moon too.
     const graticule = new Graticule(viewer.scene);
 
-    // Earth-only systems. Moon view intentionally leaves these null; they
-    // depend on Earth satellite data, WGS-84 coordinates, or Earth-specific
-    // cartography that would just clutter the lunar globe.
+    // Earth-only systems.
     const layer = isEarth ? new SatelliteLayer(viewer.scene) : null;
     const orbitRibbon = isEarth ? new OrbitTrail(viewer.scene) : null;
     const sonar = isEarth ? new SonarSweep(viewer.scene) : null;
@@ -73,6 +78,11 @@ export function GlobeCanvas() {
     const clouds = isEarth ? new CloudOverlay(viewer) : null;
     const sim = isEarth ? new Simulation(viewer) : null;
 
+    // Moon-only systems.
+    const lunarSats = isMoon ? new LunarSatellites(viewer) : null;
+    const lunarTrail = isMoon ? new LunarOrbitTrail(viewer) : null;
+    const lunarTerminator = isMoon ? new LunarTerminator(viewer) : null;
+
     const uninstallFocus = isEarth && layer ? installFocusApi(viewer, layer) : () => {};
     const uninstallClock = installClockControls(viewer);
     const uninstallSim = isEarth && sim ? installSimulation(sim) : () => {};
@@ -84,8 +94,6 @@ export function GlobeCanvas() {
     const uninstallKeyboard = installKeyboardShortcuts();
     const uninstallUrl = installUrlState();
 
-    // Admin console instrumentation — shared refs + engine event stream.
-    // Only meaningful when the Earth simulation is running.
     const clock = getClockControls();
     const uninstallRegistry =
       isEarth && clock && layer && sim
@@ -93,16 +101,20 @@ export function GlobeCanvas() {
         : () => {};
     const uninstallInstrumentation = installInstrumentation();
 
-    // Apply the initial imagery layer immediately so users see something even
-    // while TLEs download (or, on the Moon, while LRO tiles stream in).
+    // Kick imagery + Earth-only cloud state as soon as the viewer is live.
     void imagery.apply(body, useStore.getState().imageryId);
     clouds?.setEnabled(useStore.getState().cloudsOn);
 
-    // Track initial-tile-load completion so the loading screen can dismiss
-    // once the globe is actually rendered. Cesium fires
-    // tileLoadProgressEvent(remaining) whenever the queue changes; we set
-    // "imagery ready" the first time it drops to 0 after being > 0. Timeout
-    // fallback in case the imagery layer never reports any tiles.
+    // Loading-screen readiness: on Moon we don't gate on catalog / snapshot
+    // (there is no Earth snapshot pipeline running), so we mark those as
+    // "done" upfront and let the imagery-tile listener finish the sequence.
+    if (isMoon) {
+      useStore.setState({
+        catalogStatus: 'ready',
+        firstSnapshotReceived: true,
+      });
+    }
+
     let hadTiles = false;
     const tileHandler = viewer.scene.globe.tileLoadProgressEvent.addEventListener(
       (remaining: number) => {
@@ -125,17 +137,6 @@ export function GlobeCanvas() {
       cameraMoving = false;
     });
 
-    // Multi-pick: try the exact pixel first, then spiral outward through a
-    // ring of nearby pixels so tiny satellite dots are actually catchable.
-    //
-    // Each pick call is a full re-render into Cesium's pick framebuffer +
-    // pixel read — measured at ~6 ms/pick on Apple ANGLE + MSAA. So the
-    // spiral length materially affects hover FPS. We split into two:
-    //   • HOVER — tight 9-point spiral (~5 px catch radius). Cheap enough
-    //     that hover feels instant, with early-exit on first hit so empty
-    //     sky costs just one pick.
-    //   • CLICK — full 25-point spiral (~14 px catch radius). Users
-    //     initiate clicks intentionally, so paying 160 ms once is fine.
     const HOVER_PICK_OFFSETS: Array<[number, number]> = [
       [0, 0],
       [4, 0],
@@ -175,89 +176,112 @@ export function GlobeCanvas() {
       [-10, -10],
     ];
     const scratchPickPos = new Cesium.Cartesian2();
+
+    /**
+     * Multi-pick that understands both Earth NORAD numbers (numeric IDs on
+     * satellite primitives) and lunar orbiter tags ({ lunar: true,
+     * orbiterId } objects). Returns either a number, a string, or null.
+     */
+    type PickResult = { kind: 'earth'; noradId: number } | { kind: 'moon'; orbiterId: string } | null;
     const pickWithOffsets = (
       pos: Cesium.Cartesian2,
       offsets: Array<[number, number]>,
-    ): number | null => {
+    ): PickResult => {
       for (const [dx, dy] of offsets) {
         scratchPickPos.x = pos.x + dx;
         scratchPickPos.y = pos.y + dy;
         const picked = viewer.scene.pick(scratchPickPos);
-        const id =
-          picked && typeof picked.id === 'number'
-            ? picked.id
-            : picked?.primitive && typeof picked.primitive.id === 'number'
-              ? picked.primitive.id
-              : null;
-        if (id != null) return id; // early exit — first hit wins
+        if (!picked) continue;
+        const rawId = picked.id ?? picked.primitive?.id;
+        if (typeof rawId === 'number') return { kind: 'earth', noradId: rawId };
+        if (rawId && typeof rawId === 'object' && (rawId as LunarPickTag).lunar) {
+          return { kind: 'moon', orbiterId: (rawId as LunarPickTag).orbiterId };
+        }
       }
       return null;
     };
     const pickForClick = (pos: Cesium.Cartesian2) => pickWithOffsets(pos, CLICK_PICK_OFFSETS);
     const pickForHover = (pos: Cesium.Cartesian2) => pickWithOffsets(pos, HOVER_PICK_OFFSETS);
 
-    // Only wire picking on Earth — nothing pickable exists on the Moon in
-    // Part 1. Satellites and surface markers land in Parts 2 & 3.
-    if (isEarth) {
-      handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
-        const id = pickForClick(ev.position);
-        if (id == null) return;
-        const state = useStore.getState();
+    handler.setInputAction((ev: { position: Cesium.Cartesian2 }) => {
+      const hit = pickForClick(ev.position);
+      if (!hit) return;
+      const state = useStore.getState();
+      if (hit.kind === 'earth' && isEarth) {
         if (
           state.pickCompareMode &&
           state.selectedNoradId != null &&
-          id !== state.selectedNoradId
+          hit.noradId !== state.selectedNoradId
         ) {
-          state.setCompare(id);
+          state.setCompare(hit.noradId);
         } else {
-          state.select(id);
+          state.select(hit.noradId);
         }
-      }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
+      } else if (hit.kind === 'moon' && isMoon) {
+        state.setLunarSelection(hit.orbiterId);
+      }
+    }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
-      // Hover — throttled multi-pick + layer.setHovered so the nearest satellite
-      // gets a visible ring. Users get a preview of what will be selected on click.
-      // Also shows a lightweight name tooltip next to the cursor.
-      let lastHoverMs = 0;
-      const HOVER_INTERVAL_MS = 40;
-      const tooltip = tooltipRef.current;
-      handler.setInputAction((ev: { endPosition: Cesium.Cartesian2 }) => {
-        if (cameraMoving) {
-          if (tooltip) tooltip.style.display = 'none';
-          return;
-        }
-        const now = performance.now();
-        if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
-        lastHoverMs = now;
-        const id = pickForHover(ev.endPosition);
-        layer?.setHovered(id);
-        viewer.scene.canvas.style.cursor = id != null ? 'pointer' : '';
+    let lastHoverMs = 0;
+    const HOVER_INTERVAL_MS = 40;
+    const tooltip = tooltipRef.current;
+    handler.setInputAction((ev: { endPosition: Cesium.Cartesian2 }) => {
+      if (cameraMoving) {
+        if (tooltip) tooltip.style.display = 'none';
+        return;
+      }
+      const now = performance.now();
+      if (now - lastHoverMs < HOVER_INTERVAL_MS) return;
+      lastHoverMs = now;
+      const hit = pickForHover(ev.endPosition);
 
-        if (tooltip) {
-          if (id != null) {
-            const state = useStore.getState();
-            const name = state.indexByNorad.get(id);
-            const entry = state.catalogEntryByNorad.get(id);
-            const label = name ?? `#${id}`;
-            const typeBadge = entry?.objectType
-              ? entry.objectType.replace('-', ' ').replace(/^\w/, (c) => c.toUpperCase())
-              : '';
-            tooltip.innerHTML = `<span style="font-weight:600">${label}</span>${
-              typeBadge
-                ? `<span style="opacity:0.5;margin-left:6px;font-size:10px">${typeBadge}</span>`
-                : ''
-            }`;
+      // Route the hover to the layer that owns the picked primitive.
+      if (hit?.kind === 'earth' && isEarth) {
+        layer?.setHovered(hit.noradId);
+        lunarSats?.setHovered(null);
+      } else if (hit?.kind === 'moon' && isMoon) {
+        lunarSats?.setHovered(hit.orbiterId);
+        layer?.setHovered(null);
+      } else {
+        layer?.setHovered(null);
+        lunarSats?.setHovered(null);
+      }
+      viewer.scene.canvas.style.cursor = hit != null ? 'pointer' : '';
+
+      if (tooltip) {
+        if (hit?.kind === 'earth' && isEarth) {
+          const state = useStore.getState();
+          const name = state.indexByNorad.get(hit.noradId);
+          const entry = state.catalogEntryByNorad.get(hit.noradId);
+          const label = name ?? `#${hit.noradId}`;
+          const typeBadge = entry?.objectType
+            ? entry.objectType.replace('-', ' ').replace(/^\w/, (c) => c.toUpperCase())
+            : '';
+          tooltip.innerHTML = `<span style="font-weight:600">${label}</span>${
+            typeBadge
+              ? `<span style="opacity:0.5;margin-left:6px;font-size:10px">${typeBadge}</span>`
+              : ''
+          }`;
+          tooltip.style.display = 'block';
+          tooltip.style.left = `${ev.endPosition.x + 16}px`;
+          tooltip.style.top = `${ev.endPosition.y - 12}px`;
+        } else if (hit?.kind === 'moon' && isMoon) {
+          const orbiter = findLunarOrbiter(hit.orbiterId);
+          if (orbiter) {
+            tooltip.innerHTML =
+              `<span style="font-weight:600">${orbiter.name}</span>` +
+              `<span style="opacity:0.5;margin-left:6px;font-size:10px">${orbiter.agency}</span>`;
             tooltip.style.display = 'block';
             tooltip.style.left = `${ev.endPosition.x + 16}px`;
             tooltip.style.top = `${ev.endPosition.y - 12}px`;
-          } else {
-            tooltip.style.display = 'none';
           }
+        } else {
+          tooltip.style.display = 'none';
         }
-      }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
-    }
+      }
+    }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-    // Snapshot → render loop. Only wired on Earth — the propagator produces
-    // Earth-ECEF positions that would land inside the Moon's core.
+    // Snapshot → Earth render loop.
     let lastTick = -1;
     const unsubSnapshot = isEarth
       ? useStore.subscribe((s) => {
@@ -277,10 +301,10 @@ export function GlobeCanvas() {
         })
       : () => {};
 
-    // UI state → derived overlays. Also Earth-only for Part 1.
     let lastFilterRef: Set<unknown> | null = null;
     let lastObjectFilterRef: Set<unknown> | null = null;
     let lastSelection: number | null = null;
+    let lastLunarSelection: string | null = null;
     let lastCameraMode = 'orbit';
     let lastTrailMode = '';
     let lastHeatmap = false;
@@ -291,14 +315,41 @@ export function GlobeCanvas() {
     let lastGroundStations = false;
     let lastClouds = useStore.getState().cloudsOn;
     let lastImagery = useStore.getState().imageryId;
-    const unsubUi = useStore.subscribe((s) => {
-      // Body switch: remount is driven by React `key={body}` on the parent,
-      // not by this subscriber. Nothing to do here.
 
-      // Graticule works on either body.
+    // Prime lunar selection + trail so a body-swap that arrives with an
+    // existing selection immediately paints the ribbon.
+    if (isMoon) {
+      const initialSel = useStore.getState().selectedLunarId;
+      lunarSats?.setSelected(initialSel);
+      lunarTrail?.setFromOrbiterId(
+        useStore.getState().trailMode === 'off' ? null : initialSel,
+      );
+      lunarTerminator?.setEnabled(useStore.getState().terminatorOn);
+      lastLunarSelection = initialSel;
+    }
+
+    const unsubUi = useStore.subscribe((s) => {
+      // Graticule + terminator work on either body.
       if (s.graticuleOn !== lastGraticule) {
         lastGraticule = s.graticuleOn;
         graticule.setEnabled(s.graticuleOn);
+      }
+
+      if (isMoon) {
+        if (s.terminatorOn !== lastTerminator) {
+          lastTerminator = s.terminatorOn;
+          lunarTerminator?.setEnabled(s.terminatorOn);
+        }
+        if (s.selectedLunarId !== lastLunarSelection || s.trailMode !== lastTrailMode) {
+          lastLunarSelection = s.selectedLunarId;
+          lunarSats?.setSelected(s.selectedLunarId);
+          const showTrail = s.trailMode !== 'off';
+          lunarTrail?.setFromOrbiterId(showTrail ? s.selectedLunarId : null);
+        }
+        if (s.trailMode !== lastTrailMode) {
+          lastTrailMode = s.trailMode;
+        }
+        return;
       }
 
       if (!isEarth) return;
@@ -320,10 +371,7 @@ export function GlobeCanvas() {
       }
       if (s.selectedNoradId !== lastSelection || s.trailMode !== lastTrailMode) {
         lastSelection = s.selectedNoradId;
-        // Apply highlight instantly so the user sees feedback on click without
-        // waiting for the next propagator snapshot.
         layer?.setSelected(s.selectedNoradId);
-        // Only show the orbit ribbon when trail mode is 'selected' or 'visible'
         const showRibbon = s.trailMode !== 'off' && s.selectedNoradId != null;
         if (orbitRibbon && sonar) {
           void updateOrbitRibbon(orbitRibbon, sonar, showRibbon ? s.selectedNoradId : null);
@@ -405,6 +453,9 @@ export function GlobeCanvas() {
       clouds?.destroy();
       stars.destroy();
       planets.destroy();
+      lunarTrail?.destroy();
+      lunarTerminator?.destroy();
+      lunarSats?.destroy();
       imagery.destroy();
       trails?.clear();
       orbitRibbon?.destroy();
@@ -433,8 +484,6 @@ function applyCameraMode(
   mode: string,
   selectedNoradId: number | null,
 ): void {
-  // In POV of the selected sat, hide the model — otherwise the camera sits
-  // inside the mesh and we render the interior.
   model.setHidden(mode === 'pov');
   if (mode === 'follow') {
     pov.deactivate();
