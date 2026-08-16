@@ -3,6 +3,8 @@ import { useStore } from '../state/store.js';
 import { LocateButton } from './LocateButton.js';
 import { adminLog } from '../admin/admin-log.js';
 import { BrandMark } from './BrandMark.js';
+import { LUNAR_ORBITERS } from '../simulation/lunar-catalog.js';
+import { LUNAR_SURFACE_SITES } from '../simulation/lunar-surface-catalog.js';
 
 /** Top HUD: brand, catalog status, sim + wall clocks, connection health. */
 export function HeaderHUD() {
@@ -15,6 +17,9 @@ export function HeaderHUD() {
   const simTimeMs = useStore((s) => s.simTimeMs);
   const multiplier = useStore((s) => s.simMultiplier);
   const paused = useStore((s) => s.simPaused);
+  const body = useStore((s) => s.body);
+  const surfaceOn = useStore((s) => s.lunarSurfaceOn);
+  const isMoon = body === 'moon';
 
   const [wallNow, setWallNow] = useState(() => Date.now());
   const [fps, setFps] = useState(0);
@@ -65,15 +70,32 @@ export function HeaderHUD() {
       </div>
 
       <div className="spacemap-hud pointer-events-auto flex items-center gap-4 rounded-2xl border border-space-border bg-space-panel/94 px-4 py-3 font-mono text-xs shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-        <Stat
-          label="Trackable"
-          value={
-            catalogHydrating && trackableTargetCount > trackableCatalogSize
-              ? `${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()}`
-              : trackableCatalogSize.toLocaleString()
-          }
-        />
-        <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
+        {isMoon ? (
+          <>
+            {/*
+              Moon stats — the Earth catalog numbers ("Trackable", "Rendered")
+              are meaningless in lunar view, so we swap in what actually
+              exists here: the orbiter count and the surface-site count.
+            */}
+            <Stat label="Orbiters" value={LUNAR_ORBITERS.length.toString()} />
+            <Stat
+              label="Surface sites"
+              value={surfaceOn ? LUNAR_SURFACE_SITES.length.toString() : 'off'}
+            />
+          </>
+        ) : (
+          <>
+            <Stat
+              label="Trackable"
+              value={
+                catalogHydrating && trackableTargetCount > trackableCatalogSize
+                  ? `${trackableCatalogSize.toLocaleString()} / ${trackableTargetCount.toLocaleString()}`
+                  : trackableCatalogSize.toLocaleString()
+              }
+            />
+            <Stat label="Rendered" value={snapshotCount.toLocaleString()} />
+          </>
+        )}
         <Stat
           label="Speed"
           value={`${paused ? '⏸ ' : ''}${multiplier >= 0 ? '' : '−'}${Math.abs(multiplier)}×`}
@@ -100,12 +122,12 @@ export function HeaderHUD() {
             className="rounded-full p-1 transition-transform hover:scale-110 focus:outline-none"
           >
             <span
-              className={`block h-2 w-2 rounded-full ${statusColor(status)}`}
-              title={error ?? status}
+              className={`block h-2 w-2 rounded-full ${statusColor(isMoon ? 'ready' : status)}`}
+              title={isMoon ? 'lunar view' : error ?? status}
             />
           </button>
-          <span className="text-space-dim">{statusLabel(status)}</span>
-          {catalogHydrating && status === 'ready' && (
+          <span className="text-space-dim">{isMoon ? 'LUNAR' : statusLabel(status)}</span>
+          {!isMoon && catalogHydrating && status === 'ready' && (
             <span className="text-[10px] uppercase tracking-[0.18em] text-space-accent/80">
               Syncing
             </span>

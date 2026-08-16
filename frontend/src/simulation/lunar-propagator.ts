@@ -189,23 +189,34 @@ export function sampleOrbit(orbit: LunarOrbiterOrbit, at: Date): OrbitSample {
 }
 
 /**
- * Sun direction in Moon body-fixed frame, as a unit vector. We approximate
- * "sun direction from the Moon" as "sun direction from Earth" — the two are
- * off by at most 0.15° (Moon's angular size from the Sun), invisible on
- * screen. Same low-precision Meeus formula the Earth terminator uses.
+ * Sun direction as a unit vector in the ECI / J2000 mean-equator frame.
+ * Low-precision Meeus formula — the same one Cesium uses internally for
+ * its SunLight and the Earth terminator.
+ *
+ * This is the frame Cesium implicitly uses for lighting on custom
+ * ellipsoids (it doesn't know a rotation model for the Moon, so its
+ * shading treats body-fixed positions as if they were inertial). The
+ * LunarTerminator overlays a line in this same frame so it aligns with
+ * what Cesium is actually drawing on the surface.
  */
-export function sunDirectionMoonFixed(date: Date): Cartesian3 {
+export function sunDirectionInertial(date: Date): Cartesian3 {
   const jd = dateToJD(date);
   const n = jd - JD_J2000;
   const L = ((280.46 + 0.9856474 * n) * Math.PI) / 180;
   const g = ((357.528 + 0.9856003 * n) * Math.PI) / 180;
   const lambda = L + ((1.915 * Math.sin(g) + 0.02 * Math.sin(2 * g)) * Math.PI) / 180;
   const eps = (23.439 * Math.PI) / 180;
-  // Sun direction in ECI/EMEJ2000 (equal for our purposes to Moon inertial).
-  const eciSun = xyz(Math.cos(lambda), Math.cos(eps) * Math.sin(lambda), Math.sin(eps) * Math.sin(lambda));
-  // The Moon body-fixed frame differs from Earth ECI only by the Moon's
-  // rotation angle W around Z. Rotate.
-  return rotateInertialToBodyFixed(eciSun, date);
+  return xyz(Math.cos(lambda), Math.cos(eps) * Math.sin(lambda), Math.sin(eps) * Math.sin(lambda));
+}
+
+/**
+ * Sun direction in the Moon body-fixed frame. Same as `sunDirectionInertial`
+ * with the current Moon rotation angle W folded in — useful for isSunlit()
+ * style checks against body-fixed positions where consistency between the
+ * two vectors matters more than absolute frame correctness.
+ */
+export function sunDirectionMoonFixed(date: Date): Cartesian3 {
+  return rotateInertialToBodyFixed(sunDirectionInertial(date), date);
 }
 
 /**

@@ -1,21 +1,29 @@
 import * as Cesium from 'cesium';
-import { sunDirectionMoonFixed } from '../simulation/lunar-propagator.js';
+import { sunDirectionInertial } from '../simulation/lunar-propagator.js';
 
 /**
  * The great-circle line on the Moon where the sun sits exactly on the
  * horizon — the boundary between the illuminated near side and the
- * shadowed side. Cesium's SunLight already shades the globe correctly;
- * this class overlays the terminator LINE so time-warping the clock
- * shows the day/night boundary sweeping visibly across the surface.
+ * shadowed side. Cesium's SunLight already shades the globe based on the
+ * ICRF sun position; this class overlays the terminator LINE so
+ * time-warping the clock shows the day/night boundary sweeping visibly
+ * across the surface.
  *
- * Same construction as the Earth Terminator (perpendicular vectors u, v
- * spanning the plane whose normal is the sun direction, then a full
- * circle sampled around the ellipsoid), just re-anchored to Moon radius
- * and to the sun-direction-from-Moon vector.
+ * Frame note: Cesium doesn't know a rotation model for our custom Moon
+ * ellipsoid, so its shading effectively treats body-fixed positions as
+ * inertial for the purpose of applying the sun direction. To make the
+ * terminator LINE overlay the actual bright/dark boundary Cesium is
+ * drawing, we build the ring using the INERTIAL sun direction (not the
+ * Moon-fixed one) — anything else would leave the line offset by the
+ * current Moon rotation angle, which drifts ~13°/day.
+ *
+ * Visual choices: lifted 15 km above the surface so it never z-fights
+ * with the LRO WAC tiles, drawn at 3 px in warm amber that pops against
+ * both the sunlit greys and the dark side.
  */
-const REFRESH_MS = 6000;
-const SAMPLES = 180;
-const MOON_R_M = 1_737_400 + 2000; // surface + tiny lift to dodge z-fighting
+const REFRESH_MS = 4000;
+const SAMPLES = 200;
+const MOON_R_M = 1_737_400 + 15_000; // surface + 15 km — well clear of z-fight
 
 export class LunarTerminator {
   private polyline: Cesium.Polyline | null = null;
@@ -67,9 +75,13 @@ export class LunarTerminator {
     this.lastBuildMs = now;
 
     const date = Cesium.JulianDate.toDate(this.viewer.clock.currentTime);
-    const sun = sunDirectionMoonFixed(date);
+    // Inertial sun — matches Cesium's implicit lighting frame for our
+    // custom-ellipsoid Moon (see block comment above).
+    const sun = sunDirectionInertial(date);
 
-    // Two perpendicular unit vectors in the plane whose normal is `sun`.
+    // Two perpendicular unit vectors spanning the plane whose normal is
+    // the sun direction. Pick a helper axis that's ~perpendicular to sun
+    // to avoid a near-zero cross-product.
     const helper =
       Math.abs(sun.z) < 0.9 ? new Cesium.Cartesian3(0, 0, 1) : new Cesium.Cartesian3(1, 0, 0);
     const sunV = new Cesium.Cartesian3(sun.x, sun.y, sun.z);
@@ -97,10 +109,13 @@ export class LunarTerminator {
     if (!this.polyline) {
       this.polyline = this.collection.add({
         positions,
-        width: 1.5,
-        material: Cesium.Material.fromType('Color', {
-          // Warmer amber than Earth's — reads as "lunar dawn / dusk".
-          color: new Cesium.Color(1, 0.75, 0.35, 0.85),
+        width: 3,
+        material: Cesium.Material.fromType('PolylineGlow', {
+          // Bright warm amber that reads as "lunar dawn/dusk" against
+          // both the sunlit grey and the shadowed dark side.
+          color: new Cesium.Color(1, 0.72, 0.28, 1),
+          glowPower: 0.25,
+          taperPower: 1,
         }),
       });
     } else {
