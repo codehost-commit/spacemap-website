@@ -11,6 +11,11 @@ import * as Cesium from 'cesium';
  * dataset every serious lunar map you've seen is built on. It's ~100 m /px
  * at full zoom, streamed as EPSG:4326 WMTS tiles, and looks stunning on
  * a Cesium globe with the atmosphere and sea-level clouds turned off.
+ *
+ * Terrain is opt-in: if a VITE_CESIUM_ION_TOKEN is set at build time we
+ * pull Cesium World Terrain (Ion asset 1) for Earth and the LOLA lunar
+ * DEM (Ion asset 2684829) for the Moon. Without a token both bodies fall
+ * back to a smooth ellipsoid (the default EllipsoidTerrainProvider).
  */
 
 export type BodyId = 'earth' | 'moon';
@@ -21,6 +26,8 @@ export interface BodyDef {
   short: string; // one-line marketing sentence for the switcher tooltip
   radiusM: number; // spherical radius; we build an isotropic Ellipsoid from it
   imagery: () => Cesium.ImageryProvider;
+  /** Cesium Ion asset ID for this body's 3-D terrain. Loaded when a token exists. */
+  terrainIonAssetId?: number;
   /** Height (metres) the camera should sit above the surface on first view. */
   homeAltitudeM: number;
   /** Rough centre the camera should look at when first switching in. */
@@ -34,6 +41,25 @@ export interface BodyDef {
 // Radii in metres — IAU 2015 / IAU 2000 mean values.
 const EARTH_RADIUS_M = 6_378_137;
 const MOON_RADIUS_M = 1_737_400;
+
+/**
+ * Seed Cesium's Ion token once, at module load. Vite inlines the env var at
+ * build time; the GitHub Actions workflow injects it from a repo secret so
+ * the token never lives in git. Missing token is a soft failure — every
+ * downstream Ion call resolves without terrain, which is exactly what
+ * `createViewer` handles below.
+ *
+ * Restricting the token to the deploy origin (Ion → Access Tokens → Allowed
+ * URLs) is what actually makes it safe to ship in the browser bundle.
+ */
+const ION_TOKEN = (import.meta.env.VITE_CESIUM_ION_TOKEN as string | undefined) ?? '';
+if (ION_TOKEN) {
+  Cesium.Ion.defaultAccessToken = ION_TOKEN;
+}
+
+export function hasIonToken(): boolean {
+  return ION_TOKEN.length > 0;
+}
 
 function earthImagery(): Cesium.ImageryProvider {
   // Placeholder — the real Earth imagery pipeline lives in imagery.ts and
@@ -83,6 +109,8 @@ export const BODIES: Record<BodyId, BodyDef> = {
     short: '30,000+ tracked objects — the SpaceMap you already know.',
     radiusM: EARTH_RADIUS_M,
     imagery: earthImagery,
+    // Cesium World Terrain — the canonical global 3-D relief mesh from Ion.
+    terrainIonAssetId: 1,
     homeAltitudeM: 20_000_000,
     homeLonLat: [0, 15],
     globeBaseColor: Cesium.Color.fromCssColorString('#0a1a2a'),
@@ -94,6 +122,10 @@ export const BODIES: Record<BodyId, BodyDef> = {
     short: 'LRO WAC global mosaic — 100 m/pixel, streamed from NASA Moon Trek.',
     radiusM: MOON_RADIUS_M,
     imagery: moonImagery,
+    // Moon LOLA terrain — LRO Lunar Orbiter Laser Altimeter DEM, quantised
+    // by Cesium. Crater rims, mare basins, Tycho's central peak all become
+    // real geometry instead of painted-on shading.
+    terrainIonAssetId: 2684829,
     // Moon is ~3.6× smaller than Earth; a proportionally-tighter default
     // altitude keeps it filling the viewport instead of shrinking away.
     homeAltitudeM: 5_500_000,

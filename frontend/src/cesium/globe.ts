@@ -1,5 +1,5 @@
 import * as Cesium from 'cesium';
-import { BODIES, bodyEllipsoid, type BodyId } from './bodies.js';
+import { BODIES, bodyEllipsoid, hasIonToken, type BodyId } from './bodies.js';
 
 /**
  * Boot a Cesium Viewer configured for the SpaceMap aesthetic.
@@ -89,6 +89,24 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
   viewer.camera.setView({
     destination: Cesium.Cartesian3.fromDegrees(lon, lat, def.homeAltitudeM, ellipsoid),
   });
+
+  // 3-D terrain — loaded asynchronously so the viewer boots instantly on
+  // the smooth ellipsoid and swaps in relief tiles when Ion answers. If no
+  // token is configured (local dev without .env.local, PR builds), we stay
+  // on the ellipsoid and everything else still works. A soft failure inside
+  // the promise leaves the ellipsoid in place too — we log and move on.
+  if (hasIonToken() && def.terrainIonAssetId !== undefined) {
+    const assetId = def.terrainIonAssetId;
+    Cesium.CesiumTerrainProvider.fromIonAssetId(assetId, { requestVertexNormals: true })
+      .then((provider) => {
+        // Guard against the viewer being torn down mid-load (fast body switch).
+        if (viewer.isDestroyed()) return;
+        viewer.scene.setTerrain(new Cesium.Terrain(Promise.resolve(provider)));
+      })
+      .catch((err) => {
+        console.warn(`[globe] terrain load failed for ${def.id} (asset ${assetId})`, err);
+      });
+  }
 
   // Bloom — subtle glow on bright pixels (satellites, sun, bright stars).
   // Deliberately gentle: HDR mode + aggressive uniforms tonemap the base
