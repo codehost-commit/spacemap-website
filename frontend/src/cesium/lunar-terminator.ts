@@ -1,5 +1,5 @@
 import * as Cesium from 'cesium';
-import { sunDirectionInertial } from '../simulation/lunar-propagator.js';
+import { sunDirectionMoonFixed } from '../simulation/lunar-propagator.js';
 
 /**
  * The great-circle line on the Moon where the sun sits exactly on the
@@ -75,9 +75,11 @@ export class LunarTerminator {
     this.lastBuildMs = now;
 
     const date = Cesium.JulianDate.toDate(this.viewer.clock.currentTime);
-    // Inertial sun — matches Cesium's implicit lighting frame for our
-    // custom-ellipsoid Moon (see block comment above).
-    const sun = sunDirectionInertial(date);
+    // Moon-fixed sun direction. Empirically Cesium's SunLight shading on our
+    // custom Moon ellipsoid follows the body-fixed frame the LRO WAC tiles
+    // are laid out in — using inertial-frame sun here puts the terminator
+    // ring ~90° off from the actual bright/dark boundary you can see.
+    const sun = sunDirectionMoonFixed(date);
 
     // Two perpendicular unit vectors spanning the plane whose normal is
     // the sun direction. Pick a helper axis that's ~perpendicular to sun
