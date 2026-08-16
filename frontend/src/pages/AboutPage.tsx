@@ -1,10 +1,3 @@
-import {
-  Cpu,
-  Globe,
-  Satellite,
-  ShieldCheck,
-} from 'lucide-react';
-
 function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
 }
@@ -14,22 +7,16 @@ const aboutImage = (import.meta.env.BASE_URL || '/') + 'brand/about-image.png';
 
 const HOW_IT_WORKS = [
   {
-    step: 1,
-    icon: Satellite,
-    title: 'Ingest & Parse',
-    desc: 'TLE and OMM data is pulled from Space-Track, CelesTrak, and amateur observers. SpaceMap parses every element set into a propagation-ready format.',
+    title: 'It starts with public orbit data.',
+    desc: 'SpaceMap pulls in public element sets and object records, then turns them into something the tracker can actually use.',
   },
   {
-    step: 2,
-    icon: Cpu,
-    title: 'Propagate Locally',
-    desc: "SGP4 propagation runs in your browser using Web Workers. Every tracked object's position is computed at sub-second intervals, and nothing leaves your machine.",
+    title: 'Your browser keeps the positions moving.',
+    desc: 'The orbit math runs locally, so when you search, follow, or step through time, the updates happen on your machine.',
   },
   {
-    step: 3,
-    icon: Globe,
-    title: 'Render in 3D',
-    desc: 'Positions are projected onto a Cesium globe in real time. Filter by orbit type, search by name, and fly the camera to any object instantly.',
+    title: 'The map redraws from that same state.',
+    desc: 'The globe, object panel, local sky, and close-approach views all stay tied to the same moving orbit instead of feeling split across separate tools.',
   },
 ];
 
@@ -44,9 +31,9 @@ export function AboutPage() {
               Why I built <AccentWord className="text-space-accent">SpaceMap</AccentWord>
             </h1>
             <p className="site-copy mt-6 max-w-2xl text-base leading-relaxed md:text-lg">
-              SpaceMap turns raw orbital data into something readable, visual, and immediate:
-              real-time tracking, conjunction analysis, live video, local sky ranking, and launch
-              awareness, all inside one browser tab.
+              I wanted a clearer way to look at orbit without needing specialized software or a
+              messy stack of tabs. SpaceMap pulls the public data into one place so you can follow
+              objects, check close approaches, watch the ISS feed, and keep the whole map in view.
             </p>
           </div>
 
@@ -73,7 +60,7 @@ export function AboutPage() {
             <img
               src={founderImg}
               alt="Rahul Awasthi"
-              className="h-56 w-56 rounded-full border-4 border-white/10 object-cover shadow-[0_18px_40px_rgba(5,16,26,0.32)] md:h-64 md:w-64"
+              className="h-56 w-56 rounded-full object-cover md:h-64 md:w-64"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = 'none';
               }}
@@ -99,26 +86,24 @@ export function AboutPage() {
       {/* How it works */}
       <section className="py-24">
         <div className="mx-auto max-w-5xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-space-accent mb-3 text-center">
-            Under the Hood
+          <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-space-accent">
+            What the site is doing
           </p>
-          <h2 className="spacemap-heading-display mb-4 text-center text-3xl text-white">
-            How it <AccentWord className="text-space-accent">works</AccentWord>
+          <h2 className="spacemap-heading-display mb-4 max-w-3xl text-3xl text-white">
+            A simple version of what happens after you open it.
           </h2>
-          <p className="text-center text-space-dim mb-16">
-            SpaceMap runs in the browser and computes positions on your machine.
+          <p className="mb-12 max-w-2xl text-space-dim">
+            This is the plain version. The site loads public orbit data, keeps the positions
+            updated in the browser, and uses that same motion everywhere else on the page.
           </p>
 
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="divide-y divide-white/10 border-y border-white/10">
             {HOW_IT_WORKS.map((item) => (
               <div
-                key={item.step}
-                className="rounded-2xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm"
+                key={item.title}
+                className="grid gap-3 py-6 md:grid-cols-[minmax(0,18rem)_minmax(0,1fr)]"
               >
-                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#4d96e8]/30 to-[#8ed8ff]/30 text-space-accent shadow-lg shadow-[#4d96e8]/10">
-                  <span className="text-lg font-bold">{item.step}</span>
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
+                <h3 className="text-lg font-semibold text-white">{item.title}</h3>
                 <p className="text-sm leading-relaxed text-space-dim">{item.desc}</p>
               </div>
             ))}
@@ -129,15 +114,8 @@ export function AboutPage() {
       {/* Founder note */}
       <section className="py-24">
         <div className="mx-auto max-w-4xl px-6">
-          <div
-            className="rounded-[1.5rem] border border-white/10 bg-[#0d1520]/88 p-10"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <ShieldCheck size={20} className="text-space-accent" />
-              <h3 className="text-lg font-semibold text-white">
-                Why I kept building it this way
-              </h3>
-            </div>
+          <div className="border-y border-white/10 py-10">
+            <h3 className="mb-6 text-lg font-semibold text-white">Why I kept building it this way</h3>
             <div className="space-y-5 text-sm leading-relaxed text-space-dim md:text-[15px]">
               <p>
                 Most space software feels like it was built either for specialists already inside
@@ -147,9 +125,9 @@ export function AboutPage() {
               </p>
               <p>
                 That is why the heavy lifting runs locally, why the interface tries to show rather
-                than overwhelm, and why the product keeps pushing toward public understanding
-                instead of institutional gatekeeping. If orbit is part of our world now, then
-                seeing it should not require expensive software or a technical clearance.
+                than crowd you, and why I keep cutting away anything that makes the project feel
+                closed off. If someone wants to look up and understand what is in orbit, they
+                should be able to do that without much friction.
               </p>
             </div>
           </div>

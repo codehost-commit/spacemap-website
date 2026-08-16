@@ -18,7 +18,7 @@ function Section({
   return (
     <section
       id={id}
-      className="scroll-mt-32 rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-sm md:p-8"
+      className="scroll-mt-32 border-t border-white/10 pt-10"
     >
       <h2 className="spacemap-heading-display text-2xl text-white md:text-3xl">{title}</h2>
       <div className="mt-6 space-y-6 text-sm leading-relaxed text-space-dim">{children}</div>
@@ -43,7 +43,7 @@ export function LegalPage() {
           Privacy, Terms & Attributions
         </p>
         <h1 className="spacemap-heading-display max-w-4xl text-4xl text-white md:text-6xl">
-          <AccentWord className="text-space-accent">Privacy</AccentWord> first. Terms that match how SpaceMap actually works.
+          Privacy, terms, and credits for <AccentWord className="text-space-accent">SpaceMap</AccentWord>.
         </h1>
         <p className="mt-6 max-w-3xl text-base leading-relaxed text-space-dim md:text-lg">
           This page combines SpaceMap&apos;s Privacy Policy, Terms of Use, and media
@@ -52,33 +52,31 @@ export function LegalPage() {
           overlays, saved lists, contact flow, and related site pages.
         </p>
 
-        <div className="mt-8 flex flex-wrap gap-3 text-xs font-medium">
+        <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-space-dim">
           <a
             href="#privacy"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim transition-colors hover:border-space-accent/30 hover:text-white"
+            className="transition-colors hover:text-white"
           >
             Privacy
           </a>
           <a
             href="#terms"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim transition-colors hover:border-space-accent/30 hover:text-white"
+            className="transition-colors hover:text-white"
           >
             Terms
           </a>
           <a
             href="#attributions"
-            className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim transition-colors hover:border-space-accent/30 hover:text-white"
+            className="transition-colors hover:text-white"
           >
             Attributions
           </a>
-          <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-space-dim">
-            Last updated {UPDATED}
-          </span>
         </div>
+        <p className="mt-3 text-sm text-space-dim">Last updated {UPDATED}</p>
       </section>
 
       <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="mb-6 rounded-[2rem] border border-space-accent/20 bg-[linear-gradient(135deg,rgba(77,150,232,0.12),rgba(255,255,255,0.04))] p-6 backdrop-blur-sm">
+        <div className="mb-10 border-y border-white/10 py-5">
           <p className="text-sm leading-relaxed text-space-dim">
             <span className="font-semibold text-white">Operator.</span> SpaceMap is operated by{' '}
             <span className="text-white">Rahul Awasthi</span> as a sole proprietorship. SpaceMap is

@@ -15,19 +15,44 @@ export function SiteHeader() {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [showHomeBrand, setShowHomeBrand] = useState(true);
   const normalizedPath = pathname !== '/' ? pathname.replace(/\/+$/u, '') || '/' : pathname;
   const useDarkHeroHeader = normalizedPath === '/' && !scrolled;
+  const showHeaderBrand = normalizedPath !== '/' || showHomeBrand;
 
   // On the tracker page, use no header (tracker has its own HUD)
   const isTracker = normalizedPath === '/tracker';
 
   useEffect(() => {
     if (isTracker) return;
-    const onScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [isTracker]);
+    const updateHeaderState = () => {
+      setScrolled(window.scrollY > 20);
+
+      if (normalizedPath !== '/') {
+        setShowHomeBrand(true);
+        return;
+      }
+
+      const heroLogo = document.querySelector('[data-home-hero-logo="true"]');
+      if (!(heroLogo instanceof HTMLElement)) {
+        setShowHomeBrand(window.scrollY > 120);
+        return;
+      }
+
+      setShowHomeBrand(heroLogo.getBoundingClientRect().bottom <= 72);
+    };
+
+    window.addEventListener('scroll', updateHeaderState, { passive: true });
+    window.addEventListener('resize', updateHeaderState);
+    updateHeaderState();
+    const frame = window.requestAnimationFrame(updateHeaderState);
+
+    return () => {
+      window.removeEventListener('scroll', updateHeaderState);
+      window.removeEventListener('resize', updateHeaderState);
+      window.cancelAnimationFrame(frame);
+    };
+  }, [isTracker, normalizedPath]);
 
   if (isTracker) return null;
 
@@ -56,16 +81,25 @@ export function SiteHeader() {
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         {/* Logo */}
-        <Link to="/" className="group flex items-center gap-3 transition-all">
+        <Link
+          to="/"
+          className={`group flex items-center transition-[gap] duration-200 ${
+            showHeaderBrand ? 'gap-3' : 'gap-0'
+          }`}
+        >
           <img
             src={emblemSrc}
             alt="SpaceMap"
-            className="h-10 w-10 transition-transform group-hover:scale-110"
+            className={`h-10 w-10 overflow-hidden transition-[max-width,opacity,transform] duration-200 group-hover:scale-110 ${
+              showHeaderBrand ? 'max-w-10 translate-x-0 opacity-100' : 'max-w-0 -translate-x-2 opacity-0'
+            }`}
             draggable={false}
           />
           <span
-            className={`text-xl font-semibold tracking-tight font-sans ${
+            className={`overflow-hidden whitespace-nowrap text-xl font-semibold tracking-tight font-sans transition-[max-width,opacity] duration-200 ${
               useDarkHeroHeader ? 'text-white' : 'text-[#1f2a36]'
+            } ${
+              showHeaderBrand ? 'max-w-[9rem] opacity-100' : 'max-w-0 opacity-0'
             }`}
           >
             SpaceMap

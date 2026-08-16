@@ -91,7 +91,7 @@ export function LearnPage() {
           <Equation math={String.raw`\text{TLE} \rightarrow \text{state at epoch} \rightarrow \text{predicted position}`} />
         </GuideSection>
 
-        <GuideSection id="prediction" eyebrow="Prediction" title="SpaceMap predicts motion in your browser">
+        <GuideSection id="prediction" eyebrow="Prediction" title="How the tracker knows where something is">
           <p>
             SpaceMap uses SGP4, the standard propagation model for TLEs. Propagation just means
             taking the orbit record and asking where the object should be at another time.
@@ -154,7 +154,7 @@ export function LearnPage() {
           </p>
           <Link
             to="/tracker/"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-white transition-colors hover:border-space-accent/30 hover:bg-white/8"
+            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-space-accent transition-colors hover:text-white"
           >
             Open tracker
             <ArrowRight size={16} />

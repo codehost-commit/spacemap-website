@@ -258,6 +258,7 @@ export function HomePage() {
           <div className="min-w-0 max-w-[22rem] text-center sm:max-w-[40rem] lg:max-w-[46rem] lg:text-left">
             <div className="mb-8 flex justify-center lg:justify-start">
               <img
+                data-home-hero-logo="true"
                 src={emblemSrc}
                 alt="SpaceMap"
                 className="h-20 w-20 drop-shadow-2xl"
