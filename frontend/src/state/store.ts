@@ -8,6 +8,7 @@ import type {
 import { CATALOG_OBJECT_TYPES, ORBIT_CLASSES } from '@spacemap/shared';
 import type { BodyId } from '../cesium/bodies.js';
 import type { LunarOrbiterKind } from '../simulation/lunar-catalog.js';
+import type { LunarSiteKind } from '../simulation/lunar-surface-catalog.js';
 
 export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type TrailMode = 'off' | 'selected' | 'visible';
@@ -75,6 +76,11 @@ interface StoreState {
   selectedLunarId: string | null;
   lunarKindFilter: Set<LunarOrbiterKind>;
 
+  // Surface-marker layer (Part 3) — landers, Apollo sites, crashes, impacts.
+  selectedLunarSurfaceId: string | null;
+  lunarSurfaceKindFilter: Set<LunarSiteKind>;
+  lunarSurfaceOn: boolean;
+
   savedIds: Set<number>;
   notifyEnabled: boolean;
   openOverlays: Set<OverlayId>;
@@ -121,6 +127,10 @@ interface StoreState {
   setLunarSelection: (id: string | null) => void;
   toggleLunarKindFilter: (k: LunarOrbiterKind) => void;
   setLunarKindFilter: (k: Iterable<LunarOrbiterKind>) => void;
+  setLunarSurfaceSelection: (id: string | null) => void;
+  toggleLunarSurfaceKindFilter: (k: LunarSiteKind) => void;
+  setLunarSurfaceKindFilter: (k: Iterable<LunarSiteKind>) => void;
+  setLunarSurfaceOn: (v: boolean) => void;
 
   toggleSaved: (id: number) => void;
   loadSaved: (ids: Iterable<number>) => void;
@@ -139,6 +149,12 @@ const defaultLunarKindFilter = new Set<LunarOrbiterKind>([
   'relay',
   'nrho',
   'lander-support',
+]);
+const defaultLunarSurfaceKindFilter = new Set<LunarSiteKind>([
+  'crewed',
+  'lander',
+  'crash',
+  'impact',
 ]);
 
 export const useStore = create<StoreState>((set) => ({
@@ -181,6 +197,10 @@ export const useStore = create<StoreState>((set) => ({
 
   selectedLunarId: null,
   lunarKindFilter: new Set(defaultLunarKindFilter),
+
+  selectedLunarSurfaceId: null,
+  lunarSurfaceKindFilter: new Set(defaultLunarSurfaceKindFilter),
+  lunarSurfaceOn: true,
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -306,6 +326,7 @@ export const useStore = create<StoreState>((set) => ({
       selectedNoradId: body === s.body ? s.selectedNoradId : null,
       compareNoradId: body === s.body ? s.compareNoradId : null,
       selectedLunarId: body === s.body ? s.selectedLunarId : null,
+      selectedLunarSurfaceId: body === s.body ? s.selectedLunarSurfaceId : null,
       cameraMode: body === s.body ? s.cameraMode : 'orbit',
       imageryReady: body === s.body ? s.imageryReady : false,
     })),
@@ -318,6 +339,16 @@ export const useStore = create<StoreState>((set) => ({
       return { lunarKindFilter: next };
     }),
   setLunarKindFilter: (kinds) => set({ lunarKindFilter: new Set(kinds) }),
+  setLunarSurfaceSelection: (id) => set({ selectedLunarSurfaceId: id }),
+  toggleLunarSurfaceKindFilter: (kind) =>
+    set((s) => {
+      const next = new Set(s.lunarSurfaceKindFilter);
+      if (next.has(kind)) next.delete(kind);
+      else next.add(kind);
+      return { lunarSurfaceKindFilter: next };
+    }),
+  setLunarSurfaceKindFilter: (kinds) => set({ lunarSurfaceKindFilter: new Set(kinds) }),
+  setLunarSurfaceOn: (lunarSurfaceOn) => set({ lunarSurfaceOn }),
 
   toggleSaved: (id) =>
     set((s) => {

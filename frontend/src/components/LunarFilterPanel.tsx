@@ -5,6 +5,12 @@ import {
   LUNAR_ORBITERS,
   type LunarOrbiterKind,
 } from '../simulation/lunar-catalog.js';
+import {
+  LUNAR_SITE_KIND_COLOR,
+  LUNAR_SITE_KIND_LABEL,
+  LUNAR_SURFACE_SITES,
+  type LunarSiteKind,
+} from '../simulation/lunar-surface-catalog.js';
 
 /**
  * The Moon-side twin of Earth's FilterPanel. Much smaller by design:
@@ -15,6 +21,7 @@ import {
  * keeps the same mental model of "toggle overlays in the right rail".
  */
 const KIND_ORDER: LunarOrbiterKind[] = ['science', 'relay', 'nrho', 'lander-support'];
+const SURFACE_KIND_ORDER: LunarSiteKind[] = ['crewed', 'lander', 'crash', 'impact'];
 
 export function LunarFilterPanel() {
   const kindFilter = useStore((s) => s.lunarKindFilter);
@@ -26,6 +33,11 @@ export function LunarFilterPanel() {
   const setTerminator = useStore((s) => s.setTerminator);
   const graticuleOn = useStore((s) => s.graticuleOn);
   const setGraticule = useStore((s) => s.setGraticule);
+  const surfaceOn = useStore((s) => s.lunarSurfaceOn);
+  const setSurfaceOn = useStore((s) => s.setLunarSurfaceOn);
+  const surfaceKindFilter = useStore((s) => s.lunarSurfaceKindFilter);
+  const toggleSurfaceKind = useStore((s) => s.toggleLunarSurfaceKindFilter);
+  const setSurfaceKind = useStore((s) => s.setLunarSurfaceKindFilter);
 
   // We only list the kinds that actually appear in the current catalogue —
   // no dead "Lander support" row when nothing in that category is flying.
@@ -113,11 +125,72 @@ export function LunarFilterPanel() {
         />
         <span>Lat / lon grid</span>
       </label>
+      <label className="flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5">
+        <input
+          type="checkbox"
+          checked={surfaceOn}
+          onChange={(e) => setSurfaceOn(e.target.checked)}
+          className="h-3 w-3 accent-space-accent"
+        />
+        <span>Surface sites</span>
+      </label>
+
+      {surfaceOn && (
+        <>
+          <SectionHeader
+            label="Surface site type"
+            action={
+              <button
+                onClick={() =>
+                  setSurfaceKind(
+                    surfaceKindFilter.size === SURFACE_KIND_ORDER.length
+                      ? []
+                      : SURFACE_KIND_ORDER,
+                  )
+                }
+                className="text-space-dim hover:text-space-text"
+              >
+                {surfaceKindFilter.size === SURFACE_KIND_ORDER.length ? 'None' : 'All'}
+              </button>
+            }
+          />
+          <div className="mb-4 space-y-1">
+            {SURFACE_KIND_ORDER.map((kind) => {
+              const active = surfaceKindFilter.has(kind);
+              const count = LUNAR_SURFACE_SITES.filter((s) => s.kind === kind).length;
+              return (
+                <label
+                  key={kind}
+                  className={`flex cursor-pointer items-center gap-2 rounded px-1.5 py-1 hover:bg-white/5 ${
+                    active ? 'text-space-text' : 'text-space-dim line-through'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={active}
+                    onChange={() => toggleSurfaceKind(kind)}
+                    className="h-3 w-3 accent-space-accent"
+                  />
+                  <span
+                    className="h-2 w-2 rounded-full"
+                    style={{
+                      background: LUNAR_SITE_KIND_COLOR[kind],
+                      boxShadow: active ? `0 0 6px ${LUNAR_SITE_KIND_COLOR[kind]}` : 'none',
+                    }}
+                  />
+                  <span className="flex-1">{LUNAR_SITE_KIND_LABEL[kind]}</span>
+                  <span className="text-[10px] text-space-dim">{count}</span>
+                </label>
+              );
+            })}
+          </div>
+        </>
+      )}
 
       <div className="mt-4 border-t border-white/5 pt-3 text-[10px] leading-relaxed text-space-dim">
-        Positions from mission-page orbital elements, Keplerian-propagated.
-        Good to a few km / day — swap for SPICE ephemerides for anything
-        needing rendezvous precision.
+        Orbiters propagated from mission-page Keplerian elements. Surface
+        sites pinned from published landing coordinates and LROC imagery —
+        accurate to tens of metres for post-2009 landings.
       </div>
     </aside>
   );

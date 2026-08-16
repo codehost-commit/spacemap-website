@@ -21,6 +21,11 @@ import { CloudOverlay } from '../cesium/clouds.js';
 import { LunarSatellites, type LunarPickTag } from '../cesium/lunar-satellites.js';
 import { LunarOrbitTrail } from '../cesium/lunar-orbit-trail.js';
 import { LunarTerminator } from '../cesium/lunar-terminator.js';
+import {
+  LunarSurfaceMarkers,
+  type LunarSurfacePickTag,
+} from '../cesium/lunar-surface-markers.js';
+import { findLunarSurfaceSite } from '../simulation/lunar-surface-catalog.js';
 import { Simulation, installSimulation } from '../simulation/simulation.js';
 import { useStore } from '../state/store.js';
 import { installFocusApi } from '../cesium/focus.js';
@@ -82,6 +87,7 @@ export function GlobeCanvas() {
     const lunarSats = isMoon ? new LunarSatellites(viewer) : null;
     const lunarTrail = isMoon ? new LunarOrbitTrail(viewer) : null;
     const lunarTerminator = isMoon ? new LunarTerminator(viewer) : null;
+    const lunarSurface = isMoon ? new LunarSurfaceMarkers(viewer) : null;
 
     const uninstallFocus = isEarth && layer ? installFocusApi(viewer, layer) : () => {};
     const uninstallClock = installClockControls(viewer);
@@ -182,7 +188,11 @@ export function GlobeCanvas() {
      * satellite primitives) and lunar orbiter tags ({ lunar: true,
      * orbiterId } objects). Returns either a number, a string, or null.
      */
-    type PickResult = { kind: 'earth'; noradId: number } | { kind: 'moon'; orbiterId: string } | null;
+    type PickResult =
+      | { kind: 'earth'; noradId: number }
+      | { kind: 'moon-orbiter'; orbiterId: string }
+      | { kind: 'moon-surface'; surfaceId: string }
+      | null;
     const pickWithOffsets = (
       pos: Cesium.Cartesian2,
       offsets: Array<[number, number]>,
@@ -194,8 +204,17 @@ export function GlobeCanvas() {
         if (!picked) continue;
         const rawId = picked.id ?? picked.primitive?.id;
         if (typeof rawId === 'number') return { kind: 'earth', noradId: rawId };
-        if (rawId && typeof rawId === 'object' && (rawId as LunarPickTag).lunar) {
-          return { kind: 'moon', orbiterId: (rawId as LunarPickTag).orbiterId };
+        if (rawId && typeof rawId === 'object' && (rawId as { lunar?: unknown }).lunar) {
+          // Orbiter and surface tags both carry `lunar: true` — branch on
+          // which optional ID field is present.
+          const orbiterId = (rawId as LunarPickTag).orbiterId;
+          if (typeof orbiterId === 'string') {
+            return { kind: 'moon-orbiter', orbiterId };
+          }
+          const surfaceId = (rawId as LunarSurfacePickTag).surfaceId;
+          if (typeof surfaceId === 'string') {
+            return { kind: 'moon-surface', surfaceId };
+          }
         }
       }
       return null;
@@ -217,8 +236,10 @@ export function GlobeCanvas() {
         } else {
           state.select(hit.noradId);
         }
-      } else if (hit.kind === 'moon' && isMoon) {
+      } else if (hit.kind === 'moon-orbiter' && isMoon) {
         state.setLunarSelection(hit.orbiterId);
+      } else if (hit.kind === 'moon-surface' && isMoon) {
+        state.setLunarSurfaceSelection(hit.surfaceId);
       }
     }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
 
@@ -239,12 +260,19 @@ export function GlobeCanvas() {
       if (hit?.kind === 'earth' && isEarth) {
         layer?.setHovered(hit.noradId);
         lunarSats?.setHovered(null);
-      } else if (hit?.kind === 'moon' && isMoon) {
+        lunarSurface?.setHovered(null);
+      } else if (hit?.kind === 'moon-orbiter' && isMoon) {
         lunarSats?.setHovered(hit.orbiterId);
+        lunarSurface?.setHovered(null);
+        layer?.setHovered(null);
+      } else if (hit?.kind === 'moon-surface' && isMoon) {
+        lunarSurface?.setHovered(hit.surfaceId);
+        lunarSats?.setHovered(null);
         layer?.setHovered(null);
       } else {
         layer?.setHovered(null);
         lunarSats?.setHovered(null);
+        lunarSurface?.setHovered(null);
       }
       viewer.scene.canvas.style.cursor = hit != null ? 'pointer' : '';
 
@@ -265,12 +293,22 @@ export function GlobeCanvas() {
           tooltip.style.display = 'block';
           tooltip.style.left = `${ev.endPosition.x + 16}px`;
           tooltip.style.top = `${ev.endPosition.y - 12}px`;
-        } else if (hit?.kind === 'moon' && isMoon) {
+        } else if (hit?.kind === 'moon-orbiter' && isMoon) {
           const orbiter = findLunarOrbiter(hit.orbiterId);
           if (orbiter) {
             tooltip.innerHTML =
               `<span style="font-weight:600">${orbiter.name}</span>` +
               `<span style="opacity:0.5;margin-left:6px;font-size:10px">${orbiter.agency}</span>`;
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${ev.endPosition.x + 16}px`;
+            tooltip.style.top = `${ev.endPosition.y - 12}px`;
+          }
+        } else if (hit?.kind === 'moon-surface' && isMoon) {
+          const site = findLunarSurfaceSite(hit.surfaceId);
+          if (site) {
+            tooltip.innerHTML =
+              `<span style="font-weight:600">${site.name}</span>` +
+              `<span style="opacity:0.5;margin-left:6px;font-size:10px">${site.agency}</span>`;
             tooltip.style.display = 'block';
             tooltip.style.left = `${ev.endPosition.x + 16}px`;
             tooltip.style.top = `${ev.endPosition.y - 12}px`;
@@ -305,6 +343,9 @@ export function GlobeCanvas() {
     let lastObjectFilterRef: Set<unknown> | null = null;
     let lastSelection: number | null = null;
     let lastLunarSelection: string | null = null;
+    let lastLunarSurfaceOn = useStore.getState().lunarSurfaceOn;
+    let lastLunarSurfaceKindFilter = useStore.getState().lunarSurfaceKindFilter;
+    let lastLunarSurfaceSelection: string | null = null;
     let lastCameraMode = 'orbit';
     let lastTrailMode = '';
     let lastHeatmap = false;
@@ -319,13 +360,14 @@ export function GlobeCanvas() {
     // Prime lunar selection + trail so a body-swap that arrives with an
     // existing selection immediately paints the ribbon.
     if (isMoon) {
-      const initialSel = useStore.getState().selectedLunarId;
-      lunarSats?.setSelected(initialSel);
-      lunarTrail?.setFromOrbiterId(
-        useStore.getState().trailMode === 'off' ? null : initialSel,
-      );
-      lunarTerminator?.setEnabled(useStore.getState().terminatorOn);
-      lastLunarSelection = initialSel;
+      const state0 = useStore.getState();
+      lunarSats?.setSelected(state0.selectedLunarId);
+      lunarTrail?.setFromOrbiterId(state0.trailMode === 'off' ? null : state0.selectedLunarId);
+      lunarTerminator?.setEnabled(state0.terminatorOn);
+      lunarSurface?.setEnabled(state0.lunarSurfaceOn);
+      lunarSurface?.setKindFilter(state0.lunarSurfaceKindFilter);
+      lunarSurface?.setSelected(state0.selectedLunarSurfaceId);
+      lastLunarSelection = state0.selectedLunarId;
     }
 
     const unsubUi = useStore.subscribe((s) => {
@@ -348,6 +390,18 @@ export function GlobeCanvas() {
         }
         if (s.trailMode !== lastTrailMode) {
           lastTrailMode = s.trailMode;
+        }
+        if (s.lunarSurfaceOn !== lastLunarSurfaceOn) {
+          lastLunarSurfaceOn = s.lunarSurfaceOn;
+          lunarSurface?.setEnabled(s.lunarSurfaceOn);
+        }
+        if (s.lunarSurfaceKindFilter !== lastLunarSurfaceKindFilter) {
+          lastLunarSurfaceKindFilter = s.lunarSurfaceKindFilter;
+          lunarSurface?.setKindFilter(s.lunarSurfaceKindFilter);
+        }
+        if (s.selectedLunarSurfaceId !== lastLunarSurfaceSelection) {
+          lastLunarSurfaceSelection = s.selectedLunarSurfaceId;
+          lunarSurface?.setSelected(s.selectedLunarSurfaceId);
         }
         return;
       }
@@ -455,6 +509,7 @@ export function GlobeCanvas() {
       planets.destroy();
       lunarTrail?.destroy();
       lunarTerminator?.destroy();
+      lunarSurface?.destroy();
       lunarSats?.destroy();
       imagery.destroy();
       trails?.clear();

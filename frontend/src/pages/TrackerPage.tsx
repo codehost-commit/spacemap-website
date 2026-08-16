@@ -20,6 +20,7 @@ import { SystemPill } from '../components/SystemPill.js';
 import { BodySwitcher } from '../components/BodySwitcher.js';
 import { LunarFilterPanel } from '../components/LunarFilterPanel.js';
 import { LunarTelemetryPanel } from '../components/LunarTelemetryPanel.js';
+import { LunarSurfacePanel } from '../components/LunarSurfacePanel.js';
 import { useStore } from '../state/store.js';
 import { LUNAR_ORBITERS, LUNAR_KIND_COLOR } from '../simulation/lunar-catalog.js';
 
@@ -176,6 +177,7 @@ export function TrackerPage() {
         </div>
       )}
       {isMoon && <LunarTelemetryPanel />}
+      {isMoon && <LunarSurfacePanel />}
 
       <TimeControls />
       <TimelineScrubber />
