@@ -26,8 +26,20 @@ export interface BodyDef {
   short: string; // one-line marketing sentence for the switcher tooltip
   radiusM: number; // spherical radius; we build an isotropic Ellipsoid from it
   imagery: () => Cesium.ImageryProvider;
-  /** Cesium Ion asset ID for this body's 3-D terrain. Loaded when a token exists. */
+  /**
+   * Cesium Ion asset ID for a quantised-mesh terrain (drapes existing imagery
+   * over 3-D relief). Used for Earth (Cesium World Terrain, asset 1).
+   */
   terrainIonAssetId?: number;
+  /**
+   * Cesium Ion asset ID for a 3D Tileset that provides the body geometry
+   * itself (already includes textured surface). Used for the Moon —
+   * "Cesium Moon" (asset 2684829) is a full 3D Tiles model of the lunar
+   * surface, streamed from LRO/LOLA data. Rendered as an added primitive
+   * on top of the ellipsoid — Cesium picks the tileset's own textured
+   * mesh over the base imagery wherever tiles are loaded.
+   */
+  tilesetIonAssetId?: number;
   /** Height (metres) the camera should sit above the surface on first view. */
   homeAltitudeM: number;
   /** Rough centre the camera should look at when first switching in. */
@@ -122,13 +134,15 @@ export const BODIES: Record<BodyId, BodyDef> = {
     short: 'LRO WAC global mosaic — 100 m/pixel, streamed from NASA Moon Trek.',
     radiusM: MOON_RADIUS_M,
     imagery: moonImagery,
-    // Moon LOLA terrain — LRO Lunar Orbiter Laser Altimeter DEM served as
-    // quantised-mesh tiles. This asset requires you to explicitly add it
-    // to your Ion account (ion.cesium.com/assetdepot → search "moon" →
-    // click "Add to my assets" on the LRO LOLA Moon terrain entry). Once
-    // added, your token can fetch its tiles and the surface becomes real
-    // 3-D geometry — craters, mare basins, Tycho's central peak all pop.
-    terrainIonAssetId: 2684829,
+    // "Cesium Moon" — 3D Tileset of the full lunar surface, curated by
+    // Cesium from NASA/USGS data (LRO, LOLA). Requires the asset to be
+    // added to your Ion account (ion.cesium.com/assetdepot → "moon" →
+    // "Add to my assets"). Once added and your token includes it, the
+    // whole moon renders as textured 3-D geometry — craters, rille lines,
+    // and central peaks all become real relief rather than painted-on
+    // shading. The 2-D LRO WAC imagery above stays as a fallback where
+    // tileset coverage hasn't loaded yet.
+    tilesetIonAssetId: 2684829,
     // Moon is ~3.6× smaller than Earth; a proportionally-tighter default
     // altitude keeps it filling the viewport instead of shrinking away.
     homeAltitudeM: 5_500_000,

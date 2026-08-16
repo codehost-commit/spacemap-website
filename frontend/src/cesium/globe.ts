@@ -98,27 +98,47 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
   // token is configured (local dev without .env.local, PR builds), we stay
   // on the ellipsoid and everything else still works. A soft failure inside
   // the promise leaves the ellipsoid in place too — we log and move on.
-  if (hasIonToken() && def.terrainIonAssetId !== undefined) {
-    const assetId = def.terrainIonAssetId;
-    console.info(`[globe] loading Ion terrain for ${def.id} (asset ${assetId})…`);
-    Cesium.CesiumTerrainProvider.fromIonAssetId(assetId, { requestVertexNormals: true })
-      .then((provider) => {
-        // Guard against the viewer being torn down mid-load (fast body switch).
-        if (viewer.isDestroyed()) return;
-        viewer.scene.setTerrain(new Cesium.Terrain(Promise.resolve(provider)));
-        console.info(
-          `[globe] Ion terrain applied for ${def.id} — zoom in on a crater/mountain to see relief.`,
-        );
-      })
-      .catch((err) => {
-        const msg = err instanceof Error ? err.message : String(err);
-        console.warn(
-          `[globe] terrain load failed for ${def.id} (asset ${assetId}): ${msg}. ` +
-            `If this is a 404 or "asset not found", visit ion.cesium.com/assetdepot, ` +
-            `add asset ${assetId} to your account, then redeploy.`,
-        );
-      });
-  } else if (!hasIonToken()) {
+  if (hasIonToken()) {
+    // Quantised-mesh terrain (Earth's Cesium World Terrain).
+    if (def.terrainIonAssetId !== undefined) {
+      const assetId = def.terrainIonAssetId;
+      console.info(`[globe] loading Ion terrain for ${def.id} (asset ${assetId})…`);
+      Cesium.CesiumTerrainProvider.fromIonAssetId(assetId, { requestVertexNormals: true })
+        .then((provider) => {
+          if (viewer.isDestroyed()) return;
+          viewer.scene.setTerrain(new Cesium.Terrain(Promise.resolve(provider)));
+          console.info(`[globe] Ion terrain applied for ${def.id} — zoom in to see 3-D relief.`);
+        })
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(
+            `[globe] terrain load failed for ${def.id} (asset ${assetId}): ${msg}. ` +
+              `Add asset ${assetId} at ion.cesium.com/assetdepot if it isn't in your account.`,
+          );
+        });
+    }
+
+    // 3D Tileset (the Moon's "Cesium Moon" — a fully-textured lunar mesh).
+    if (def.tilesetIonAssetId !== undefined) {
+      const assetId = def.tilesetIonAssetId;
+      console.info(`[globe] loading Ion 3D tileset for ${def.id} (asset ${assetId})…`);
+      Cesium.Cesium3DTileset.fromIonAssetId(assetId)
+        .then((tileset) => {
+          if (viewer.isDestroyed()) return;
+          viewer.scene.primitives.add(tileset);
+          console.info(
+            `[globe] Ion 3D tileset applied for ${def.id} — surface now real 3-D geometry.`,
+          );
+        })
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message : String(err);
+          console.warn(
+            `[globe] 3D tileset load failed for ${def.id} (asset ${assetId}): ${msg}. ` +
+              `Add asset ${assetId} at ion.cesium.com/assetdepot if it isn't in your account.`,
+          );
+        });
+    }
+  } else {
     console.info('[globe] no VITE_CESIUM_ION_TOKEN — falling back to smooth ellipsoid');
   }
 
