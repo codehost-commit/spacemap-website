@@ -1,4 +1,5 @@
 import * as Cesium from 'cesium';
+import { BODIES, type BodyId } from './bodies.js';
 
 /**
  * Base-imagery catalog.
@@ -11,6 +12,10 @@ import * as Cesium from 'cesium';
  * They are notoriously finicky: BlueMarble insists on `.jpeg` (not `.jpg`),
  * MODIS uses `.jpg`, VIIRS uses `.png`, and the maximumLevel must match the
  * tile matrix set exactly or you get 400s that render as a black hemisphere.
+ *
+ * The Moon has its own layer (LRO WAC global mosaic) defined in bodies.ts —
+ * BaseImageryController routes to it whenever the active body is 'moon',
+ * ignoring the Earth-side imagery picker entirely.
  */
 export interface ImageryDef {
   id: string;
@@ -116,10 +121,17 @@ export class BaseImageryController {
 
   constructor(private readonly viewer: Cesium.Viewer) {}
 
-  async apply(id: string): Promise<void> {
-    const def = IMAGERY_LAYERS.find((d) => d.id === id) ?? IMAGERY_LAYERS[0];
+  async apply(body: BodyId, id: string): Promise<void> {
+    // Moon ignores the Earth imagery picker — there's exactly one map that
+    // matters (LRO WAC global mosaic) and it lives with the body definition.
+    let provider: Cesium.ImageryProvider;
     try {
-      const provider = await Promise.resolve(def.create());
+      if (body === 'moon') {
+        provider = BODIES.moon.imagery();
+      } else {
+        const def = IMAGERY_LAYERS.find((d) => d.id === id) ?? IMAGERY_LAYERS[0];
+        provider = await Promise.resolve(def.create());
+      }
       const layer = new Cesium.ImageryLayer(provider);
       this.viewer.imageryLayers.add(layer, 0);
       if (this.current) {
@@ -127,7 +139,7 @@ export class BaseImageryController {
       }
       this.current = layer;
     } catch (err) {
-      console.warn('[imagery] failed to apply', id, err);
+      console.warn('[imagery] failed to apply', body, id, err);
     }
   }
 

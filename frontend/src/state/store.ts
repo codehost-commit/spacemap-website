@@ -6,6 +6,7 @@ import type {
   PropagationSnapshot,
 } from '@spacemap/shared';
 import { CATALOG_OBJECT_TYPES, ORBIT_CLASSES } from '@spacemap/shared';
+import type { BodyId } from '../cesium/bodies.js';
 
 export type CatalogStatus = 'idle' | 'loading' | 'ready' | 'error';
 export type TrailMode = 'off' | 'selected' | 'visible';
@@ -63,6 +64,12 @@ interface StoreState {
   cloudsOn: boolean;
   imageryId: string;
 
+  // Beyond Earth — which body is the globe currently rendering. Earth is the
+  // default and behaves exactly like the original tracker; Moon swaps the
+  // globe for a Moon-radius sphere textured with LRO WAC imagery and hides
+  // every Earth-specific overlay while it's active.
+  body: BodyId;
+
   savedIds: Set<number>;
   notifyEnabled: boolean;
   openOverlays: Set<OverlayId>;
@@ -105,6 +112,7 @@ interface StoreState {
   setGroundStations: (v: boolean) => void;
   setClouds: (v: boolean) => void;
   setImagery: (id: string) => void;
+  setBody: (b: BodyId) => void;
 
   toggleSaved: (id: number) => void;
   loadSaved: (ids: Iterable<number>) => void;
@@ -157,6 +165,7 @@ export const useStore = create<StoreState>((set) => ({
   groundStationsOn: false,
   cloudsOn: true,
   imageryId: 'arcgis',
+  body: 'earth',
 
   savedIds: new Set(),
   notifyEnabled: false,
@@ -276,6 +285,18 @@ export const useStore = create<StoreState>((set) => ({
   setGroundStations: (groundStationsOn) => set({ groundStationsOn }),
   setClouds: (cloudsOn) => set({ cloudsOn }),
   setImagery: (imageryId) => set({ imageryId }),
+  setBody: (body) =>
+    set((s) => ({
+      body,
+      // Switching bodies drops the current selection — the selected NORAD ID
+      // belongs to an Earth catalog and would be meaningless in Moon view.
+      selectedNoradId: body === s.body ? s.selectedNoradId : null,
+      compareNoradId: body === s.body ? s.compareNoradId : null,
+      cameraMode: body === s.body ? s.cameraMode : 'orbit',
+      // Force re-detection of the "first tiles rendered" moment so the
+      // loading screen dismisses cleanly for the new imagery layer.
+      imageryReady: body === s.body ? s.imageryReady : false,
+    })),
 
   toggleSaved: (id) =>
     set((s) => {
