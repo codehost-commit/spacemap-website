@@ -97,15 +97,21 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
   // the promise leaves the ellipsoid in place too — we log and move on.
   if (hasIonToken() && def.terrainIonAssetId !== undefined) {
     const assetId = def.terrainIonAssetId;
+    console.info(`[globe] loading Ion terrain for ${def.id} (asset ${assetId})…`);
     Cesium.CesiumTerrainProvider.fromIonAssetId(assetId, { requestVertexNormals: true })
       .then((provider) => {
         // Guard against the viewer being torn down mid-load (fast body switch).
         if (viewer.isDestroyed()) return;
         viewer.scene.setTerrain(new Cesium.Terrain(Promise.resolve(provider)));
+        console.info(
+          `[globe] Ion terrain applied for ${def.id} — zoom in on a crater/mountain to see relief.`,
+        );
       })
       .catch((err) => {
         console.warn(`[globe] terrain load failed for ${def.id} (asset ${assetId})`, err);
       });
+  } else if (!hasIonToken()) {
+    console.info('[globe] no VITE_CESIUM_ION_TOKEN — falling back to smooth ellipsoid');
   }
 
   // Bloom — subtle glow on bright pixels (satellites, sun, bright stars).

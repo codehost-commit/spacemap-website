@@ -21,6 +21,7 @@ import { CloudOverlay } from '../cesium/clouds.js';
 import { LunarSatellites, type LunarPickTag } from '../cesium/lunar-satellites.js';
 import { LunarOrbitTrail } from '../cesium/lunar-orbit-trail.js';
 import { LunarTerminator } from '../cesium/lunar-terminator.js';
+import { LunarNightShade } from '../cesium/lunar-night-shade.js';
 import {
   LunarSurfaceMarkers,
   type LunarSurfacePickTag,
@@ -87,6 +88,7 @@ export function GlobeCanvas() {
     const lunarSats = isMoon ? new LunarSatellites(viewer) : null;
     const lunarTrail = isMoon ? new LunarOrbitTrail(viewer) : null;
     const lunarTerminator = isMoon ? new LunarTerminator(viewer) : null;
+    const lunarNightShade = isMoon ? new LunarNightShade(viewer) : null;
     const lunarSurface = isMoon ? new LunarSurfaceMarkers(viewer) : null;
 
     const uninstallFocus = isEarth && layer ? installFocusApi(viewer, layer) : () => {};
@@ -364,6 +366,7 @@ export function GlobeCanvas() {
       lunarSats?.setSelected(state0.selectedLunarId);
       lunarTrail?.setFromOrbiterId(state0.trailMode === 'off' ? null : state0.selectedLunarId);
       lunarTerminator?.setEnabled(state0.terminatorOn);
+      lunarNightShade?.setEnabled(state0.terminatorOn);
       lunarSurface?.setEnabled(state0.lunarSurfaceOn);
       lunarSurface?.setKindFilter(state0.lunarSurfaceKindFilter);
       lunarSurface?.setSelected(state0.selectedLunarSurfaceId);
@@ -381,6 +384,7 @@ export function GlobeCanvas() {
         if (s.terminatorOn !== lastTerminator) {
           lastTerminator = s.terminatorOn;
           lunarTerminator?.setEnabled(s.terminatorOn);
+          lunarNightShade?.setEnabled(s.terminatorOn);
         }
         if (s.selectedLunarId !== lastLunarSelection || s.trailMode !== lastTrailMode) {
           lastLunarSelection = s.selectedLunarId;
@@ -509,6 +513,7 @@ export function GlobeCanvas() {
       planets.destroy();
       lunarTrail?.destroy();
       lunarTerminator?.destroy();
+      lunarNightShade?.destroy();
       lunarSurface?.destroy();
       lunarSats?.destroy();
       imagery.destroy();
