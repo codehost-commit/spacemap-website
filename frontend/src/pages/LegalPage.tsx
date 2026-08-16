@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom';
 
 const UPDATED = 'August 13, 2026';
+const CONTENT_LINKS = [
+  ['Privacy', '#privacy'],
+  ['Terms', '#terms'],
+  ['Attributions', '#attributions'],
+] as const;
 
 function AccentWord({ children, className = '' }: { children: React.ReactNode; className?: string }) {
   return <span className={`spacemap-heading-accent ${className}`.trim()}>{children}</span>;
@@ -38,225 +43,225 @@ function Clause({ title, children }: { title: string; children: React.ReactNode 
 export function LegalPage() {
   return (
     <div className="relative pt-24">
-      <section className="mx-auto max-w-5xl px-6 py-16">
-        <p className="mb-4 text-xs font-semibold uppercase tracking-[0.32em] text-space-accent">
-          Privacy, Terms & Attributions
-        </p>
-        <h1 className="spacemap-heading-display max-w-4xl text-4xl text-white md:text-6xl">
-          Privacy, terms, and credits for <AccentWord className="text-space-accent">SpaceMap</AccentWord>.
-        </h1>
-        <p className="mt-6 max-w-3xl text-base leading-relaxed text-space-dim md:text-lg">
-          This page combines SpaceMap&apos;s Privacy Policy, Terms of Use, and media
-          attributions. It is written for the current product at{' '}
-          <span className="text-white">spacemap.earth</span>, including the live tracker,
-          overlays, saved lists, contact flow, and related site pages.
-        </p>
+      <section className="mx-auto max-w-[68rem] px-6 py-16">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,48rem)_minmax(12rem,1fr)] lg:items-start">
+          <div className="max-w-3xl">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.32em] text-space-accent">
+              Privacy, Terms & Attributions
+            </p>
+            <h1 className="spacemap-heading-display text-4xl text-white md:text-6xl">
+              Privacy, terms, and credits for <AccentWord className="text-space-accent">SpaceMap</AccentWord>.
+            </h1>
+            <p className="mt-6 text-base leading-relaxed text-space-dim md:text-lg">
+              This page combines SpaceMap&apos;s Privacy Policy, Terms of Use, and media
+              attributions. It is written for the current product at{' '}
+              <span className="text-white">spacemap.earth</span>, including the live tracker,
+              overlays, saved lists, contact flow, and related site pages.
+            </p>
+            <p className="mt-6 text-sm text-space-dim">Last updated {UPDATED}</p>
+          </div>
 
-        <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-sm font-medium text-space-dim">
-          <a
-            href="#privacy"
-            className="transition-colors hover:text-white"
-          >
-            Privacy
-          </a>
-          <a
-            href="#terms"
-            className="transition-colors hover:text-white"
-          >
-            Terms
-          </a>
-          <a
-            href="#attributions"
-            className="transition-colors hover:text-white"
-          >
-            Attributions
-          </a>
+          <nav className="lg:sticky lg:top-28">
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-space-accent">
+              On this page
+            </p>
+            <div className="mt-4 flex flex-wrap gap-x-5 gap-y-3 lg:block lg:space-y-3">
+              {CONTENT_LINKS.map(([label, href]) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="block text-sm font-semibold text-space-dim transition-colors hover:text-white"
+                >
+                  {label}
+                </a>
+              ))}
+            </div>
+          </nav>
         </div>
-        <p className="mt-3 text-sm text-space-dim">Last updated {UPDATED}</p>
       </section>
 
-      <section className="mx-auto max-w-5xl px-6 pb-24">
-        <div className="mb-10 border-y border-white/10 py-5">
-          <p className="text-sm leading-relaxed text-space-dim">
-            <span className="font-semibold text-white">Operator.</span> SpaceMap is operated by{' '}
-            <span className="text-white">Rahul Awasthi</span> as a sole proprietorship. SpaceMap is
-            not a corporation or limited liability company. Questions about this page can be sent
-            to{' '}
-            <a
-              href="mailto:hello@spacemap.earth"
-              className="text-space-accent transition-colors hover:text-white"
-            >
-              hello@spacemap.earth
-            </a>
-            .
-          </p>
-        </div>
+      <section className="mx-auto max-w-[68rem] px-6 pb-24">
+        <article className="max-w-3xl">
+          <div className="mb-12 border-y border-white/10 py-5">
+            <p className="text-sm leading-relaxed text-space-dim">
+              <span className="font-semibold text-white">Operator.</span> SpaceMap is operated by{' '}
+              <span className="text-white">Rahul Awasthi</span> as a sole proprietorship.
+              Questions about this page can be sent to{' '}
+              <a
+                href="mailto:hello@spacemap.earth"
+                className="text-space-accent transition-colors hover:text-white"
+              >
+                hello@spacemap.earth
+              </a>
+              .
+            </p>
+          </div>
 
-        <div className="space-y-8">
-          <Section id="privacy" title="Privacy Policy">
-            <Clause title="1. What this policy covers">
-              <p>
-                This Privacy Policy explains what information SpaceMap may collect, how it may be
-                used, how it may be shared, and what choices you have when you use the website,
-                tracker, related overlays, and any associated communications.
-              </p>
-              <p>
-                SpaceMap is designed to do a substantial amount of work directly in your browser.
-                That means many calculations, render steps, and saved preferences can remain on
-                your device instead of being transmitted to a SpaceMap-operated backend.
-              </p>
-            </Clause>
+          <div className="space-y-14">
+              <Section id="privacy" title="Privacy Policy">
+                <Clause title="1. What this policy covers">
+                  <p>
+                    This Privacy Policy explains what information SpaceMap may collect, how it may be
+                    used, how it may be shared, and what choices you have when you use the website,
+                    tracker, related overlays, and any associated communications.
+                  </p>
+                  <p>
+                    SpaceMap is designed to do a substantial amount of work directly in your browser.
+                    That means many calculations, render steps, and saved preferences can remain on
+                    your device instead of being transmitted to a SpaceMap-operated backend.
+                  </p>
+                </Clause>
 
-            <Clause title="2. Information we collect">
-              <p>SpaceMap may collect or process the following categories of information:</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>
-                  Information you provide directly, such as your name, email address, and message
-                  if you contact SpaceMap.
-                </li>
-                <li>
-                  Device, browser, network, and usage information, such as IP address, user agent,
-                  approximate location inferred from network data, page views, navigation events,
-                  performance diagnostics, crash information, and security logs.
-                </li>
-                <li>
-                  Data stored locally on your device, including local storage, cached assets,
-                  service worker data, saved satellite lists, tracker preferences, and similar
-                  browser-side settings.
-                </li>
-                <li>
-                  Notification preferences if you enable browser notifications.
-                </li>
-                <li>
-                  Information generated through your use of the product, such as searches,
-                  selections, interface interactions, or feature usage patterns, to the extent
-                  SpaceMap or its service providers monitor product usage.
-                </li>
-              </ul>
-            </Clause>
+                <Clause title="2. Information we collect">
+                  <p>SpaceMap may collect or process the following categories of information:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      Information you provide directly, such as your name, email address, and message
+                      if you contact SpaceMap.
+                    </li>
+                    <li>
+                      Device, browser, network, and usage information, such as IP address, user agent,
+                      approximate location inferred from network data, page views, navigation events,
+                      performance diagnostics, crash information, and security logs.
+                    </li>
+                    <li>
+                      Data stored locally on your device, including local storage, cached assets,
+                      service worker data, saved satellite lists, tracker preferences, and similar
+                      browser-side settings.
+                    </li>
+                    <li>
+                      Notification preferences if you enable browser notifications.
+                    </li>
+                    <li>
+                      Information generated through your use of the product, such as searches,
+                      selections, interface interactions, or feature usage patterns, to the extent
+                      SpaceMap or its service providers monitor product usage.
+                    </li>
+                  </ul>
+                </Clause>
 
-            <Clause title="3. Tracking, cookies, local storage, and similar technologies">
-              <p>
-                By using SpaceMap, you authorize SpaceMap and its service providers to use cookies,
-                local storage, cache storage, service workers, server logs, diagnostics, analytics,
-                and similar technologies for product operation, security, abuse prevention,
-                performance monitoring, debugging, and product improvement.
-              </p>
-              <p>
-                Some features depend on local browser storage or cached assets to function
-                correctly. Disabling these technologies may limit functionality.
-              </p>
-            </Clause>
+                <Clause title="3. Tracking, cookies, local storage, and similar technologies">
+                  <p>
+                    By using SpaceMap, you authorize SpaceMap and its service providers to use cookies,
+                    local storage, cache storage, service workers, server logs, diagnostics, analytics,
+                    and similar technologies for product operation, security, abuse prevention,
+                    performance monitoring, debugging, and product improvement.
+                  </p>
+                  <p>
+                    Some features depend on local browser storage or cached assets to function
+                    correctly. Disabling these technologies may limit functionality.
+                  </p>
+                </Clause>
 
-            <Clause title="4. How we use information">
-              <p>SpaceMap may use information to:</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>operate, maintain, secure, and improve the website and tracker;</li>
-                <li>render orbital data, map layers, and optional overlays;</li>
-                <li>remember settings and saved items on your device;</li>
-                <li>respond to support requests, feedback, or legal notices;</li>
-                <li>measure reliability, detect abuse, prevent fraud, and investigate incidents;</li>
-                <li>understand how the product is used and what should be improved next.</li>
-              </ul>
-            </Clause>
+                <Clause title="4. How we use information">
+                  <p>SpaceMap may use information to:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>operate, maintain, secure, and improve the website and tracker;</li>
+                    <li>render orbital data, map layers, and optional overlays;</li>
+                    <li>remember settings and saved items on your device;</li>
+                    <li>respond to support requests, feedback, or legal notices;</li>
+                    <li>measure reliability, detect abuse, prevent fraud, and investigate incidents;</li>
+                    <li>understand how the product is used and what should be improved next.</li>
+                  </ul>
+                </Clause>
 
-            <Clause title="5. Public data sources and third-party materials">
-              <p>
-                SpaceMap uses public, publicly accessible, or publicly licensed data and reference
-                materials from third parties. Depending on the feature, these may include orbital
-                element sets and metadata, launch information, basemap imagery, geographic
-                reference data, and astronomical catalogs.
-              </p>
-              <p>Examples of sources used by the product include:</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>Space-Track and CelesTrak for orbital element and catalog data;</li>
-                <li>Launch Library 2 / The Space Devs for launch-related data;</li>
-                <li>Natural Earth for geographic outlines and reference layers;</li>
-                <li>HYG and similar astronomy datasets for star background data;</li>
-                <li>imagery and mapping providers used through the tracker experience.</li>
-              </ul>
-              <p>
-                Those sources are not owned by SpaceMap. Their accuracy, uptime, freshness,
-                licensing terms, and usage restrictions are controlled by their respective
-                providers.
-              </p>
-            </Clause>
+                <Clause title="5. Public data sources and third-party materials">
+                  <p>
+                    SpaceMap uses public, publicly accessible, or publicly licensed data and reference
+                    materials from third parties. Depending on the feature, these may include orbital
+                    element sets and metadata, launch information, basemap imagery, geographic
+                    reference data, and astronomical catalogs.
+                  </p>
+                  <p>Examples of sources used by the product include:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>Space-Track and CelesTrak for orbital element and catalog data;</li>
+                    <li>Launch Library 2 / The Space Devs for launch-related data;</li>
+                    <li>Natural Earth for geographic outlines and reference layers;</li>
+                    <li>HYG and similar astronomy datasets for star background data;</li>
+                    <li>imagery and mapping providers used through the tracker experience.</li>
+                  </ul>
+                  <p>
+                    Those sources are not owned by SpaceMap. Their accuracy, uptime, freshness,
+                    licensing terms, and usage restrictions are controlled by their respective
+                    providers.
+                  </p>
+                </Clause>
 
-            <Clause title="6. Sharing and disclosure">
-              <p>SpaceMap may share information in the following circumstances:</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>
-                  with hosting, infrastructure, analytics, security, or delivery providers that
-                  help operate the service;
-                </li>
-                <li>
-                  with third-party data or media providers when your browser requests their
-                  content or APIs;
-                </li>
-                <li>
-                  when required by law, legal process, court order, or a good-faith belief that
-                  disclosure is necessary to protect rights, safety, or property;
-                </li>
-                <li>
-                  in connection with a reorganization, asset sale, financing, or transfer of the
-                  business, subject to applicable law.
-                </li>
-              </ul>
-              <p>
-                SpaceMap does not represent that it sells personal information in the ordinary
-                consumer sense. However, service providers and infrastructure partners may process
-                technical data as part of delivering the service.
-              </p>
-            </Clause>
+                <Clause title="6. Sharing and disclosure">
+                  <p>SpaceMap may share information in the following circumstances:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>
+                      with hosting, infrastructure, analytics, security, or delivery providers that
+                      help operate the service;
+                    </li>
+                    <li>
+                      with third-party data or media providers when your browser requests their
+                      content or APIs;
+                    </li>
+                    <li>
+                      when required by law, legal process, court order, or a good-faith belief that
+                      disclosure is necessary to protect rights, safety, or property;
+                    </li>
+                    <li>
+                      in connection with a reorganization, asset sale, financing, or transfer of the
+                      business, subject to applicable law.
+                    </li>
+                  </ul>
+                  <p>
+                    SpaceMap does not represent that it sells personal information in the ordinary
+                    consumer sense. However, service providers and infrastructure partners may process
+                    technical data as part of delivering the service.
+                  </p>
+                </Clause>
 
-            <Clause title="7. Retention">
-              <p>
-                Information may be retained for as long as reasonably necessary to operate the
-                service, comply with legal obligations, resolve disputes, enforce agreements, or
-                maintain security and business records.
-              </p>
-              <p>
-                Data stored locally in your browser may remain there until you clear it or your
-                browser removes it.
-              </p>
-            </Clause>
+                <Clause title="7. Retention">
+                  <p>
+                    Information may be retained for as long as reasonably necessary to operate the
+                    service, comply with legal obligations, resolve disputes, enforce agreements, or
+                    maintain security and business records.
+                  </p>
+                  <p>
+                    Data stored locally in your browser may remain there until you clear it or your
+                    browser removes it.
+                  </p>
+                </Clause>
 
-            <Clause title="8. Security">
-              <p>
-                SpaceMap uses reasonable administrative, technical, and organizational measures to
-                protect information. No website, storage method, or network transmission is
-                perfectly secure, so absolute security cannot be guaranteed.
-              </p>
-            </Clause>
+                <Clause title="8. Security">
+                  <p>
+                    SpaceMap uses reasonable administrative, technical, and organizational measures to
+                    protect information. No website, storage method, or network transmission is
+                    perfectly secure, so absolute security cannot be guaranteed.
+                  </p>
+                </Clause>
 
-            <Clause title="9. Children">
-              <p>
-                SpaceMap is not intended for children under 13 and is not knowingly designed to
-                collect personal information from children under 13. If you believe such
-                information has been provided, contact SpaceMap so it can be reviewed.
-              </p>
-            </Clause>
+                <Clause title="9. Children">
+                  <p>
+                    SpaceMap is not intended for children under 13 and is not knowingly designed to
+                    collect personal information from children under 13. If you believe such
+                    information has been provided, contact SpaceMap so it can be reviewed.
+                  </p>
+                </Clause>
 
-            <Clause title="10. Your choices">
-              <p>You may be able to:</p>
-              <ul className="list-disc space-y-2 pl-5">
-                <li>disable notifications through your browser;</li>
-                <li>clear local storage, cookies, or cached assets through browser settings;</li>
-                <li>stop using the service at any time;</li>
-                <li>contact SpaceMap regarding privacy questions or requests.</li>
-              </ul>
-            </Clause>
+                <Clause title="10. Your choices">
+                  <p>You may be able to:</p>
+                  <ul className="list-disc space-y-2 pl-5">
+                    <li>disable notifications through your browser;</li>
+                    <li>clear local storage, cookies, or cached assets through browser settings;</li>
+                    <li>stop using the service at any time;</li>
+                    <li>contact SpaceMap regarding privacy questions or requests.</li>
+                  </ul>
+                </Clause>
 
-            <Clause title="11. Changes to this policy">
-              <p>
-                SpaceMap may update this Privacy Policy from time to time. Changes become effective
-                when posted here, unless a later date is stated. Continued use of the service after
-                updates means you accept the revised policy.
-              </p>
-            </Clause>
-          </Section>
+                <Clause title="11. Changes to this policy">
+                  <p>
+                    SpaceMap may update this Privacy Policy from time to time. Changes become effective
+                    when posted here, unless a later date is stated. Continued use of the service after
+                    updates means you accept the revised policy.
+                  </p>
+                </Clause>
+              </Section>
 
-          <Section id="terms" title="Terms of Use">
+              <Section id="terms" title="Terms of Use">
             <Clause title="1. Acceptance of these terms">
               <p>
                 By accessing or using SpaceMap, you agree to these Terms of Use. If you do not
@@ -424,9 +429,9 @@ export function LegalPage() {
                 .
               </p>
             </Clause>
-          </Section>
+              </Section>
 
-          <Section id="attributions" title="Attributions">
+              <Section id="attributions" title="Attributions">
             <Clause title="Homepage hero video">
               <p>
                 SpaceMap&apos;s homepage hero uses a trimmed excerpt from{' '}
@@ -509,8 +514,9 @@ export function LegalPage() {
                 or spacemap.earth.
               </p>
             </Clause>
-          </Section>
-        </div>
+              </Section>
+          </div>
+        </article>
       </section>
     </div>
   );
