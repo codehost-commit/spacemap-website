@@ -1,30 +1,20 @@
 import * as Cesium from 'cesium';
 
 /**
- * The great-circle line on the Moon where the sun sits exactly on the
- * horizon — the boundary between the illuminated near side and the
- * shadowed side. Cesium's SunLight already shades the globe based on the
- * ICRF sun position; this class overlays the terminator LINE so
- * time-warping the clock shows the day/night boundary sweeping visibly
- * across the surface.
+ * Solar terminator ring for Mars — same construction as LunarTerminator,
+ * scaled to Mars radius. The great circle where the sun sits exactly on
+ * the horizon: everything on the sunlit side of it is in Martian daytime,
+ * everything on the far side is in the pre-dawn/post-sunset cold.
  *
- * Frame note: Cesium doesn't know a rotation model for our custom Moon
- * ellipsoid, so its shading effectively treats body-fixed positions as
- * inertial for the purpose of applying the sun direction. To make the
- * terminator LINE overlay the actual bright/dark boundary Cesium is
- * drawing, we build the ring using the INERTIAL sun direction (not the
- * Moon-fixed one) — anything else would leave the line offset by the
- * current Moon rotation angle, which drifts ~13°/day.
- *
- * Visual choices: lifted 15 km above the surface so it never z-fights
- * with the LRO WAC tiles, drawn at 3 px in warm amber that pops against
- * both the sunlit greys and the dark side.
+ * Uses `scene.light.direction` directly so the ring can't drift out of
+ * sync with whatever frame Cesium is actually shading against — the same
+ * technique that fixed the Moon terminator drift.
  */
 const REFRESH_MS = 4000;
-const SAMPLES = 200;
-const MOON_R_M = 1_737_400 + 15_000; // surface + 15 km — well clear of z-fight
+const SAMPLES = 240;
+const MARS_R_M = 3_389_500 + 20_000; // surface + 20 km — clear of any relief
 
-export class LunarTerminator {
+export class MarsTerminator {
   private polyline: Cesium.Polyline | null = null;
   private collection: Cesium.PolylineCollection | null = null;
   private lastBuildMs = 0;
@@ -73,19 +63,14 @@ export class LunarTerminator {
     if (now - this.lastBuildMs < REFRESH_MS) return;
     this.lastBuildMs = now;
 
-    // Use the SAME sun direction Cesium's SunLight is applying to the
-    // tileset — reading scene.light.direction guarantees the terminator
-    // ring and the visible day/night boundary can't drift apart, no matter
-    // which frame the underlying tileset ended up in. Cesium's base Light
-    // type doesn't declare `direction`, but every concrete subclass
-    // (SunLight, DirectionalLight) exposes it — cast through unknown.
+    // Sun direction Cesium is actually shading with — reading it here
+    // guarantees our ring and the scene's day/night boundary agree.
+    // Cesium's base Light type doesn't declare `direction`; every concrete
+    // subclass does. Cast through unknown to satisfy the type checker.
     const sceneLight = this.scene.light as unknown as { direction?: Cesium.Cartesian3 } | undefined;
     const light = sceneLight?.direction ?? new Cesium.Cartesian3(1, 0, 0);
     const sun = { x: light.x, y: light.y, z: light.z };
 
-    // Two perpendicular unit vectors spanning the plane whose normal is
-    // the sun direction. Pick a helper axis that's ~perpendicular to sun
-    // to avoid a near-zero cross-product.
     const helper =
       Math.abs(sun.z) < 0.9 ? new Cesium.Cartesian3(0, 0, 1) : new Cesium.Cartesian3(1, 0, 0);
     const sunV = new Cesium.Cartesian3(sun.x, sun.y, sun.z);
@@ -101,8 +86,8 @@ export class LunarTerminator {
     const positions: Cesium.Cartesian3[] = new Array(SAMPLES + 1);
     for (let i = 0; i <= SAMPLES; i++) {
       const t = (i * 2 * Math.PI) / SAMPLES;
-      const cx = Math.cos(t) * MOON_R_M;
-      const cy = Math.sin(t) * MOON_R_M;
+      const cx = Math.cos(t) * MARS_R_M;
+      const cy = Math.sin(t) * MARS_R_M;
       positions[i] = new Cesium.Cartesian3(
         cx * u.x + cy * v.x,
         cx * u.y + cy * v.y,
@@ -115,10 +100,10 @@ export class LunarTerminator {
         positions,
         width: 3,
         material: Cesium.Material.fromType('PolylineGlow', {
-          // Bright warm amber that reads as "lunar dawn/dusk" against
-          // both the sunlit grey and the shadowed dark side.
-          color: new Cesium.Color(1, 0.72, 0.28, 1),
-          glowPower: 0.25,
+          // Warm dawn/dusk amber, tinted slightly redder than the Moon
+          // terminator so the two read as distinct at a glance.
+          color: new Cesium.Color(1, 0.55, 0.25, 1),
+          glowPower: 0.28,
           taperPower: 1,
         }),
       });

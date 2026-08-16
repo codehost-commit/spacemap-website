@@ -3,17 +3,16 @@ import { BODIES, type BodyId } from '../cesium/bodies.js';
 
 /**
  * "Beyond Earth" body selector — the entry point for switching between
- * Earth and Moon views. Rendered as a pill row of body chips floating in
- * the top-centre of the tracker, in the same visual family as the rest of
- * the HUD (frosted glass, space-accent gradient on active).
- *
- * Part 1 shows only Earth + Moon; more bodies land here as the map grows.
+ * Earth, Moon, and Mars views. Rendered as a pill row of body chips
+ * floating in the top-centre of the tracker, in the same visual family
+ * as the rest of the HUD (frosted glass, space-accent gradient on active).
  */
-const BODY_ORDER: BodyId[] = ['earth', 'moon'];
+const BODY_ORDER: BodyId[] = ['earth', 'moon', 'mars'];
 
 const BODY_ICON: Record<BodyId, string> = {
   earth: '🌍',
   moon: '🌕',
+  mars: '🔴',
 };
 
 export function BodySwitcher() {

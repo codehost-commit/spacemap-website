@@ -36,6 +36,7 @@ export function TrackerPage() {
   const body = useStore((s) => s.body);
   const isEarth = body === 'earth';
   const isMoon = body === 'moon';
+  const isMars = body === 'mars';
 
   useEffect(() => {
     document.body.classList.add('tracker-mode');
@@ -183,6 +184,21 @@ export function TrackerPage() {
       )}
       {isMoon && <LunarTelemetryPanel />}
       {isMoon && <LunarSurfacePanel />}
+
+      {/*
+        Mars — Part 1 (foundation) ships imagery + terminator + switcher.
+        Orbiters, surface markers, and their panels land in Part 2. Until
+        then we show a small floating banner so it's clear more is on the
+        way rather than looking empty by accident.
+      */}
+      {isMars && (
+        <div className="pointer-events-none absolute bottom-24 left-1/2 z-20 -translate-x-1/2">
+          <div className="pointer-events-auto rounded-full border border-space-border bg-space-panel/92 px-4 py-2 font-mono text-[11px] text-space-dim shadow-[0_18px_40px_rgba(0,0,0,0.28)] backdrop-blur-xl">
+            <span className="text-space-accent">Mars</span> — Viking MDIM 2.1 basemap live.
+            Orbiters &amp; surface sites arriving next.
+          </div>
+        </div>
+      )}
 
       <TimeControls />
       <TimelineScrubber />

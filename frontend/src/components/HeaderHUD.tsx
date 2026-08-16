@@ -20,6 +20,8 @@ export function HeaderHUD() {
   const body = useStore((s) => s.body);
   const surfaceOn = useStore((s) => s.lunarSurfaceOn);
   const isMoon = body === 'moon';
+  const isMars = body === 'mars';
+  const isPlanetaryOther = isMoon || isMars;
 
   const [wallNow, setWallNow] = useState(() => Date.now());
   const [fps, setFps] = useState(0);
@@ -83,6 +85,16 @@ export function HeaderHUD() {
               value={surfaceOn ? LUNAR_SURFACE_SITES.length.toString() : 'off'}
             />
           </>
+        ) : isMars ? (
+          <>
+            {/*
+              Mars stats — Part 1 (foundation) shows the base numbers we
+              know now (a placeholder body label + Viking mosaic resolution).
+              Orbiter and surface counts drop in with Part 2.
+            */}
+            <Stat label="Body" value="Mars" />
+            <Stat label="Imagery" value="232 m/px" />
+          </>
         ) : (
           <>
             <Stat
@@ -122,12 +134,14 @@ export function HeaderHUD() {
             className="rounded-full p-1 transition-transform hover:scale-110 focus:outline-none"
           >
             <span
-              className={`block h-2 w-2 rounded-full ${statusColor(isMoon ? 'ready' : status)}`}
-              title={isMoon ? 'lunar view' : error ?? status}
+              className={`block h-2 w-2 rounded-full ${statusColor(isPlanetaryOther ? 'ready' : status)}`}
+              title={isMoon ? 'lunar view' : isMars ? 'mars view' : error ?? status}
             />
           </button>
-          <span className="text-space-dim">{isMoon ? 'LUNAR' : statusLabel(status)}</span>
-          {!isMoon && catalogHydrating && status === 'ready' && (
+          <span className="text-space-dim">
+            {isMoon ? 'LUNAR' : isMars ? 'MARS' : statusLabel(status)}
+          </span>
+          {!isPlanetaryOther && catalogHydrating && status === 'ready' && (
             <span className="text-[10px] uppercase tracking-[0.18em] text-space-accent/80">
               Syncing
             </span>

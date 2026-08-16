@@ -18,7 +18,7 @@ import * as Cesium from 'cesium';
  * back to a smooth ellipsoid (the default EllipsoidTerrainProvider).
  */
 
-export type BodyId = 'earth' | 'moon';
+export type BodyId = 'earth' | 'moon' | 'mars';
 
 export interface BodyDef {
   id: BodyId;
@@ -53,6 +53,7 @@ export interface BodyDef {
 // Radii in metres — IAU 2015 / IAU 2000 mean values.
 const EARTH_RADIUS_M = 6_378_137;
 const MOON_RADIUS_M = 1_737_400;
+const MARS_RADIUS_M = 3_389_500;
 
 /**
  * Seed Cesium's Ion token once, at module load. Vite inlines the env var at
@@ -95,6 +96,33 @@ function earthImagery(): Cesium.ImageryProvider {
  * so Cesium never sees an error — it just renders black off the edge. That
  * matches the tiling scheme exactly, so nothing extra to configure.
  */
+/**
+ * NASA Mars Trek — Viking MDIM 2.1 colorized global mosaic. 232 m/pixel
+ * equirectangular (EPSG:4326) tiles, JPEG, no auth. The standard reference
+ * basemap of Mars; every mission page you've seen uses it (or its ancestor).
+ *
+ * Same tiling convention as the Moon layer — Trek serves 200-with-blank
+ * for out-of-bounds tiles rather than 404, so nothing extra to catch.
+ */
+function marsImagery(): Cesium.ImageryProvider {
+  return new Cesium.UrlTemplateImageryProvider({
+    url:
+      'https://trek.nasa.gov/tiles/Mars/EQ/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0/default/default028mm/{z}/{y}/{x}.jpg',
+    tileWidth: 256,
+    tileHeight: 256,
+    minimumLevel: 0,
+    maximumLevel: 7,
+    tilingScheme: new Cesium.GeographicTilingScheme({
+      ellipsoid: new Cesium.Ellipsoid(MARS_RADIUS_M, MARS_RADIUS_M, MARS_RADIUS_M),
+    }),
+    rectangle: Cesium.Rectangle.MAX_VALUE,
+    credit: new Cesium.Credit(
+      'NASA / JPL / USGS — Viking MDIM 2.1 Colorized Global Mosaic (Mars Trek)',
+      true,
+    ),
+  });
+}
+
 function moonImagery(): Cesium.ImageryProvider {
   return new Cesium.UrlTemplateImageryProvider({
     url:
@@ -127,6 +155,21 @@ export const BODIES: Record<BodyId, BodyDef> = {
     homeLonLat: [0, 15],
     globeBaseColor: Cesium.Color.fromCssColorString('#0a1a2a'),
     hasAtmosphere: true,
+  },
+  mars: {
+    id: 'mars',
+    label: 'Mars',
+    short: 'Viking MDIM 2.1 colorized mosaic — 232 m/pixel, streamed from NASA Mars Trek.',
+    radiusM: MARS_RADIUS_M,
+    imagery: marsImagery,
+    // No Ion tileset for Mars yet — Cesium hasn't published one at the time
+    // of writing. The Viking mosaic still reads as unmistakably Martian.
+    // Mars is ~1.9× the Moon's radius; use a proportionally-larger default
+    // altitude so the disk fills the viewport at spawn.
+    homeAltitudeM: 12_000_000,
+    homeLonLat: [0, 0],
+    globeBaseColor: Cesium.Color.fromCssColorString('#2a1611'),
+    hasAtmosphere: false,
   },
   moon: {
     id: 'moon',

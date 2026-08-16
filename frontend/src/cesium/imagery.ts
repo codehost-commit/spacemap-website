@@ -128,6 +128,10 @@ export class BaseImageryController {
     try {
       if (body === 'moon') {
         provider = BODIES.moon.imagery();
+      } else if (body === 'mars') {
+        // Mars, like Moon, ignores the Earth imagery picker — one canonical
+        // basemap (Viking MDIM 2.1) lives with the body definition.
+        provider = BODIES.mars.imagery();
       } else {
         const def = IMAGERY_LAYERS.find((d) => d.id === id) ?? IMAGERY_LAYERS[0];
         provider = await Promise.resolve(def.create());

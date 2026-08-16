@@ -21,6 +21,7 @@ import { CloudOverlay } from '../cesium/clouds.js';
 import { LunarSatellites, type LunarPickTag } from '../cesium/lunar-satellites.js';
 import { LunarOrbitTrail } from '../cesium/lunar-orbit-trail.js';
 import { LunarTerminator } from '../cesium/lunar-terminator.js';
+import { MarsTerminator } from '../cesium/mars-terminator.js';
 import {
   LunarSurfaceMarkers,
   type LunarSurfacePickTag,
@@ -61,6 +62,7 @@ export function GlobeCanvas() {
     const body = useStore.getState().body;
     const isEarth = body === 'earth';
     const isMoon = body === 'moon';
+    const isMars = body === 'mars';
     const viewer = createViewer(containerRef.current, body);
     const imagery = new BaseImageryController(viewer);
     const stars = new StarCatalog(viewer);
@@ -87,6 +89,8 @@ export function GlobeCanvas() {
     const lunarSats = isMoon ? new LunarSatellites(viewer) : null;
     const lunarTrail = isMoon ? new LunarOrbitTrail(viewer) : null;
     const lunarTerminator = isMoon ? new LunarTerminator(viewer) : null;
+    // Mars-only systems (Part 1 = terminator only; orbiters + surface land in Part 2).
+    const marsTerminator = isMars ? new MarsTerminator(viewer) : null;
     const lunarSurface = isMoon ? new LunarSurfaceMarkers(viewer) : null;
 
     const uninstallFocus = isEarth && layer ? installFocusApi(viewer, layer) : () => {};
@@ -114,7 +118,7 @@ export function GlobeCanvas() {
     // Loading-screen readiness: on Moon we don't gate on catalog / snapshot
     // (there is no Earth snapshot pipeline running), so we mark those as
     // "done" upfront and let the imagery-tile listener finish the sequence.
-    if (isMoon) {
+    if (isMoon || isMars) {
       useStore.setState({
         catalogStatus: 'ready',
         firstSnapshotReceived: true,
@@ -369,12 +373,22 @@ export function GlobeCanvas() {
       lunarSurface?.setSelected(state0.selectedLunarSurfaceId);
       lastLunarSelection = state0.selectedLunarId;
     }
+    if (isMars) {
+      marsTerminator?.setEnabled(useStore.getState().terminatorOn);
+    }
 
     const unsubUi = useStore.subscribe((s) => {
       // Graticule + terminator work on either body.
       if (s.graticuleOn !== lastGraticule) {
         lastGraticule = s.graticuleOn;
         graticule.setEnabled(s.graticuleOn);
+      }
+
+      if (isMars) {
+        if (s.terminatorOn !== lastTerminator) {
+          lastTerminator = s.terminatorOn;
+          marsTerminator?.setEnabled(s.terminatorOn);
+        }
       }
 
       if (isMoon) {
@@ -509,6 +523,7 @@ export function GlobeCanvas() {
       planets.destroy();
       lunarTrail?.destroy();
       lunarTerminator?.destroy();
+      marsTerminator?.destroy();
       lunarSurface?.destroy();
       lunarSats?.destroy();
       imagery.destroy();
