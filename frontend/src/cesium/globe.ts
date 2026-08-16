@@ -76,11 +76,14 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
   controller.maximumMovementRatio = 0.08;
   controller.inertiaSpin = 0.82;
   controller.inertiaTranslate = 0.82;
-  // Zoom limits scale with body radius — otherwise Moon's much smaller
-  // sphere lets you scroll straight through it, or park the camera at a
-  // useless altitude for Earth.
-  controller.minimumZoomDistance = def.radiusM * 0.02;
-  controller.maximumZoomDistance = def.radiusM * 25;
+  // Zoom limits: only apply body-radius-scaled clamps on non-Earth bodies —
+  // otherwise Moon's much smaller sphere lets you scroll straight through it.
+  // Earth keeps Cesium's built-in defaults so ground-level zoom still works
+  // for looking at buildings / launch pads.
+  if (def.id !== 'earth') {
+    controller.minimumZoomDistance = def.radiusM * 0.02;
+    controller.maximumZoomDistance = def.radiusM * 25;
+  }
 
   // Fly the camera to the body's default home view instead of Cesium's
   // Earth-centric default, so switching to the Moon actually shows the Moon

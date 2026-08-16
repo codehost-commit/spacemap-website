@@ -122,10 +122,10 @@ export const BODIES: Record<BodyId, BodyDef> = {
     short: 'LRO WAC global mosaic — 100 m/pixel, streamed from NASA Moon Trek.',
     radiusM: MOON_RADIUS_M,
     imagery: moonImagery,
-    // Moon LOLA terrain — LRO Lunar Orbiter Laser Altimeter DEM, quantised
-    // by Cesium. Crater rims, mare basins, Tycho's central peak all become
-    // real geometry instead of painted-on shading.
-    terrainIonAssetId: 2684829,
+    // No Moon terrain for now — the LOLA Ion asset (2684829) returns 404 on
+    // its tile requests, and the LRO WAC imagery already carries strong
+    // baked-in crater shadows that read as 3-D relief at all zoom levels.
+    // Earth still gets Cesium World Terrain via terrainIonAssetId = 1.
     // Moon is ~3.6× smaller than Earth; a proportionally-tighter default
     // altitude keeps it filling the viewport instead of shrinking away.
     homeAltitudeM: 5_500_000,
