@@ -125,6 +125,28 @@ export function createViewer(container: HTMLElement, body: BodyId = 'earth'): Ce
       Cesium.Cesium3DTileset.fromIonAssetId(assetId)
         .then((tileset) => {
           if (viewer.isDestroyed()) return;
+          // Custom fragment shader: darken the anti-sun hemisphere. The
+          // Cesium Moon tileset ships with a PBR material that mostly
+          // ignores scene lighting, so without this the whole surface reads
+          // as evenly-lit and the terminator has nothing to bound. We
+          // sample czm_lightDirectionEC (Cesium's own sun direction in
+          // eye space) against the fragment's own normal and multiply
+          // diffuse by a smooth day/night factor.
+          tileset.customShader = new Cesium.CustomShader({
+            fragmentShaderText: `
+              void fragmentMain(FragmentInput fsInput, inout czm_modelMaterial material) {
+                vec3 sun = normalize(czm_lightDirectionEC);
+                vec3 n = normalize(fsInput.attributes.normalEC);
+                float shade = dot(n, sun);
+                // Fully lit above +0.15, effectively black below −0.10, soft
+                // ~14° penumbra in between. Keep a tiny 5% ambient on the
+                // night side so surface texture stays legible (moonlight-ish).
+                float lit = smoothstep(-0.10, 0.15, shade);
+                float mul = mix(0.05, 1.0, lit);
+                material.diffuse *= mul;
+              }
+            `,
+          });
           viewer.scene.primitives.add(tileset);
           console.info(
             `[globe] Ion 3D tileset applied for ${def.id} — surface now real 3-D geometry.`,
